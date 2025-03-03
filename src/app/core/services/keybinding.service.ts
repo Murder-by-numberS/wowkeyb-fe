@@ -56,39 +56,37 @@ export class KeybindingService {
         return keybinding.keybinds.some(keybind => keybind.key === key);
     }
 
-    updateKeybindsInKeybinding(name: string, update: KeybindUpdate) {
+    updateKeybindsInKeybinding(id: string, update: KeybindUpdate): Observable<Keybinding> {
         const currentKeybindings = this.keybindingsSource.getValue();
-        const { addedKeybinds, removedKeybinds } = update;
-        console.log('addedKeybinds', addedKeybinds);
+        console.log('updateKeybindsInKeybinding - currentKeybindings - update:', update);
+
         const updatedKeybindings = currentKeybindings.map(kb => {
-            console.log('kb', kb)
-            if (kb.name === name) {
-                console.log('found keybinding');
+            if (kb.keybinding_id === id) {
                 let keybinds = [...kb.keybinds];
-                console.log('before keybinds', keybinds);
-                // Remove keybinds
-                if (removedKeybinds?.length) {
-                    console.log('removing keybinds', removedKeybinds);
+                if (update.removedKeybinds?.length) {
+                    console.log('removing keybinds', keybinds);
+                    console.log('update.removedKeybinds', update.removedKeybinds);
                     keybinds = keybinds.filter(existing =>
-                        !removedKeybinds.some(remove =>
+                        !update.removedKeybinds.some(remove =>
                             remove.key === existing.key &&
-                            JSON.stringify(remove.spell.spellId) === JSON.stringify(existing.spell.spellId)
+                            String(remove.spell.spellId) === String(existing.spell.spellId)
                         )
                     );
                 }
-                console.log('keybinds after removedKeybinds', keybinds);
-                // Add new keybinds
-                if (addedKeybinds?.length) {
-                    keybinds.push(...addedKeybinds);
+                if (update.addedKeybinds?.length) {
+                    keybinds.push(...update.addedKeybinds);
+
+                    console.log('updateKeybindsInKeybinding - keybinds', keybinds);
+
                 }
-                console.log('after keybinds', keybinds);
+
+                console.log('after updateKeybindsInKeybinding - keybinds', keybinds);
                 return { ...kb, keybinds };
             }
-            console.log('after - kb', kb)
             return kb;
         });
-        console.log('returning updatedKeybindings', updatedKeybindings);
-        this.keybindingsSource.next(updatedKeybindings);
+
+        return this.updateKeybinding(id, updatedKeybindings.find(kb => kb.keybinding_id === id));
     }
 
     updateKeybinding(id: string, updatedKeybinding: Partial<Keybinding>): Observable<Keybinding> {

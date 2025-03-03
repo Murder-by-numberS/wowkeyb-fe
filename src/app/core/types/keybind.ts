@@ -4,9 +4,9 @@ export interface Keybind {
         key: string,
         description: string,
         icon: string,
-        id: number
+        id: number,
         keybinding: string,
         name: string,
-        spellId: number
+        spellId: string
     }
 }

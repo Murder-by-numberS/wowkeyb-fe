@@ -77,7 +77,7 @@
             <div class="flex items-center" matTooltip="{{ ability.name }}: {{ ability.description }}"
                 matTooltipPosition="above" (click)="selectKey(ability)">
                 <img [src]="ability.icon" alt="{{ ability.name }} icon" class="w-12 h-12 object-contain"
-                    [class.grayscale]="ability.keybindings" />
+                    [class.grayscale]="ability.keybindings.length > 0" />
             </div>
         </div>
 
