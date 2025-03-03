@@ -164,10 +164,10 @@ export class KeybindsComponent implements OnInit {
             if (this.keybindsDrawerComponent) {
                 this.keybindsDrawerComponent.loadKeybindings();
             }
-            // if (this.abilitiesComponent) {
-            //     this.abilitiesComponent.abilities = [];
-            //     this.abilitiesComponent.fetchAbilities();
-            // }
+            if (this.abilitiesComponent) {
+                this.abilitiesComponent.abilities = [];
+                this.abilitiesComponent.fetchAbilities();
+            }
 
             if (!this.selectedKeybinding.spec || !this.selectedKeybinding.heroTalent) {
                 console.log('reseting keyboard')
@@ -179,9 +179,18 @@ export class KeybindsComponent implements OnInit {
 
     updateKeybinding(update) {
         console.log('updated keybinding?', update);
-        this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.name, update);
-        this.selectedKeybinding = this.keybindingService.getKeybindingById(this.selectedKeybinding.keybinding_id);
-        console.log('this.selectedKeybinding', this.selectedKeybinding);
+
+        this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybinding_id, update)
+            .subscribe({
+                next: (updatedKeybinding) => {
+                    this.selectedKeybinding = this.keybindingService.getKeybindingById(this.selectedKeybinding.keybinding_id);
+                    this.keyboard.updateKeyboardBindings();
+
+                },
+                error: (error) => {
+                    console.error('Error updating keybinding:', error);
+                }
+            });
     }
 
     // saveKeybinding() {

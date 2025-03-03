@@ -1,6 +1,6 @@
 export interface Ability {
     id: number;
-    spellId: number;
+    spellId: string;
     name: string;
     description: string;
     power: number;
