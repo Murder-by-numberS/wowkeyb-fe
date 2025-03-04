@@ -245,12 +245,20 @@ export class AbilitiesComponent implements OnInit {
                     this.keybindingService.updateKeybinding(this.selectedKeybinding.keybinding_id, { heroTalent: selectedOption })
                         .subscribe({
                             next: (updatedKeybinding) => {
+                                this.selectedKeybinding.keybinds = [];
                                 this.selectedKeybindingHeroTalent = selectedOption;
                                 this.selectedKeybinding.heroTalent = this.selectedKeybindingHeroTalent;
-                                this.fetchAbilities();
-                                this.selectedKeybinding.keybinds = [];
-                                this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybinding_id, { addedKeybinds: [], removedKeybinds: [] });
-                                this.selectionClassChanged.emit(null);
+                                this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybinding_id, { addedKeybinds: [], removedKeybinds: [] })
+                                    .subscribe({
+                                        next: (updatedKeybinding) => {
+                                            console.log('**1this.selectedKeybindingClass', this.selectedKeybindingClass);
+                                            this.selectionClassChanged.emit(null);
+                                            this.fetchAbilities();
+                                        },
+                                        error: (error) => {
+                                            console.error('Error updating keybinding:', error);
+                                        }
+                                    });
                             },
                             error: (error) => {
                                 console.error('Error updating keybinding:', error);
@@ -271,10 +279,18 @@ export class AbilitiesComponent implements OnInit {
                     next: (updatedKeybinding) => {
                         this.selectedKeybindingHeroTalent = selectedOption;
                         this.selectedKeybinding.heroTalent = this.selectedKeybindingHeroTalent;
-                        this.fetchAbilities();
+
                         this.selectedKeybinding.keybinds = [];
-                        this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybinding_id, { addedKeybinds: [], removedKeybinds: [] });
-                        this.selectionClassChanged.emit(null);
+                        this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybinding_id, { addedKeybinds: [], removedKeybinds: [] })
+                            .subscribe({
+                                next: (updatedKeybinding) => {
+                                    this.selectionClassChanged.emit(null);
+                                    this.fetchAbilities();
+                                },
+                                error: (error) => {
+                                    console.error('Error updating keybinding:', error);
+                                }
+                            });
                     },
                     error: (error) => {
                         console.error('Error updating keybinding:', error);
