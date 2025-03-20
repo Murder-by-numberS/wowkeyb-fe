@@ -128,6 +128,11 @@ export class KeybindsComponent implements OnInit {
             this.selectedKeybindingName = null;
             this.keybindingSelected = false;
             this.nameForm.get('name')?.setValue('');
+            if (this.abilitiesComponent) {
+                this.abilitiesComponent.abilities = [];
+                this.abilitiesComponent.fetchAbilities();
+            }
+
         }
     }
 

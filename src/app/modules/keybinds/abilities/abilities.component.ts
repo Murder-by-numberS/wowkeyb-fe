@@ -186,14 +186,13 @@ export class AbilitiesComponent implements OnInit {
                 if (result) {
                     console.log('Selection confirmed:', selectedOption);
                     console.log('spec changed');
-                    this.selectedKeybindingSpec = selectedOption;
-                    this.selectedKeybinding.spec = this.selectedKeybindingSpec;
-                    this.selectedKeybindingHeroTalent = undefined;
                     this.keybindingService.updateKeybinding(this.selectedKeybinding.keybinding_id, { spec: selectedOption, heroTalent: undefined })
                         .subscribe({
                             next: (updatedKeybinding) => {
+                                this.selectedKeybindingSpec = selectedOption;
+                                this.selectedKeybinding.spec = this.selectedKeybindingSpec;
+                                this.selectedKeybindingHeroTalent = undefined;
                                 this.heroTalents = fullClasses[this.selectedKeybindingClass].specs[this.selectedKeybindingSpec];
-                                console.log('this.heroTalents', this.heroTalents);
                                 this.selectedKeybinding.keybinds = [];
                                 this.selectedKeybinding.heroTalent = undefined;
                                 this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybinding_id, { addedKeybinds: [], removedKeybinds: [] });
