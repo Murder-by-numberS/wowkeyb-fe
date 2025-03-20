@@ -49,9 +49,9 @@
     }
 </div>
 <div class="pl-4 pb-2 flex flex-row w-full max-h-6 min-h-6 items-center">
+    @if (abilities?.length > 0) {
     <p class="">Abilities</p>
 
-    @if (abilities?.length > 0) {
     <!-- Previous Page Button -->
     <!-- <mat-icon class="text-gray-500 cursor-pointer ml-2" (click)="goToPreviousPage()"
         [class.opacity-50]="currentPage === 0">arrow_back</mat-icon> -->
@@ -64,6 +64,8 @@
     <!-- Next Page Button -->
     <!-- <mat-icon class="text-gray-500 cursor-pointer ml-2" (click)="goToNextPage()"
         [class.opacity-50]="currentPage === maxPage()">arrow_forward</mat-icon> -->
+    } @else {
+    <p class="">No Keybinding Selected</p>
     }
 </div>
 

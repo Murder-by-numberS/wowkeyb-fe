@@ -128,6 +128,11 @@ export class KeybindsComponent implements OnInit {
             this.selectedKeybindingName = null;
             this.keybindingSelected = false;
             this.nameForm.get('name')?.setValue('');
+            if (this.abilitiesComponent) {
+                this.abilitiesComponent.abilities = [];
+                this.abilitiesComponent.fetchAbilities();
+            }
+
         }
     }
 
@@ -158,20 +163,37 @@ export class KeybindsComponent implements OnInit {
     refreshChildKeybindings() {
         console.log('refreshChildKeybindings');
 
-        //refetch the keybindings from server
-        this.keybindingService.getKeybindings().subscribe((keybindings) => {
-            console.log('refreshChildKeybindings - keybindings', keybindings);
-            if (this.keybindsDrawerComponent) {
-                this.keybindsDrawerComponent.loadKeybindings();
-            }
-            if (this.abilitiesComponent) {
-                this.abilitiesComponent.abilities = [];
-                this.abilitiesComponent.fetchAbilities();
-            }
+        //check if loggedin
+        this._authService.check().subscribe((authenticated) => {
+            if (authenticated) {
+                //refetch the keybindings from server
+                this.keybindingService.getKeybindings().subscribe((keybindings) => {
+                    console.log('refreshChildKeybindings - keybindings', keybindings);
 
-            if (!this.selectedKeybinding.spec || !this.selectedKeybinding.heroTalent) {
-                console.log('reseting keyboard')
-                this.keyboard.resetKeyboard();
+                    if (this.keybindsDrawerComponent) {
+                        this.keybindsDrawerComponent.loadKeybindings();
+                    }
+
+                    if (this.abilitiesComponent) {
+                        this.abilitiesComponent.abilities = [];
+                        this.abilitiesComponent.fetchAbilities();
+                    }
+
+                    if (!this.selectedKeybinding.spec || !this.selectedKeybinding.heroTalent) {
+                        console.log('reseting keyboard')
+                        this.keyboard.resetKeyboard();
+                    }
+
+                });
+            } else {
+                //check local storage for keybindings
+                const keybindings = localStorage.getItem('keybindings');
+                if (keybindings) {
+                    this.keybindingService.updateKeybindings(JSON.parse(keybindings));
+                    if (this.keybindsDrawerComponent) {
+                        this.keybindsDrawerComponent.loadKeybindings();
+                    }
+                }
             }
         });
 
