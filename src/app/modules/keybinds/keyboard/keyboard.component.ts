@@ -246,7 +246,7 @@ export class KeyboardComponent implements OnInit {
 
             dialogRef.afterClosed().subscribe(result => {
                 if (result) {
-                    console.log('Dialog result:', result);
+                    console.log('Keyboard - Dialog result:', result);
                     key.keybinds = result;
                     // Update the selectedKeybinding's keybinds
                     this.selectedKeybinding.keybinds = this.selectedKeybinding.keybinds

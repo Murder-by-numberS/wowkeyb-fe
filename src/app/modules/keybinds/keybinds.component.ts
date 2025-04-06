@@ -186,12 +186,18 @@ export class KeybindsComponent implements OnInit {
 
                 });
             } else {
+                console.log('not authenticated');
                 //check local storage for keybindings
                 const keybindings = localStorage.getItem('keybindings');
                 if (keybindings) {
                     this.keybindingService.updateKeybindings(JSON.parse(keybindings));
                     if (this.keybindsDrawerComponent) {
                         this.keybindsDrawerComponent.loadKeybindings();
+                    }
+
+                    if (this.abilitiesComponent) {
+                        this.abilitiesComponent.abilities = [];
+                        this.abilitiesComponent.fetchAbilities();
                     }
                 }
             }
