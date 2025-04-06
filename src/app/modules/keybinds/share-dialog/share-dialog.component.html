@@ -1,0 +1,17 @@
+<div class="flex flex-col h-full">
+    <h2 mat-dialog-title>Share Keybinding</h2>
+    <mat-dialog-content class="flex-1">
+        <div class="flex flex-col space-y-4">
+            <p>Share this keybinding with others by sending them this link:</p>
+            <div class="flex items-center space-x-2">
+                <input matInput [value]="shareUrl" readonly class="flex-1" #urlInput>
+                <button mat-icon-button (click)="copyToClipboard()" matTooltip="Copy to clipboard" #copyButton>
+                    <mat-icon>content_copy</mat-icon>
+                </button>
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-button (click)="onClose()">Close</button>
+    </mat-dialog-actions>
+</div>
