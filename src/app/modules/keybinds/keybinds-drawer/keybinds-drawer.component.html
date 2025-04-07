@@ -64,6 +64,13 @@
         <div class="flex-1">
             <p>{{keybinding.name}} - {{keybinding.class}}</p>
         </div>
+        <div class="flex items-center">
+            @if (keybinding.is_public) {
+            <mat-icon class="text-green-500">public</mat-icon>
+            } @else {
+            <mat-icon class="text-gray-500">public_off</mat-icon>
+            }
+        </div>
     </div>
     }
 
