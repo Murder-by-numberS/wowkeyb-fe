@@ -5,7 +5,7 @@
             <mat-label>Class: </mat-label>
             <mat-select [(value)]="selectedKeybindingClass" [disabled]="!keybindingSelected"
                 (selectionChange)="onClassChange($event)">
-                @for (class of classes; track class) {
+                @for (class of classes; track class.name) {
                 <mat-option [value]="class.name">{{class.name}}</mat-option>
                 }
             </mat-select>
@@ -27,7 +27,7 @@
             <mat-label>Spec: </mat-label>
             <mat-select [(value)]="selectedKeybindingSpec" [disabled]="!keybindingSelected"
                 (selectionChange)="onSpecChange($event)">
-                @for (spec of specs; track spec) {
+                @for (spec of specs; track $index + spec) {
                 <mat-option [value]="spec">{{spec}}</mat-option>
                 }
             </mat-select>
@@ -40,7 +40,7 @@
             <mat-label>Hero Talent: </mat-label>
             <mat-select [(value)]="selectedKeybindingHeroTalent" [disabled]="!keybindingSelected"
                 (selectionChange)="onHeroTalentChange($event)">
-                @for (heroTalent of heroTalents; track heroTalent) {
+                @for (heroTalent of heroTalents; track $index + heroTalent) {
                 <mat-option [value]="heroTalent">{{heroTalent}}</mat-option>
                 }
             </mat-select>
@@ -74,7 +74,7 @@
         @if (abilities?.length > 0) {
         <mat-icon class="text-gray-500 cursor-pointer ml-2" (click)="goToPreviousPage()"
             [class.opacity-50]="currentPage === 0">arrow_back</mat-icon>
-        @for (ability of getAbilitiesForCurrentPage(); track ability) {
+        @for (ability of getAbilitiesForCurrentPage(); track $index) {
         <div class="flex flex-col w-12">
             <div class="flex items-center" matTooltip="{{ ability.name }}: {{ ability.description }}"
                 matTooltipPosition="above" (click)="selectKey(ability)">
@@ -82,7 +82,6 @@
                     [class.grayscale]="ability.keybindings.length > 0" />
             </div>
         </div>
-
         }
         <mat-icon class="text-gray-500 cursor-pointer ml-2" (click)="goToNextPage()"
             [class.opacity-50]="currentPage === maxPage()">arrow_forward</mat-icon>

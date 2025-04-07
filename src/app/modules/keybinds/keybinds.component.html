@@ -63,6 +63,21 @@
                                     <span>Edit</span>
                                 </button>
                             </div>
+                            <div class="px-2">
+                                @if (selectedKeybinding.is_public) {
+                                <button mat-stroked-button color="primary" matTooltip="Make Private"
+                                    (click)="togglePublic()" [disabled]="!isAuthenticated">
+                                    <mat-icon>public</mat-icon>
+                                    <span class="ml-2">Public</span>
+                                </button>
+                                } @else {
+                                <button mat-stroked-button matTooltip="Make Public" (click)="togglePublic()"
+                                    [disabled]="!isAuthenticated">
+                                    <mat-icon>public_off</mat-icon>
+                                    <span class="ml-2">Private</span>
+                                </button>
+                                }
+                            </div>
                             }
                             @if(editingName) {
                             <div>

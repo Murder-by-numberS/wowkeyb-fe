@@ -2,13 +2,27 @@
     <h2 mat-dialog-title>Share Keybinding</h2>
     <mat-dialog-content class="flex-1">
         <div class="flex flex-col space-y-4">
-            <p>Share this keybinding with others by sending them this link:</p>
-            <div class="flex items-center space-x-2">
-                <input matInput [value]="shareUrl" readonly class="flex-1" #urlInput>
-                <button mat-icon-button (click)="copyToClipboard()" matTooltip="Copy to clipboard" #copyButton>
-                    <mat-icon>content_copy</mat-icon>
-                </button>
+            @if (!showShareLink && isAuthenticated) {
+            <div class="flex flex-col space-y-4">
+                <p>To share this keybinding, it needs to be set to public. This means anyone with the link can view it.
+                </p>
+                <div class="flex justify-end">
+                    <button mat-flat-button color="primary" (click)="makePublic()">
+                        Make Public
+                    </button>
+                </div>
             </div>
+            } @else {
+            <div class="flex flex-col space-y-4">
+                <p>Share this keybinding with others by sending them this link:</p>
+                <div class="flex items-center space-x-2">
+                    <input matInput [value]="shareUrl" readonly class="flex-1" #urlInput>
+                    <button mat-icon-button (click)="copyToClipboard()" matTooltip="Copy to clipboard" #copyButton>
+                        <mat-icon>content_copy</mat-icon>
+                    </button>
+                </div>
+            </div>
+            }
         </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">

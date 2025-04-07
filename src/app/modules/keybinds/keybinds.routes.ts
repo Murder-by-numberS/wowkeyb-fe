@@ -10,4 +10,8 @@ export default [
         path: 'create',
         component: KeybindsComponent,
     },
+    {
+        path: ':id',
+        component: KeybindsComponent,
+    },
 ] as Routes;

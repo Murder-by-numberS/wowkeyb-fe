@@ -1,7 +1,8 @@
 //Angular
-import { Component, ViewEncapsulation, OnInit, ViewChild } from '@angular/core';
-
+import { Component, ViewEncapsulation, OnInit, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { NgClass } from '@angular/common';
 
 import { Subject, takeUntil } from 'rxjs';
 
@@ -14,17 +15,21 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 //Components
 import { KeyboardComponent } from './keyboard/keyboard.component';
 import { AbilitiesComponent } from './abilities/abilities.component';
 import { KeybindsDrawerComponent } from './keybinds-drawer/keybinds-drawer.component';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
-
+import { ShareDialogComponent } from './share-dialog/share-dialog.component';
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
 import { AuthService } from 'app/core/auth/auth.service';
+
+//Types
+import { Keybinding } from 'app/core/types/keybinding';
 
 @Component({
     selector: 'keybinds',
@@ -63,7 +68,9 @@ export class KeybindsComponent implements OnInit {
     selectedKeybinding: any = null;
     selectedKeybindingName: string;
     keybindingSelected: boolean;
-    selectedClass: any = null;
+    selectedKeybindingClass: string;
+    selectedKeybindingSpec: string;
+    selectedKeybindingHeroTalent: string;
 
     refresh: boolean = false;
 
@@ -78,7 +85,9 @@ export class KeybindsComponent implements OnInit {
         private keybindingService: KeybindingService,
         private _formBuilder: FormBuilder,
         private _authService: AuthService,
-        private dialog: MatDialog) {
+        private dialog: MatDialog,
+        private route: ActivatedRoute,
+        private snackBar: MatSnackBar) {
 
         this.keybindingSelected = false;
 
@@ -97,6 +106,19 @@ export class KeybindsComponent implements OnInit {
         this.nameForm = this._formBuilder.group({
             name: ['', [Validators.required, Validators.maxLength(32)]]
         });
+
+        // Subscribe to route parameters
+        this.route.params
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe(params => {
+                if (params['id']) {
+                    console.log('params', params);
+                    //go search the backend for the keybinding
+                    // this.keybindingService.getKeybindingById(params['id']).subscribe((keybinding) => {
+                    //     console.log('keybinding', keybinding); //lets just see it for now
+                    // });
+                }
+            });
 
     }
 
@@ -118,26 +140,62 @@ export class KeybindsComponent implements OnInit {
     onKeybindingSelected(keybinding: any) {
         console.log('onKeybindingSelected', keybinding)
         if (keybinding) {
-            this.selectedKeybinding = keybinding; // Handle the emitted keybind from the child component
-            this.selectedKeybindingName = this.selectedKeybinding.name;
-            this.keybindingSelected = true;
-            this.nameForm.get('name')?.setValue(this.selectedKeybindingName);
+            // Get the latest version of the keybinding from the service's current keybindings
+            this.keybindingService.currentKeybindings
+                .pipe(takeUntil(this._unsubscribeAll))
+                .subscribe(keybindings => {
+                    const updatedKeybinding = keybindings.find(kb => kb.keybinding_id === keybinding.keybinding_id);
+                    if (updatedKeybinding) {
+                        // Update the selected keybinding with the latest data
+                        this.selectedKeybinding = updatedKeybinding;
+                        this.selectedKeybindingName = this.selectedKeybinding.name;
+                        this.keybindingSelected = true;
+                        this.nameForm.get('name')?.setValue(this.selectedKeybindingName);
+
+                        // Update the class, spec, and heroTalent selections
+                        this.selectedKeybindingClass = updatedKeybinding.class;
+                        this.selectedKeybindingSpec = updatedKeybinding.spec;
+                        this.selectedKeybindingHeroTalent = updatedKeybinding.heroTalent;
+
+                        // Update local storage to ensure consistency
+                        const savedKeybindings = localStorage.getItem('keybindings');
+                        if (savedKeybindings) {
+                            try {
+                                const parsedKeybindings = JSON.parse(savedKeybindings);
+                                const updatedKeybindings = parsedKeybindings.map((kb: Keybinding) => {
+                                    if (kb.keybinding_id === updatedKeybinding.keybinding_id) {
+                                        return { ...kb, is_public: updatedKeybinding.is_public };
+                                    }
+                                    return kb;
+                                });
+                                localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
+                            } catch (error) {
+                                console.error('Failed to update keybindings in localStorage:', error);
+                            }
+                        }
+
+                        // Trigger the change events to update the abilities component
+                        this.onSelectionClassChanged(updatedKeybinding.class);
+                    }
+                });
         }
         else {
             this.selectedKeybinding = null;
             this.selectedKeybindingName = null;
             this.keybindingSelected = false;
             this.nameForm.get('name')?.setValue('');
+            this.selectedKeybindingClass = null;
+            this.selectedKeybindingSpec = null;
+            this.selectedKeybindingHeroTalent = null;
             if (this.abilitiesComponent) {
                 this.abilitiesComponent.abilities = [];
                 this.abilitiesComponent.fetchAbilities();
             }
-
         }
     }
 
     onSelectionClassChanged(value: string) {
-        this.selectedClass = value;
+        this.selectedKeybindingClass = value;
         // You can also perform other actions here
     }
 
@@ -186,7 +244,6 @@ export class KeybindsComponent implements OnInit {
 
                 });
             } else {
-                console.log('not authenticated');
                 //check local storage for keybindings
                 const keybindings = localStorage.getItem('keybindings');
                 if (keybindings) {
@@ -226,7 +283,17 @@ export class KeybindsComponent implements OnInit {
     // }
 
     shareKeybinding() {
-        console.log('share keybinding');
+        if (!this.selectedKeybinding) {
+            return;
+        }
+
+        this.dialog.open(ShareDialogComponent, {
+            data: {
+                keybindingId: this.selectedKeybinding.keybinding_id
+            },
+            width: '600px',
+            maxWidth: '90vw'
+        });
     }
 
     // updateKeybindings() {
@@ -281,6 +348,48 @@ export class KeybindsComponent implements OnInit {
         this.nameForm.reset(); // Resets the form to its initial state
         this.nameForm.get('name')?.setValue(this.selectedKeybindingName);
         console.log('Form reset');
+    }
+
+    togglePublic(): void {
+        if (!this.selectedKeybinding) return;
+
+        const newPublicStatus = !this.selectedKeybinding.is_public;
+        this.keybindingService.updateKeybinding(this.selectedKeybinding.keybinding_id, {
+            is_public: newPublicStatus
+        }).subscribe({
+            next: (updatedKeybinding) => {
+                // Update local storage
+                const savedKeybindings = localStorage.getItem('keybindings');
+                if (savedKeybindings) {
+                    try {
+                        const parsedKeybindings = JSON.parse(savedKeybindings);
+                        const updatedKeybindings = parsedKeybindings.map((kb: Keybinding) => {
+                            if (kb.keybinding_id === this.selectedKeybinding?.keybinding_id) {
+                                return { ...kb, is_public: newPublicStatus };
+                            }
+                            return kb;
+                        });
+                        localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
+                    } catch (error) {
+                        console.error('Failed to update keybindings in localStorage:', error);
+                    }
+                }
+
+                // Update the selected keybinding
+                this.selectedKeybinding = updatedKeybinding;
+                this.keyboard.updateKeyboardBindings();
+
+                this.snackBar.open(
+                    newPublicStatus ? 'Keybinding is now public' : 'Keybinding is now private',
+                    'Close',
+                    { duration: 3000 }
+                );
+            },
+            error: (error) => {
+                console.error('Error updating keybinding:', error);
+                this.snackBar.open('Error updating keybinding status', 'Close', { duration: 3000 });
+            }
+        });
     }
 
 }

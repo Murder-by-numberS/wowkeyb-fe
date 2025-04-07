@@ -59,8 +59,11 @@
     <div [ngClass]="{
         'bg-blue-500 text-white': isSelected(keybinding.keybinding_id),
         'bg-gray-200 text-black': !isSelected(keybinding.keybinding_id)
-    }" class="flex flex-0 max-h-16 min-h-12 items-center px-4 cursor-pointer" (click)="selectKeybinding(keybinding)">
-        <p>{{keybinding.name}} - {{keybinding.class}}</p>
+    }" class="flex flex-0 max-h-16 min-h-12 items-center px-4 cursor-pointer group"
+        (click)="selectKeybinding(keybinding)">
+        <div class="flex-1">
+            <p>{{keybinding.name}} - {{keybinding.class}}</p>
+        </div>
     </div>
     }
 
