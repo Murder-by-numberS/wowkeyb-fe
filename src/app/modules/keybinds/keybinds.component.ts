@@ -23,6 +23,7 @@ import { AbilitiesComponent } from './abilities/abilities.component';
 import { KeybindsDrawerComponent } from './keybinds-drawer/keybinds-drawer.component';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
 import { ShareDialogComponent } from './share-dialog/share-dialog.component';
+import { ViewAllKeybindingsComponent } from './view-all-keybindings/view-all-keybindings.component';
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -50,7 +51,8 @@ import { Keybinding } from 'app/core/types/keybinding';
 
         KeyboardComponent,
         AbilitiesComponent,
-        KeybindsDrawerComponent
+        KeybindsDrawerComponent,
+        ViewAllKeybindingsComponent
     ],
 })
 export class KeybindsComponent implements OnInit {

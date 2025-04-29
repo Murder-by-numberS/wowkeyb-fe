@@ -1,0 +1,87 @@
+<div class="mx-auto flex w-full flex-wrap pb-2">
+    <div class="flex flex-row w-full justify-between items-center py-2 ml-6">
+        <div class="text-3xl font-semibold leading-8 tracking-tight">
+            Keybindings
+        </div>
+        <div class="ml-6 pr-4 flex">
+            <button class="hidden sm:inline-flex" mat-stroked-button [disabled]="!keybindingSelected"
+                (click)="onDeleteKeybinding()">
+                <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:cog-8-tooth'"></mat-icon>
+                <span class="ml-2">Delete</span>
+            </button>
+
+            <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'"
+                [disabled]="!keybindingSelected" (click)="onShareKeybinding()">
+                <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:arrow-up-tray'"></mat-icon>
+                <span class="ml-2">Share</span>
+            </button>
+
+            <div class="sm:hidden">
+                <button [matMenuTriggerFor]="actionsMenu" mat-icon-button>
+                    <mat-icon [svgIcon]="'heroicons_outline:ellipsis-vertical'"></mat-icon>
+                </button>
+                <mat-menu #actionsMenu="matMenu">
+                    <button mat-menu-item (click)="onDeleteKeybinding()">Delete</button>
+                    <button mat-menu-item (click)="onShareKeybinding()">Share</button>
+                </mat-menu>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex w-full mx-4">
+        <div class="flex flex-0 max-h-10 min-h-10">
+            @if (selectedKeybinding) {
+            <div class="flex flex-1 items-center flex-row">
+                <p class="px-2">Viewing: </p>
+                @if(!editingName) {
+                {{ selectedKeybindingName }}
+                <div class="px-2">
+                    <button class="hidden sm:inline-flex" mat-stroked-button (click)="onEditName()">
+                        <span>Edit</span>
+                    </button>
+                </div>
+                <div class="px-2">
+                    @if (selectedKeybinding.is_public) {
+                    <button mat-stroked-button color="primary" matTooltip="Make Private" (click)="onTogglePublic()"
+                        [disabled]="!isAuthenticated">
+                        <mat-icon>public</mat-icon>
+                        <span class="ml-2">Public</span>
+                    </button>
+                    } @else {
+                    <button mat-stroked-button matTooltip="Make Public" (click)="onTogglePublic()"
+                        [disabled]="!isAuthenticated">
+                        <mat-icon>public_off</mat-icon>
+                        <span class="ml-2">Private</span>
+                    </button>
+                    }
+                </div>
+                }
+                @if(editingName) {
+                <div>
+                    <form [formGroup]="nameForm" (ngSubmit)="onSaveName()">
+                        <mat-form-field class="w-80 px-2">
+                            <input matInput formControlName="name" placeholder="Enter a name" maxlength="32">
+                        </mat-form-field>
+                        <button type="submit" class="hidden sm:inline-flex mr-2" mat-stroked-button
+                            [disabled]="nameForm.invalid">
+                            <span> Save </span>
+                        </button>
+                        <button type="button" class="hidden sm:inline-flex" mat-stroked-button (click)="onCancelName()">
+                            <span>Cancel</span>
+                        </button>
+                    </form>
+                </div>
+                }
+            </div>
+            }
+        </div>
+    </div>
+</div>
+<div cdkDropListGroup class="w-full bg-gray-300 max-h-48 min-h-48">
+    <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
+        (selectionClassChanged)="onRefreshChildKeybindings()" (keybindingUpdated)="onUpdateKeybinding($event)" />
+</div>
+<div cdkDropListGroup class="">
+    <keyboard (refreshKeybindings)="onRefreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding">
+    </keyboard>
+</div>
