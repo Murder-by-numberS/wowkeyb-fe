@@ -1,52 +1,34 @@
-import { Component, ViewEncapsulation, OnInit, viewChild, Input, signal, SimpleChanges, EventEmitter, Output } from '@angular/core';
+import { Component, Input, ViewChild, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-
-import { NgxPanZoomModule, PanZoomComponent, PanZoomModel } from 'ngx-panzoom';
-
-//Material
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatSidenavModule } from '@angular/material/sidenav';
-
+import { NgxPanZoomModule, PanZoomComponent } from 'ngx-panzoom';
 import { Keybinding } from 'app/core/types/keybinding';
-import { KeybindDialogComponent } from './keybind-dialog/keybind-dialog.component';
-import { KeybindingService } from 'app/core/services/keybinding.service';
+import { DragDropModule } from '@angular/cdk/drag-drop';
+import { Keybind } from 'app/core/types/keybind';
 
 interface Key {
     label: string;
     width: string;
     isHovered?: boolean;
-    keybinds?: { key: string, spell?: string }[]
+    keybinds?: Keybind[];
 }
 
 @Component({
-    selector: 'keyboard',
-    templateUrl: './keyboard.component.html',
-    encapsulation: ViewEncapsulation.None,
+    selector: 'view-keyboard',
+    templateUrl: './view-keyboard.component.html',
     standalone: true,
     imports: [
         CommonModule,
-
         MatButtonModule,
         MatIconModule,
-        MatMenuModule,
-        MatSidenavModule,
-        MatDialogModule,
-
-        NgxPanZoomModule
-    ],
+        NgxPanZoomModule,
+        DragDropModule
+    ]
 })
-export class KeyboardComponent implements OnInit {
-
-    @Input()
-    selectedKeybinding: Keybinding;
-
-    @Output() refreshKeybindings = new EventEmitter<void>();
-
-    readonly panZoom = viewChild(PanZoomComponent);
-    readonly panzoomModel = signal<PanZoomModel>(undefined!);
+export class ViewKeyboardComponent implements OnChanges {
+    @Input() keybinding: Keybinding | null = null;
+    @ViewChild('panZoom') panZoom: PanZoomComponent | undefined;
 
     canZoom: boolean = true;
 
@@ -105,89 +87,53 @@ export class KeyboardComponent implements OnInit {
         ]
     ];
 
-    private keyMap: Map<string, Key> = new Map();
-
-    /**
-     * Constructor
-     */
-    constructor(
-        private dialog: MatDialog,
-        private keybindingService: KeybindingService
-    ) { }
-
-    ngOnInit(): void {
-        this.initializeKeyMap();
-    }
-
-    private initializeKeyMap(): void {
-        this.keyboardLayout.forEach(row => {
-            row.forEach(keyItem => {
-                this.keyMap.set(keyItem.label.toUpperCase(), keyItem);
-            });
-        });
-    }
-
-    scalePerZoomLevel() {
+    scalePerZoomLevel(): number {
         return 2.0;
     }
 
-    neutralZoomLevel() {
+    neutralZoomLevel(): number {
         return 2;
     }
 
-    reset(): void {
-        this.panZoom()?.resetView();
-    }
-
-    zoomIn(): void {
-        this.panZoom()?.zoomIn('viewCenter');
-    }
-
-    zoomOut(): void {
-        this.panZoom()?.zoomOut('viewCenter');
-    }
-
-    onPanDown100Clicked(): void {
-        this.panZoom()?.panDelta({ x: 0, y: 100 });
-    }
-
-    onPanUp100Clicked(): void {
-        this.panZoom()?.panDelta({ x: 0, y: -100 });
-    }
-
-    onPanRight100Clicked(): void {
-        this.panZoom()?.panDelta({ x: 100, y: 0 });
-    }
-
-    onPanLeft100Clicked(): void {
-        this.panZoom()?.panDelta({ x: -100, y: 0 });
-    }
-
-    zoomEnabled() {
+    zoomEnabled(): boolean {
         return this.canZoom;
     }
 
-    private calculateDialogWidth(keybindsCount: number): string {
-        // Base width for 1-2 keybinds
-        const baseWidth = 300;
-        // Add 50px for each additional keybind beyond 2
-        const extraWidth = Math.max(0, keybindsCount - 2) * 50;
-        // Cap the maximum width at 600px
-        return `${Math.min(baseWidth + extraWidth, 600)}px`;
+    zoomIn(): void {
+        this.panZoom?.zoomIn('viewCenter');
     }
 
-    collapseKey(key: Key): void {
-        key.isHovered = false;
+    zoomOut(): void {
+        this.panZoom?.zoomOut('viewCenter');
+    }
+
+    reset(): void {
+        this.panZoom?.resetView();
+    }
+
+    onPanDown100Clicked(): void {
+        this.panZoom?.panDelta({ x: 0, y: 100 });
+    }
+
+    onPanUp100Clicked(): void {
+        this.panZoom?.panDelta({ x: 0, y: -100 });
+    }
+
+    onPanRight100Clicked(): void {
+        this.panZoom?.panDelta({ x: 100, y: 0 });
+    }
+
+    onPanLeft100Clicked(): void {
+        this.panZoom?.panDelta({ x: -100, y: 0 });
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes['selectedKeybinding']) {
-            console.log('Keyboard - inputProp changed:', changes['selectedKeybinding'].currentValue);
+        if (changes['keybinding']) {
             this.updateKeyboardBindings();
         }
     }
 
-    public updateKeyboardBindings(): void {
+    private updateKeyboardBindings(): void {
         // First, clear all existing keybindings and hover states
         this.keyboardLayout.forEach(row => {
             row.forEach(keyItem => {
@@ -196,19 +142,15 @@ export class KeyboardComponent implements OnInit {
             });
         });
 
-        //console log the selectedKeybinding
-        console.log('Keyboard - updateKeyboardBindings - this.selectedKeybinding', this.selectedKeybinding);
-
-        if (this.selectedKeybinding?.keybinds) {
-            this.selectedKeybinding.keybinds.forEach(keybind => {
+        if (this.keybinding?.keybinds) {
+            this.keybinding.keybinds.forEach(keybind => {
                 this.addKeybinding(keybind);
             });
         }
     }
 
-    addKeybinding(keybind) {
-        const { key, spell } = keybind;
-        const keyParts = key.toLowerCase().split('+');
+    private addKeybinding(keybind: Keybind): void {
+        const keyParts = keybind.key.toLowerCase().split('+');
         const mainKey = keyParts[keyParts.length - 1].toUpperCase();
 
         // Find the key in the keyboard layout directly
@@ -220,63 +162,9 @@ export class KeyboardComponent implements OnInit {
                         keyItem.keybinds = [];
                     }
                     // Add new keybind
-                    keyItem.keybinds.push({ key, spell });
-                    // Update the keyMap as well
-                    this.keyMap.set(mainKey, keyItem);
+                    keyItem.keybinds.push(keybind);
                 }
             });
         });
-        console.log('addKeybinding - this.keyboardLayout', this.keyboardLayout);
     }
-
-    openKeybindDialog(key: any): void {
-        if (key.keybinds?.length > 0) {
-            const dialogWidth = this.calculateDialogWidth(key.keybinds.length);
-            const dialogRef = this.dialog.open(KeybindDialogComponent, {
-                data: { key: key },
-                width: dialogWidth
-            });
-
-            dialogRef.afterClosed().subscribe(result => {
-                if (result) {
-                    console.log('Keyboard - Dialog result:', result);
-                    key.keybinds = result;
-                    // Update the selectedKeybinding's keybinds
-                    this.selectedKeybinding.keybinds = this.selectedKeybinding.keybinds
-                        .filter(k => k.key !== key.label);
-                    // Add the remaining keybinds back
-                    result.forEach(keybind => {
-                        this.selectedKeybinding.keybinds.push(keybind);
-                    });
-                    //update the keybinding in the keybindingService
-                    this.keybindingService.updateKeybinding(this.selectedKeybinding.keybinding_id, this.selectedKeybinding)
-                        .subscribe({
-                            next: (updatedKeybinding) => {
-                                console.log('after keybind-dialog - this.selectedKeybinding', this.selectedKeybinding);
-                                this.updateKeyboardBindings();
-                                this.refreshKeybindings.emit();
-                            },
-                            error: (error) => {
-                                console.error('Error updating keybinding:', error);
-                            }
-                        });
-                }
-            });
-        }
-    }
-
-    /**
-     * Public method that can be called by parent components to reset the keyboard
-     * Clears all keybindings and hover states
-     */
-    public resetKeyboard(): void {
-        console.log('reseting keyboard');
-        this.keyboardLayout.forEach(row => {
-            row.forEach(keyItem => {
-                keyItem.keybinds = [];
-                keyItem.isHovered = false;
-            });
-        });
-    }
-
 }

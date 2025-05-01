@@ -1,0 +1,19 @@
+<div class="flex flex-col w-full h-full">
+    <div class="flex items-center justify-between p-4 bg-gray-100">
+        <div class="flex items-center gap-4">
+            <button mat-icon-button (click)="toggleDrawer.emit()">
+                <mat-icon>{{ opened ? 'menu_open' : 'menu' }}</mat-icon>
+            </button>
+            <h1 class="text-2xl font-bold">{{ keybinding?.name }}</h1>
+            <button mat-stroked-button [matTooltip]="!isAuthenticated ? 'Login to duplicate keybinding' : ''"
+                [disabled]="!isAuthenticated" (click)="onDuplicateKeybinding()">
+                <mat-icon>content_copy</mat-icon>
+                <span>Duplicate</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-hidden">
+        <view-keyboard [keybinding]="keybinding"></view-keyboard>
+    </div>
+</div>

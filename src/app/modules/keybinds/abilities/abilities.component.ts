@@ -101,6 +101,14 @@ export class AbilitiesComponent implements OnInit {
                 } else {
                     this.abilities = [];
                 }
+            } else {
+                // Reset all values when no keybinding is selected
+                this.selectedKeybindingClass = undefined;
+                this.selectedKeybindingSpec = undefined;
+                this.selectedKeybindingHeroTalent = undefined;
+                this.specs = [];
+                this.heroTalents = [];
+                this.abilities = [];
             }
         }
     }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { tap } from 'rxjs/operators';
+import { tap, map } from 'rxjs/operators';
 
 import { environment } from 'environments/environment';
 
@@ -52,7 +52,6 @@ export class KeybindingService {
     hasKeybindKey(keybindingId: string, key: string): boolean {
         const keybinding = this.getKeybindingById(keybindingId);
         if (!keybinding) return false;
-
         return keybinding.keybinds.some(keybind => keybind.key === key);
     }
 
@@ -120,14 +119,13 @@ export class KeybindingService {
     //     this.keybindingsSource.next(updatedKeybindings);
     // }
 
-    createKeybinding(): Observable<Keybinding> {
+    createKeybinding(keybinding?: Keybinding): Observable<Keybinding> {
         console.log('creating keybinding');
-        return this.http.post<Keybinding>(`${environment.apiUrl}/keybindings`, {}).pipe(
+        return this.http.post<Keybinding>(`${environment.apiUrl}/keybindings`, keybinding || {}).pipe(
             tap((newKeybinding: Keybinding) => {
                 console.log('after created - newKeybinding', newKeybinding);
                 const currentKeybindings = this.keybindingsSource.getValue();
                 this.keybindingsSource.next([...currentKeybindings, newKeybinding]);
-                //debug this.keybindingsSource
                 console.log('this.keybindingsSource', this.keybindingsSource.getValue());
                 localStorage.setItem('keybindings', JSON.stringify([...currentKeybindings, newKeybinding]));
             })
@@ -152,5 +150,12 @@ export class KeybindingService {
         localStorage.removeItem('keybindings');
     }
 
+    getKeybinding(id: string): Observable<Keybinding> {
+        return this.http.get<Keybinding>(`${environment.apiUrl}/keybindings/${id}`).pipe(
+            tap((keybinding: Keybinding) => {
+                return keybinding;
+            })
+        );
+    }
 
 }

@@ -38,6 +38,7 @@ export class ViewAllKeybindingsComponent {
     @Input() nameForm: FormGroup = this.fb.group({
         name: ['', [Validators.required, Validators.maxLength(32)]]
     });
+    @Input() opened: boolean = true;
 
     @Output() deleteKeybinding = new EventEmitter<void>();
     @Output() shareKeybinding = new EventEmitter<void>();
@@ -47,6 +48,7 @@ export class ViewAllKeybindingsComponent {
     @Output() togglePublic = new EventEmitter<void>();
     @Output() refreshChildKeybindings = new EventEmitter<void>();
     @Output() updateKeybinding = new EventEmitter<Keybinding>();
+    @Output() toggleDrawer = new EventEmitter<void>();
 
     constructor(private fb: FormBuilder) { }
 

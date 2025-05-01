@@ -11,12 +11,11 @@
             </mat-select>
         </mat-form-field>
         }
-        @if (!selectedKeybinding && !selectedKeybindingClass) {
+        @if (!selectedKeybinding || !selectedKeybindingClass) {
         <mat-form-field appearance="fill" class="w-48">
             <mat-label>Class: </mat-label>
-            <mat-select placeholder="Select an option" [disabled]="isDisabled">
-                <mat-option value="" disabled>Select an option</mat-option>
-                <!-- Dynamically add options here -->
+            <mat-select placeholder="Select a keybinding first" [disabled]="true">
+                <mat-option value="" disabled>Select a keybinding first</mat-option>
             </mat-select>
         </mat-form-field>
         }
@@ -51,21 +50,14 @@
 <div class="pl-4 pb-2 flex flex-row w-full max-h-6 min-h-6 items-center">
     @if (abilities?.length > 0) {
     <p class="">Abilities</p>
-
-    <!-- Previous Page Button -->
-    <!-- <mat-icon class="text-gray-500 cursor-pointer ml-2" (click)="goToPreviousPage()"
-        [class.opacity-50]="currentPage === 0">arrow_back</mat-icon> -->
-
     <p class="ml-2">
         Page {{ currentPage + 1 }} of {{ maxPage() + 1 }} |
         Showing {{ getStartIndex() + 1 }} - {{ getEndIndex() }} of {{ abilities.length }}
     </p>
-
-    <!-- Next Page Button -->
-    <!-- <mat-icon class="text-gray-500 cursor-pointer ml-2" (click)="goToNextPage()"
-        [class.opacity-50]="currentPage === maxPage()">arrow_forward</mat-icon> -->
+    } @else if (selectedKeybinding) {
+    <p class="">No abilities available for selected class/spec/hero talent</p>
     } @else {
-    <p class="">No Keybinding Selected</p>
+    <p class="">Select a keybinding to view abilities</p>
     }
 </div>
 

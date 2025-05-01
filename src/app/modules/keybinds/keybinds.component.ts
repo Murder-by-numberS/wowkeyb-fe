@@ -1,6 +1,6 @@
 //Angular
 import { Component, ViewEncapsulation, OnInit, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 
@@ -24,10 +24,12 @@ import { KeybindsDrawerComponent } from './keybinds-drawer/keybinds-drawer.compo
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
 import { ShareDialogComponent } from './share-dialog/share-dialog.component';
 import { ViewAllKeybindingsComponent } from './view-all-keybindings/view-all-keybindings.component';
+import { ViewKeybindingComponent } from './view-keybinding/view-keybinding.component';
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
 import { AuthService } from 'app/core/auth/auth.service';
+import { UserService } from 'app/core/user/user.service';
 
 //Types
 import { Keybinding } from 'app/core/types/keybinding';
@@ -52,7 +54,8 @@ import { Keybinding } from 'app/core/types/keybinding';
         KeyboardComponent,
         AbilitiesComponent,
         KeybindsDrawerComponent,
-        ViewAllKeybindingsComponent
+        ViewAllKeybindingsComponent,
+        ViewKeybindingComponent
     ],
 })
 export class KeybindsComponent implements OnInit {
@@ -73,12 +76,21 @@ export class KeybindsComponent implements OnInit {
     selectedKeybindingClass: string;
     selectedKeybindingSpec: string;
     selectedKeybindingHeroTalent: string;
+    viewKeybinding: any = null;
+    viewKeybindingName: string;
+    viewKeybindingClass: string;
+    viewKeybindingSpec: string;
+    viewKeybindingHeroTalent: string;
 
     refresh: boolean = false;
 
     editingName: boolean = false;
 
     private _unsubscribeAll: Subject<any> = new Subject<any>();
+
+    isViewAllRoute: boolean = false;
+    isViewKeybindingRoute: boolean = false;
+    isCreateRoute: boolean = false;
 
     /**
      * Constructor
@@ -87,8 +99,10 @@ export class KeybindsComponent implements OnInit {
         private keybindingService: KeybindingService,
         private _formBuilder: FormBuilder,
         private _authService: AuthService,
+        private _userService: UserService,
         private dialog: MatDialog,
         private route: ActivatedRoute,
+        private router: Router,
         private snackBar: MatSnackBar) {
 
         this.keybindingSelected = false;
@@ -115,12 +129,35 @@ export class KeybindsComponent implements OnInit {
             .subscribe(params => {
                 if (params['id']) {
                     console.log('params', params);
-                    //go search the backend for the keybinding
-                    // this.keybindingService.getKeybindingById(params['id']).subscribe((keybinding) => {
-                    //     console.log('keybinding', keybinding); //lets just see it for now
-                    // });
                 }
             });
+
+        // Check current route
+        const url = this.router.url;
+        this.isViewAllRoute = url === '/keybinds/view';
+        this.isViewKeybindingRoute = url.includes('/keybinds/') && !this.isViewAllRoute && url !== '/keybinds/create';
+        this.isCreateRoute = url === '/keybinds/create';
+
+        // If we're on a view keybinding route, load the keybinding
+        if (this.isViewKeybindingRoute) {
+            console.log('isViewKeybindingRoute');
+            const id = this.route.snapshot.paramMap.get('id');
+            if (id) {
+                this.keybindingService.getKeybinding(id).subscribe({
+                    next: (keybinding) => {
+                        console.log('keybinding', keybinding);
+                        this.viewKeybinding = keybinding;
+                        this.viewKeybindingName = keybinding.name;
+                        this.viewKeybindingClass = keybinding.class;
+                        this.viewKeybindingSpec = keybinding.spec;
+                        this.viewKeybindingHeroTalent = keybinding.heroTalent;
+                    },
+                    error: (error) => {
+                        console.error('Error loading keybinding:', error);
+                    }
+                });
+            }
+        }
 
     }
 
@@ -269,10 +306,10 @@ export class KeybindsComponent implements OnInit {
 
         this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybinding_id, update)
             .subscribe({
-                next: (updatedKeybinding) => {
+                next: () => {
                     this.selectedKeybinding = this.keybindingService.getKeybindingById(this.selectedKeybinding.keybinding_id);
-                    this.keyboard.updateKeyboardBindings();
-
+                    // Refresh the view-keyboard component
+                    this.refreshChildKeybindings();
                 },
                 error: (error) => {
                     console.error('Error updating keybinding:', error);
@@ -391,6 +428,43 @@ export class KeybindsComponent implements OnInit {
                 console.error('Error updating keybinding:', error);
                 this.snackBar.open('Error updating keybinding status', 'Close', { duration: 3000 });
             }
+        });
+    }
+
+    duplicateKeybinding(keybinding: Keybinding): void {
+        if (!this.isAuthenticated) {
+            return;
+        }
+
+        this._userService.user$.subscribe(user => {
+            const newKeybinding = {
+                ...keybinding,
+                name: `${keybinding.name} (Copy)`,
+                keybinding_id: undefined, // Let the server generate a new ID
+                is_public: false, // Default to private
+                user_id: user.id // Use the user ID from UserService
+            };
+
+            this.keybindingService.createKeybinding(newKeybinding).subscribe({
+                next: (createdKeybinding) => {
+                    // Refresh the keybindings list
+                    this.keybindingService.getKeybindings().subscribe(keybindings => {
+                        // Update the drawer with new keybindings
+                        if (this.keybindsDrawerComponent) {
+                            this.keybindsDrawerComponent.loadKeybindings();
+                        }
+                        // Set the selected keybinding to the new one
+                        this.onKeybindingSelected(createdKeybinding);
+                        // Navigate to view all keybindings
+                        this.router.navigate(['/keybinds/view']);
+                    });
+                    this.snackBar.open('Keybinding duplicated successfully', 'Close', { duration: 3000 });
+                },
+                error: (error) => {
+                    console.error('Error duplicating keybinding:', error);
+                    this.snackBar.open('Error duplicating keybinding', 'Close', { duration: 3000 });
+                }
+            });
         });
     }
 
