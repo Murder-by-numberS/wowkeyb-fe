@@ -2,7 +2,7 @@
 import { Component, ViewEncapsulation, OnInit, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, CommonModule } from '@angular/common';
 
 import { Subject, takeUntil } from 'rxjs';
 
@@ -25,6 +25,7 @@ import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.compo
 import { ShareDialogComponent } from './share-dialog/share-dialog.component';
 import { ViewAllKeybindingsComponent } from './view-all-keybindings/view-all-keybindings.component';
 import { ViewKeybindingComponent } from './view-keybinding/view-keybinding.component';
+import { CreateKeybindingComponent } from './create-keybinding/create-keybinding.component';
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -40,6 +41,7 @@ import { Keybinding } from 'app/core/types/keybinding';
     encapsulation: ViewEncapsulation.None,
     standalone: true,
     imports: [
+        CommonModule,
         FormsModule,
         ReactiveFormsModule,
 
@@ -55,7 +57,8 @@ import { Keybinding } from 'app/core/types/keybinding';
         AbilitiesComponent,
         KeybindsDrawerComponent,
         ViewAllKeybindingsComponent,
-        ViewKeybindingComponent
+        ViewKeybindingComponent,
+        CreateKeybindingComponent
     ],
 })
 export class KeybindsComponent implements OnInit {
@@ -110,14 +113,20 @@ export class KeybindsComponent implements OnInit {
     }
 
     ngOnInit(): void {
-
         this._authService.check()
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe((authenticated) => {
                 this.isAuthenticated = authenticated;
             })
 
-        this.opened = true;
+        // Check current route
+        const url = this.router.url;
+        this.isViewAllRoute = url === '/keybinds/view';
+        this.isViewKeybindingRoute = url.includes('/keybinds/') && !this.isViewAllRoute && url !== '/keybinds/create';
+        this.isCreateRoute = url === '/keybinds/create';
+
+        // Set drawer state based on route
+        this.opened = !this.isCreateRoute;
 
         this.nameForm = this._formBuilder.group({
             name: ['', [Validators.required, Validators.maxLength(32)]]
@@ -128,24 +137,28 @@ export class KeybindsComponent implements OnInit {
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe(params => {
                 if (params['id']) {
-                    console.log('params', params);
+                    const id = params['id'];
+                    this.keybindingService.getKeybinding(id).subscribe({
+                        next: (keybinding) => {
+                            this.viewKeybinding = keybinding;
+                            this.viewKeybindingName = keybinding.name;
+                            this.viewKeybindingClass = keybinding.class;
+                            this.viewKeybindingSpec = keybinding.spec;
+                            this.viewKeybindingHeroTalent = keybinding.heroTalent;
+                        },
+                        error: (error) => {
+                            console.error('Error loading keybinding:', error);
+                        }
+                    });
                 }
             });
 
-        // Check current route
-        const url = this.router.url;
-        this.isViewAllRoute = url === '/keybinds/view';
-        this.isViewKeybindingRoute = url.includes('/keybinds/') && !this.isViewAllRoute && url !== '/keybinds/create';
-        this.isCreateRoute = url === '/keybinds/create';
-
         // If we're on a view keybinding route, load the keybinding
         if (this.isViewKeybindingRoute) {
-            console.log('isViewKeybindingRoute');
             const id = this.route.snapshot.paramMap.get('id');
             if (id) {
                 this.keybindingService.getKeybinding(id).subscribe({
                     next: (keybinding) => {
-                        console.log('keybinding', keybinding);
                         this.viewKeybinding = keybinding;
                         this.viewKeybindingName = keybinding.name;
                         this.viewKeybindingClass = keybinding.class;
@@ -159,6 +172,17 @@ export class KeybindsComponent implements OnInit {
             }
         }
 
+        // If we're on the view-all route, subscribe to keybindings to select the last one
+        if (this.isViewAllRoute) {
+            this.keybindingService.currentKeybindings
+                .pipe(takeUntil(this._unsubscribeAll))
+                .subscribe(keybindings => {
+                    if (keybindings.length > 0 && !this.selectedKeybinding) {
+                        const lastKeybinding = keybindings[keybindings.length - 1];
+                        this.onKeybindingSelected(lastKeybinding);
+                    }
+                });
+        }
     }
 
     // refreshChildKeybindings() {
@@ -211,6 +235,11 @@ export class KeybindsComponent implements OnInit {
                             } catch (error) {
                                 console.error('Failed to update keybindings in localStorage:', error);
                             }
+                        }
+
+                        // Update the drawer's selection
+                        if (this.keybindsDrawerComponent) {
+                            this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
                         }
 
                         // Trigger the change events to update the abilities component
@@ -466,6 +495,20 @@ export class KeybindsComponent implements OnInit {
                 }
             });
         });
+    }
+
+    // Add a method to handle the newly created keybinding
+    onKeybindingCreated(newKeybinding: Keybinding): void {
+        // First set the newly created keybinding as selected
+        this.onKeybindingSelected(newKeybinding);
+
+        // Then update the drawer's selection
+        if (this.keybindsDrawerComponent) {
+            this.keybindsDrawerComponent.setSelectedKeybinding(newKeybinding);
+        }
+
+        // Finally refresh the keybindings list
+        this.refreshChildKeybindings();
     }
 
 }

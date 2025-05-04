@@ -1,27 +1,45 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit, EventEmitter, Output } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { KeybindingService } from 'app/core/services/keybinding.service';
 import { Keybinding } from 'app/core/types/keybinding';
-import { Router } from '@angular/router';
-import { ReactiveFormsModule } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 import { classNames, fullClasses } from 'app/core/data/classes';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'create-keybinding',
     templateUrl: './create-keybinding.component.html',
     standalone: true,
-    imports: [ReactiveFormsModule]
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatButtonModule,
+        MatIconModule
+    ]
 })
 export class CreateKeybindingComponent implements OnInit {
+    @Output() toggleDrawer = new EventEmitter<void>();
+    @Output() keybindingCreated = new EventEmitter<Keybinding>();
+    opened: boolean = true;
+
     keybindingForm: FormGroup;
-    classes = classNames;
+    classes: string[] = classNames;
     specs: string[] = [];
     heroTalents: string[] = [];
 
     constructor(
         private fb: FormBuilder,
         private keybindingService: KeybindingService,
-        private router: Router
+        private router: Router,
+        private route: ActivatedRoute
     ) {
         this.keybindingForm = this.fb.group({
             name: ['', Validators.required],
@@ -69,8 +87,9 @@ export class CreateKeybindingComponent implements OnInit {
             };
 
             this.keybindingService.createKeybinding(keybinding).subscribe({
-                next: () => {
-                    this.router.navigate(['/keybindings']);
+                next: (newKeybinding) => {
+                    this.keybindingCreated.emit(newKeybinding);
+                    this.router.navigate(['/keybinds/view']);
                 },
                 error: (error) => {
                     console.error('Error creating keybinding:', error);
@@ -80,6 +99,6 @@ export class CreateKeybindingComponent implements OnInit {
     }
 
     onCancel(): void {
-        this.router.navigate(['/keybindings']);
+        this.router.navigate(['view'], { relativeTo: this.route.parent });
     }
 }

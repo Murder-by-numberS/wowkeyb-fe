@@ -22,9 +22,9 @@
             } @else if (isCreateRoute) {
             <!-- Create keybinding content -->
             <div class="flex flex-col w-full">
-                <div class="text-3xl font-semibold leading-8 tracking-tight py-2 ml-6">
-                    Create New Keybinding
-                </div>
+                <create-keybinding *ngIf="isCreateRoute" [opened]="opened" (toggleDrawer)="opened = !opened"
+                    (keybindingCreated)="onKeybindingCreated($event)">
+                </create-keybinding>
             </div>
             }
         </mat-drawer-content>

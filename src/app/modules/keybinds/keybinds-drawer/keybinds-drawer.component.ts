@@ -90,16 +90,16 @@ export class KeybindsDrawerComponent implements OnInit {
                 // Update the KeybindingService with the saved keybindings
                 this.keybindingService.updateKeybindings(parsedKeybindings);
                 this.applyFilter();
-
-                // Set the first keybinding as selected and emit it
-                if (parsedKeybindings.length > 0) {
-                    this.selectedKeybindingId = parsedKeybindings[0].keybinding_id;
-                    this.keybindingSelected.emit(parsedKeybindings[0]);
-                }
             } catch (error) {
                 console.error('Failed to parse keybindings from localStorage:', error);
             }
         }
+
+        // Subscribe to the keybinding service to update when keybindings change
+        this.keybindingService.currentKeybindings.subscribe(keybindings => {
+            this.keybindings = keybindings;
+            this.applyFilter();
+        });
 
         this.selectedClasses.valueChanges.subscribe(() => {
             this.filterKeybindings();
@@ -111,15 +111,31 @@ export class KeybindsDrawerComponent implements OnInit {
         this.keybindingService.currentKeybindings.subscribe(keybindings => {
             this.keybindings = keybindings;
             this.applyFilter();
+
+            // If we're on the view-all page and no keybinding is selected, select the last one
+            if (window.location.pathname === '/keybinds/view' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
+                const lastKeybinding = this.filteredKeybindings[this.filteredKeybindings.length - 1];
+                this.selectedKeybindingId = lastKeybinding.keybinding_id;
+                this.keybindingSelected.emit(lastKeybinding);
+            }
         });
     }
 
     selectKeybinding(keybinding: any): void {
         console.log('keybinding selected', keybinding);
-
         this.selectedKeybindingId = keybinding.keybinding_id;
-        console.log('emitting', keybinding)
         this.keybindingSelected.emit(keybinding);
+    }
+
+    // Add a method to set the selected keybinding from outside
+    setSelectedKeybinding(keybinding: Keybinding): void {
+        if (keybinding) {
+            this.selectedKeybindingId = keybinding.keybinding_id;
+            // Ensure the keybinding is in the filtered list
+            if (!this.filteredKeybindings.some(kb => kb.keybinding_id === keybinding.keybinding_id)) {
+                this.filteredKeybindings = [...this.filteredKeybindings, keybinding];
+            }
+        }
     }
 
     closeAccordion() {
@@ -163,29 +179,15 @@ export class KeybindsDrawerComponent implements OnInit {
 
     applyFilter() {
         if (this.filterApplied) {
-
-            console.log('applying filter');
             this.filteredKeybindings = this.keybindings.filter(keybinding => this.selectedClasses.value.includes(keybinding.class));
-            console.log('this.filteredKeybindings', this.filteredKeybindings);
             if (!this.filteredKeybindings.some(keybinding => keybinding.keybinding_id === this.selectedKeybindingId)) {
-                console.log('applying filter - selectedKeybindingId', this.selectedKeybindingId);
                 this.selectedKeybindingId = null;
                 this.keybindingSelected.emit(null);
             }
         } else {
             this.filteredKeybindings = this.keybindings;
-
-            // Use getValue() to get the current value from the BehaviorSubject
-            if (!this.keybindingService.currentKeybindingsValue.some(keybinding =>
-                keybinding.keybinding_id === this.selectedKeybindingId)) {
-                console.log('applying filter - selectedKeybindingId', this.selectedKeybindingId);
-                if (this.filteredKeybindings.length > 0) {
-                    this.selectedKeybindingId = this.filteredKeybindings[0].keybinding_id;
-                    this.keybindingSelected.emit(this.filteredKeybindings[0]);
-                }
-            }
+            // Don't automatically select the first keybinding
         }
-
     }
 
     filterKeybindings(): void {
