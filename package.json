@@ -5,6 +5,9 @@
     "author": "Logan Born",
     "license": "https://themeforest.net/licenses/standard",
     "private": true,
+    "engines": {
+        "node": ">=22.0.0"
+    },
     "scripts": {
         "ng": "ng",
         "start": "node server.js",

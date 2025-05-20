@@ -160,6 +160,10 @@ export class KeybindsDrawerComponent implements OnInit {
         return this.selectedKeybindingId === keybindingId;
     }
 
+    trackByKeybindingId(index: number, keybinding: Keybinding): string {
+        return `${index}-${keybinding.keybinding_id}`;
+    }
+
     createKeybinding() {
         this.keybindingService.createKeybinding().subscribe({
             next: (createdKeybinding) => {

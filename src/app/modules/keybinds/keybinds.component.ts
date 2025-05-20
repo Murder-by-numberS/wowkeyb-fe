@@ -25,7 +25,7 @@ import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.compo
 import { ShareDialogComponent } from './share-dialog/share-dialog.component';
 import { ViewAllKeybindingsComponent } from './view-all-keybindings/view-all-keybindings.component';
 import { ViewKeybindingComponent } from './view-keybinding/view-keybinding.component';
-import { CreateKeybindingComponent } from './create-keybinding/create-keybinding.component';
+import { KeybindsHomeComponent } from './keybinds-home/keybinds-home.component';
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -52,17 +52,17 @@ import { Keybinding } from 'app/core/types/keybinding';
         MatFormFieldModule,
         MatInputModule,
         MatTooltipModule,
+        MatDialogModule,
 
         KeyboardComponent,
         AbilitiesComponent,
         KeybindsDrawerComponent,
         ViewAllKeybindingsComponent,
         ViewKeybindingComponent,
-        CreateKeybindingComponent
+        KeybindsHomeComponent
     ],
 })
 export class KeybindsComponent implements OnInit {
-
     @ViewChild(KeybindsDrawerComponent) keybindsDrawerComponent: KeybindsDrawerComponent;
     @ViewChild(AbilitiesComponent) abilitiesComponent: AbilitiesComponent;
     @ViewChild(KeyboardComponent) keyboard: KeyboardComponent;
@@ -91,13 +91,10 @@ export class KeybindsComponent implements OnInit {
 
     private _unsubscribeAll: Subject<any> = new Subject<any>();
 
-    isViewAllRoute: boolean = false;
+    isHomeRoute: boolean = false;
+    isMyKeybindingsRoute: boolean = false;
     isViewKeybindingRoute: boolean = false;
-    isCreateRoute: boolean = false;
 
-    /**
-     * Constructor
-     */
     constructor(
         private keybindingService: KeybindingService,
         private _formBuilder: FormBuilder,
@@ -109,7 +106,6 @@ export class KeybindsComponent implements OnInit {
         private snackBar: MatSnackBar) {
 
         this.keybindingSelected = false;
-
     }
 
     ngOnInit(): void {
@@ -117,16 +113,31 @@ export class KeybindsComponent implements OnInit {
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe((authenticated) => {
                 this.isAuthenticated = authenticated;
-            })
 
-        // Check current route
-        const url = this.router.url;
-        this.isViewAllRoute = url === '/keybinds/view';
-        this.isViewKeybindingRoute = url.includes('/keybinds/') && !this.isViewAllRoute && url !== '/keybinds/create';
-        this.isCreateRoute = url === '/keybinds/create';
+                // Check current route
+                const url = this.router.url;
+                this.isHomeRoute = url === '/keybinds';
+                this.isMyKeybindingsRoute = url === '/keybinds/my-keybindings';
+                this.isViewKeybindingRoute = url.includes('/keybinds/') && !this.isHomeRoute && !this.isMyKeybindingsRoute;
 
-        // Set drawer state based on route
-        this.opened = !this.isCreateRoute;
+                // If user is not authenticated and tries to access my-keybindings, redirect to home
+                if (!authenticated && this.isMyKeybindingsRoute) {
+                    this.router.navigate(['/keybinds']);
+                    return;
+                }
+
+                // Set drawer state based on route and authentication
+                if (this.isMyKeybindingsRoute) {
+                    // Always show drawer on my-keybindings route
+                    this.opened = true;
+                } else if (this.isViewKeybindingRoute) {
+                    // Only show drawer on view route if authenticated
+                    this.opened = authenticated;
+                } else {
+                    // Don't show drawer on home route
+                    this.opened = false;
+                }
+            });
 
         this.nameForm = this._formBuilder.group({
             name: ['', [Validators.required, Validators.maxLength(32)]]
@@ -172,8 +183,8 @@ export class KeybindsComponent implements OnInit {
             }
         }
 
-        // If we're on the view-all route, subscribe to keybindings to select the last one
-        if (this.isViewAllRoute) {
+        // If we're on the my-keybindings route, subscribe to keybindings to select the last one
+        if (this.isMyKeybindingsRoute) {
             this.keybindingService.currentKeybindings
                 .pipe(takeUntil(this._unsubscribeAll))
                 .subscribe(keybindings => {
@@ -184,10 +195,6 @@ export class KeybindsComponent implements OnInit {
                 });
         }
     }
-
-    // refreshChildKeybindings() {
-    //     this.refresh = !this.refresh; // Toggle the value to trigger ngOnChanges in the child
-    // }
 
     getKeybindings(authenticated: boolean = false) {
         //check local storage for keybindings
@@ -346,10 +353,6 @@ export class KeybindsComponent implements OnInit {
             });
     }
 
-    // saveKeybinding() {
-    //     console.log('save keybinding');
-    // }
-
     shareKeybinding() {
         if (!this.selectedKeybinding) {
             return;
@@ -363,25 +366,6 @@ export class KeybindsComponent implements OnInit {
             maxWidth: '90vw'
         });
     }
-
-    // updateKeybindings() {
-    // const newKeybindings = [
-    //     { id: '1', name: 'Default', class: 'Paladin', keybinds: [{ key: 'Ctrl+C', spell: 'Copy' }, { key: 'Ctrl+V', spell: 'Paste' }] },
-    //     { id: '2', name: 'Editing', class: 'Mage', keybinds: [{ key: 'Ctrl+X', spell: 'Cut' }, { key: 'Ctrl+Z', spell: 'Undo' }] }
-    // ];
-    // this.keybindingService.updateKeybindings(newKeybindings);
-    // }
-
-    // updateKeybindsInKeybinding() {
-    //     const updatedKeybinds = [{ key: 'Ctrl+P', spell: 'Print' }];
-    //     this.keybindingService.updateKeybindsInKeybinding('Default', updatedKeybinds);
-
-    // }
-
-    // onNameChange(newValue: string) {
-    //     console.log('Updated Value:', newValue);
-    //     this.keybindingService.updateKeybindingName(this.selectedKeybinding.keybinding_id, newValue);
-    // }
 
     editName() {
         this.editingName = true;
@@ -509,6 +493,36 @@ export class KeybindsComponent implements OnInit {
 
         // Finally refresh the keybindings list
         this.refreshChildKeybindings();
+    }
+
+    onKeybindingUpdated(keybinding: Keybinding): void {
+        if (!keybinding.keybinding_id) {
+            // This is a new keybinding (either created or duplicated)
+            this.keybindingService.createKeybinding(keybinding).subscribe({
+                next: (createdKeybinding) => {
+                    this.refreshChildKeybindings();
+                    // Navigate to the view page with the new keybinding selected
+                    this.router.navigate(['/keybinds', createdKeybinding.keybinding_id]);
+                },
+                error: (error) => {
+                    console.error('Error creating keybinding:', error);
+                }
+            });
+        } else {
+            // This is an update to an existing keybinding
+            this.keybindingService.updateKeybinding(keybinding.keybinding_id, keybinding).subscribe({
+                next: () => {
+                    this.refreshChildKeybindings();
+                },
+                error: (error) => {
+                    console.error('Error updating keybinding:', error);
+                }
+            });
+        }
+    }
+
+    navigateToKeybinding(keybinding: Keybinding): void {
+        this.router.navigate(['/keybinds', keybinding.keybinding_id]);
     }
 
 }

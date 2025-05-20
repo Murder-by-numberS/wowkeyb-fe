@@ -1,0 +1,89 @@
+<div class="flex flex-col w-full h-full">
+    <!-- Header -->
+    <div class="flex flex-col items-center justify-center p-8">
+        <h1 class="text-4xl font-bold mb-4">Keybindings</h1>
+        <p class="text-xl mb-8">Browse public keybindings or create your own</p>
+        @if (isAuthenticated) {
+        <button mat-raised-button color="primary" routerLink="/keybinds/create">
+            <mat-icon class="mr-2">add</mat-icon>
+            Create Keybinding
+        </button>
+        } @else {
+        <button mat-raised-button color="primary" routerLink="/sign-in">
+            <mat-icon class="mr-2">login</mat-icon>
+            Login to Create
+        </button>
+        }
+    </div>
+
+    <!-- Class Navigation -->
+    <div class="flex justify-center w-full">
+        <div class="flex overflow-x-auto gap-4 px-4 py-2 mb-8">
+            @for (class of classes; track class.name) {
+            <div class="flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                (click)="scrollToClass(class.name)" matTooltip="{{class.name}}">
+                <img [src]="class.icon" [alt]="class.name" class="w-12 h-12">
+            </div>
+            }
+        </div>
+    </div>
+
+    <!-- Class Sections -->
+    <div class="max-w-7xl mx-auto px-4">
+        @for (class of classes; track class.name) {
+        <div [id]="'class-' + class.name.toLowerCase().replace(' ', '-')" class="mb-12">
+            <h2 class="text-2xl font-bold mb-4 text-center">{{class.name}}</h2>
+
+            <div class="grid grid-cols-2 gap-8">
+                <!-- Recent Keybindings -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-center">Recent</h3>
+                    <div class="flex flex-col gap-4">
+                        @if (classKeybindings[class.name]?.recent?.length > 0) {
+                        @for (keybinding of classKeybindings[class.name].recent; track keybinding.keybinding_id) {
+                        <div class="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow w-full"
+                            (click)="navigateToKeybinding(keybinding)">
+                            <div class="font-semibold text-lg mb-3">{{keybinding.name}}</div>
+                            <div class="flex justify-between text-sm gap-4">
+                                <div class="text-gray-600 min-w-[100px]">Class: {{keybinding.class}}</div>
+                                <div class="text-gray-600 min-w-[120px]">Spec: {{keybinding.spec || 'None'}}</div>
+                                <div class="text-gray-600 min-w-[100px]">Hero: {{keybinding.heroTalent || 'None'}}</div>
+                            </div>
+                        </div>
+                        }
+                        } @else {
+                        <div class="text-center text-gray-500 py-8">
+                            No recent keybindings
+                        </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Popular Keybindings -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-center">Popular</h3>
+                    <div class="flex flex-col gap-4">
+                        @if (classKeybindings[class.name]?.popular?.length > 0) {
+                        @for (keybinding of classKeybindings[class.name].popular; track keybinding.keybinding_id) {
+                        <div class="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow w-full"
+                            (click)="navigateToKeybinding(keybinding)">
+                            <div class="font-semibold text-lg mb-3">{{keybinding.name}}</div>
+                            <div class="flex justify-between text-sm gap-4">
+                                <div class="text-gray-600 min-w-[100px]">Class: {{keybinding.class}}</div>
+                                <div class="text-gray-600 min-w-[120px]">Spec: {{keybinding.spec || 'None'}}</div>
+                                <div class="text-gray-600 min-w-[100px]">Hero: {{keybinding.heroTalent || 'None'}}</div>
+                            </div>
+                        </div>
+                        }
+                        } @else {
+                        <div class="text-center text-gray-500 py-8">
+                            No popular keybindings
+                        </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        }
+    </div>
+</div>

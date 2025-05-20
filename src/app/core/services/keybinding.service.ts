@@ -13,6 +13,13 @@ interface KeybindUpdate {
     removedKeybinds: Keybind[];
 }
 
+interface HomeKeybindingsResponse {
+    [className: string]: {
+        recent: Keybinding[];
+        popular: Keybinding[];
+    }
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -140,7 +147,21 @@ export class KeybindingService {
                 this.keybindingsSource.next(keybindings);
                 console.log('getKeybindings - this.keybindingsSource', this.keybindingsSource.getValue());
                 localStorage.setItem('keybindings', JSON.stringify(keybindings));
+            })
+        );
+    }
 
+    getHomeKeybindings(): Observable<HomeKeybindingsResponse> {
+        console.log('getting home keybindings');
+        return this.http.get<HomeKeybindingsResponse>(`${environment.apiUrl}/keybindings/home`).pipe(
+            tap((response: HomeKeybindingsResponse) => {
+                console.log('getHomeKeybindings - response', response);
+                // Flatten all keybindings into a single array for the BehaviorSubject
+                const allKeybindings = Object.values(response).reduce((acc, classData) => {
+                    return [...acc, ...classData.recent, ...classData.popular];
+                }, [] as Keybinding[]);
+                this.keybindingsSource.next(allKeybindings);
+                localStorage.setItem('keybindings', JSON.stringify(allKeybindings));
             })
         );
     }

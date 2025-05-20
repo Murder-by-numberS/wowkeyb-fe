@@ -78,7 +78,6 @@ export const appRoutes: Route[] = [
         data: {
             layout: 'modern'
         },
-        // Coming Soon
         children: [{ path: 'keybinds', loadChildren: () => import('app/modules/keybinds/keybinds.routes') },
         ]
     },

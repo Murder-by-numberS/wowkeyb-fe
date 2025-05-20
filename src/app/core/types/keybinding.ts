@@ -7,5 +7,14 @@ export interface Keybinding {
     spec?: string; //TODO: ENUM
     heroTalent?: string;  //TODO: ENUM
     keybinds: Keybind[];
-    is_public?: boolean;
+    is_public: boolean;
+    created_at?: string;
+    views?: number;
+}
+
+export interface HomeKeybindingsResponse {
+    [className: string]: {
+        recent: Keybinding[];
+        popular: Keybinding[];
+    }
 }

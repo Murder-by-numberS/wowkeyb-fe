@@ -6,7 +6,9 @@
             <keybinds-drawer (keybindingSelected)="onKeybindingSelected($event)"></keybinds-drawer>
         </mat-drawer>
         <mat-drawer-content class="">
-            @if (isViewAllRoute) {
+            @if (isHomeRoute) {
+            <keybinds-home [isAuthenticated]="isAuthenticated"></keybinds-home>
+            } @else if (isMyKeybindingsRoute) {
             <view-all-keybindings [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
                 [selectedKeybindingName]="selectedKeybindingName" [isAuthenticated]="isAuthenticated"
                 [editingName]="editingName" [nameForm]="nameForm" [opened]="opened"
@@ -19,13 +21,6 @@
             <view-keybinding [keybinding]="viewKeybinding" [isAuthenticated]="isAuthenticated" [opened]="opened"
                 (keybindingUpdated)="updateKeybinding($event)" (refreshKeybindings)="refreshChildKeybindings()"
                 (duplicateKeybinding)="duplicateKeybinding($event)" (toggleDrawer)="opened = !opened"></view-keybinding>
-            } @else if (isCreateRoute) {
-            <!-- Create keybinding content -->
-            <div class="flex flex-col w-full">
-                <create-keybinding *ngIf="isCreateRoute" [opened]="opened" (toggleDrawer)="opened = !opened"
-                    (keybindingCreated)="onKeybindingCreated($event)">
-                </create-keybinding>
-            </div>
             }
         </mat-drawer-content>
     </mat-drawer-container>

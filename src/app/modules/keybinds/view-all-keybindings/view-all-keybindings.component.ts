@@ -10,6 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { AbilitiesComponent } from '../abilities/abilities.component';
 import { KeyboardComponent } from '../keyboard/keyboard.component';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'view-all-keybindings',
@@ -49,8 +50,9 @@ export class ViewAllKeybindingsComponent {
     @Output() refreshChildKeybindings = new EventEmitter<void>();
     @Output() updateKeybinding = new EventEmitter<Keybinding>();
     @Output() toggleDrawer = new EventEmitter<void>();
+    @Output() keybindingUpdated = new EventEmitter<Keybinding>();
 
-    constructor(private fb: FormBuilder) { }
+    constructor(private fb: FormBuilder, private router: Router) { }
 
     onDeleteKeybinding(): void {
         this.deleteKeybinding.emit();
@@ -82,5 +84,23 @@ export class ViewAllKeybindingsComponent {
 
     onUpdateKeybinding(keybinding: Keybinding): void {
         this.updateKeybinding.emit(keybinding);
+    }
+
+    onCreateNewKeybinding(): void {
+        this.router.navigate(['/keybinds/my-keybindings']);
+    }
+
+    onDuplicateKeybinding(): void {
+        if (!this.selectedKeybinding || !this.isAuthenticated) {
+            return;
+        }
+
+        const duplicatedKeybinding = {
+            ...this.selectedKeybinding,
+            name: `${this.selectedKeybinding.name} (Copy)`,
+            keybinding_id: undefined
+        };
+
+        this.updateKeybinding.emit(duplicatedKeybinding);
     }
 }

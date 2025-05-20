@@ -5,17 +5,33 @@
                 <button mat-icon-button (click)="toggleDrawer.emit()">
                     <mat-icon>{{ opened ? 'menu_open' : 'menu' }}</mat-icon>
                 </button>
-                Keybindings
+                My Keybindings
             </div>
             <div class="ml-6 pr-4 flex">
-                <button class="hidden sm:inline-flex" mat-stroked-button [disabled]="!keybindingSelected"
-                    (click)="onDeleteKeybinding()">
-                    <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:cog-8-tooth'"></mat-icon>
+                <button class="hidden sm:inline-flex" mat-flat-button color="primary" (click)="onCreateNewKeybinding()"
+                    [disabled]="!isAuthenticated" matTooltip="Create an account to create keybindings"
+                    [matTooltipDisabled]="isAuthenticated">
+                    <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon>
+                    <span class="ml-2">Create New</span>
+                </button>
+
+                <button class="ml-3 hidden sm:inline-flex" mat-stroked-button
+                    [disabled]="!keybindingSelected || !isAuthenticated" (click)="onDeleteKeybinding()"
+                    matTooltip="Create an account to delete keybindings" [matTooltipDisabled]="isAuthenticated">
+                    <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:trash'"></mat-icon>
                     <span class="ml-2">Delete</span>
                 </button>
 
+                <button class="ml-3 hidden sm:inline-flex" mat-stroked-button
+                    [disabled]="!keybindingSelected || !isAuthenticated" (click)="onDuplicateKeybinding()"
+                    matTooltip="Create an account to duplicate keybindings" [matTooltipDisabled]="isAuthenticated">
+                    <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:document-duplicate'"></mat-icon>
+                    <span class="ml-2">Duplicate</span>
+                </button>
+
                 <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'"
-                    [disabled]="!keybindingSelected" (click)="onShareKeybinding()">
+                    [disabled]="!keybindingSelected || !isAuthenticated" (click)="onShareKeybinding()"
+                    matTooltip="Create an account to share keybindings" [matTooltipDisabled]="isAuthenticated">
                     <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:arrow-up-tray'"></mat-icon>
                     <span class="ml-2">Share</span>
                 </button>
@@ -25,8 +41,13 @@
                         <mat-icon [svgIcon]="'heroicons_outline:ellipsis-vertical'"></mat-icon>
                     </button>
                     <mat-menu #actionsMenu="matMenu">
-                        <button mat-menu-item (click)="onDeleteKeybinding()">Delete</button>
-                        <button mat-menu-item (click)="onShareKeybinding()">Share</button>
+                        <button mat-menu-item (click)="onCreateNewKeybinding()" [disabled]="!isAuthenticated">Create
+                            New</button>
+                        <button mat-menu-item (click)="onDeleteKeybinding()"
+                            [disabled]="!isAuthenticated">Delete</button>
+                        <button mat-menu-item (click)="onDuplicateKeybinding()"
+                            [disabled]="!isAuthenticated">Duplicate</button>
+                        <button mat-menu-item (click)="onShareKeybinding()" [disabled]="!isAuthenticated">Share</button>
                     </mat-menu>
                 </div>
             </div>
@@ -40,20 +61,23 @@
                     @if(!editingName) {
                     {{ selectedKeybindingName }}
                     <div class="px-2">
-                        <button class="hidden sm:inline-flex" mat-stroked-button (click)="onEditName()">
+                        <button class="hidden sm:inline-flex" mat-stroked-button (click)="onEditName()"
+                            [disabled]="!isAuthenticated">
                             <span>Edit</span>
                         </button>
                     </div>
                     <div class="px-2">
                         @if (selectedKeybinding.is_public) {
                         <button mat-stroked-button color="primary" matTooltip="Make Private" (click)="onTogglePublic()"
-                            [disabled]="!isAuthenticated">
+                            [disabled]="!isAuthenticated"
+                            [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Private'">
                             <mat-icon>public</mat-icon>
                             <span class="ml-2">Public</span>
                         </button>
                         } @else {
                         <button mat-stroked-button matTooltip="Make Public" (click)="onTogglePublic()"
-                            [disabled]="!isAuthenticated">
+                            [disabled]="!isAuthenticated"
+                            [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Public'">
                             <mat-icon>public_off</mat-icon>
                             <span class="ml-2">Private</span>
                         </button>

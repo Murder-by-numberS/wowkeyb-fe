@@ -1,44 +1,56 @@
 export const classes = [
     {
         name: 'Death Knight',
+        icon: 'assets/images/classes/death-knight.png'
     },
     {
         name: 'Demon Hunter',
+        icon: 'assets/images/classes/demon-hunter.png'
     },
     {
         name: 'Druid',
+        icon: 'assets/images/classes/druid.png'
     },
     {
         name: 'Evoker',
+        icon: 'assets/images/classes/evoker.png'
     },
     {
         name: 'Hunter',
+        icon: 'assets/images/classes/hunter.png'
     },
     {
         name: 'Mage',
+        icon: 'assets/images/classes/mage.png'
     },
     {
         name: 'Monk',
+        icon: 'assets/images/classes/monk.png'
     },
     {
         name: 'Paladin',
+        icon: 'assets/images/classes/paladin.png'
     },
     {
         name: 'Priest',
+        icon: 'assets/images/classes/priest.png'
     },
     {
         name: 'Rogue',
+        icon: 'assets/images/classes/rogue.png'
     },
     {
         name: 'Shaman',
+        icon: 'assets/images/classes/shaman.png'
     },
     {
         name: 'Warlock',
+        icon: 'assets/images/classes/warlock.png'
     },
     {
         name: 'Warrior',
+        icon: 'assets/images/classes/warrior.png'
     }
-
 ]
 
 export const classNames = [

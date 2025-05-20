@@ -1,14 +1,16 @@
 import { Routes } from '@angular/router';
 import { KeybindsComponent } from './keybinds.component';
+import { AuthGuard } from 'app/core/auth/guards/auth.guard';
 
 export default [
     {
-        path: 'view',
+        path: '',
         component: KeybindsComponent,
     },
     {
-        path: 'create',
+        path: 'my-keybindings',
         component: KeybindsComponent,
+        canActivate: [AuthGuard]
     },
     {
         path: ':id',
