@@ -112,10 +112,16 @@ export class KeybindsDrawerComponent implements OnInit {
             this.keybindings = keybindings;
             this.applyFilter();
 
+            // If we're on the my-keybindings page and no keybinding is selected, select the first one
+            if (window.location.pathname === '/keybinds/my-keybindings' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
+                const firstKeybinding = this.filteredKeybindings[0];
+                this.selectedKeybindingId = firstKeybinding.keybindingId;
+                this.keybindingSelected.emit(firstKeybinding);
+            }
             // If we're on the view-all page and no keybinding is selected, select the last one
-            if (window.location.pathname === '/keybinds/view' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
+            else if (window.location.pathname === '/keybinds/view' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
                 const lastKeybinding = this.filteredKeybindings[this.filteredKeybindings.length - 1];
-                this.selectedKeybindingId = lastKeybinding.keybinding_id;
+                this.selectedKeybindingId = lastKeybinding.keybindingId;
                 this.keybindingSelected.emit(lastKeybinding);
             }
         });
@@ -123,16 +129,16 @@ export class KeybindsDrawerComponent implements OnInit {
 
     selectKeybinding(keybinding: any): void {
         console.log('keybinding selected', keybinding);
-        this.selectedKeybindingId = keybinding.keybinding_id;
+        this.selectedKeybindingId = keybinding.keybindingId;
         this.keybindingSelected.emit(keybinding);
     }
 
     // Add a method to set the selected keybinding from outside
     setSelectedKeybinding(keybinding: Keybinding): void {
         if (keybinding) {
-            this.selectedKeybindingId = keybinding.keybinding_id;
+            this.selectedKeybindingId = keybinding.keybindingId;
             // Ensure the keybinding is in the filtered list
-            if (!this.filteredKeybindings.some(kb => kb.keybinding_id === keybinding.keybinding_id)) {
+            if (!this.filteredKeybindings.some(kb => kb.keybindingId === keybinding.keybindingId)) {
                 this.filteredKeybindings = [...this.filteredKeybindings, keybinding];
             }
         }
@@ -161,7 +167,7 @@ export class KeybindsDrawerComponent implements OnInit {
     }
 
     trackByKeybindingId(index: number, keybinding: Keybinding): string {
-        return `${index}-${keybinding.keybinding_id}`;
+        return `${index}-${keybinding.keybindingId}`;
     }
 
     createKeybinding() {
@@ -169,7 +175,7 @@ export class KeybindsDrawerComponent implements OnInit {
             next: (createdKeybinding) => {
                 console.log('Keybinding created:', createdKeybinding);
                 // Update selected keybinding and emit it
-                this.selectedKeybindingId = createdKeybinding.keybinding_id;
+                this.selectedKeybindingId = createdKeybinding.keybindingId;
                 console.log('selectedKeybindingId', this.selectedKeybindingId);
                 this.keybindingSelected.emit(createdKeybinding);
                 this.loadKeybindings();
@@ -184,7 +190,7 @@ export class KeybindsDrawerComponent implements OnInit {
     applyFilter() {
         if (this.filterApplied) {
             this.filteredKeybindings = this.keybindings.filter(keybinding => this.selectedClasses.value.includes(keybinding.class));
-            if (!this.filteredKeybindings.some(keybinding => keybinding.keybinding_id === this.selectedKeybindingId)) {
+            if (!this.filteredKeybindings.some(keybinding => keybinding.keybindingId === this.selectedKeybindingId)) {
                 this.selectedKeybindingId = null;
                 this.keybindingSelected.emit(null);
             }
@@ -204,7 +210,7 @@ export class KeybindsDrawerComponent implements OnInit {
     }
 
     togglePublic(keybinding: Keybinding): void {
-        this.keybindingService.updateKeybinding(keybinding.keybinding_id, { is_public: !keybinding.is_public })
+        this.keybindingService.updateKeybinding(keybinding.keybindingId, { isPublic: !keybinding.isPublic })
             .subscribe({
                 next: () => {
                     // Update local storage
@@ -213,8 +219,8 @@ export class KeybindsDrawerComponent implements OnInit {
                         try {
                             const parsedKeybindings = JSON.parse(savedKeybindings);
                             const updatedKeybindings = parsedKeybindings.map((kb: Keybinding) => {
-                                if (kb.keybinding_id === keybinding.keybinding_id) {
-                                    return { ...kb, is_public: !keybinding.is_public };
+                                if (kb.keybindingId === keybinding.keybindingId) {
+                                    return { ...kb, isPublic: !keybinding.isPublic };
                                 }
                                 return kb;
                             });
@@ -226,7 +232,7 @@ export class KeybindsDrawerComponent implements OnInit {
 
                     this.loadKeybindings(); // Reload to update the UI
                     this.snackBar.open(
-                        keybinding.is_public ? 'Keybinding is now private' : 'Keybinding is now public',
+                        keybinding.isPublic ? 'Keybinding is now private' : 'Keybinding is now public',
                         'Close',
                         { duration: 3000 }
                     );

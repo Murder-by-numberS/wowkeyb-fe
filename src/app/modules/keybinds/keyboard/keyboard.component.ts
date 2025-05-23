@@ -249,7 +249,7 @@ export class KeyboardComponent implements OnInit {
                         this.selectedKeybinding.keybinds.push(keybind);
                     });
                     //update the keybinding in the keybindingService
-                    this.keybindingService.updateKeybinding(this.selectedKeybinding.keybinding_id, this.selectedKeybinding)
+                    this.keybindingService.updateKeybinding(this.selectedKeybinding.keybindingId, this.selectedKeybinding)
                         .subscribe({
                             next: (updatedKeybinding) => {
                                 console.log('after keybind-dialog - this.selectedKeybinding', this.selectedKeybinding);

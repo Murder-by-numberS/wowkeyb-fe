@@ -42,7 +42,23 @@ export class KeybindsHomeComponent implements OnInit {
             console.log('Home keybindings response:', response);
             console.log('Classes:', this.classes);
             console.log('Response keys:', Object.keys(response));
-            this.classKeybindings = response;
+
+            // Log keybinding IDs for debugging
+            Object.entries(response).forEach(([className, data]) => {
+                console.log(`Class ${className} recent keybindings:`, data.recent.map(k => k.keybindingId));
+                console.log(`Class ${className} popular keybindings:`, data.popular.map(k => k.keybindingId));
+            });
+
+            // Filter out keybindings without valid IDs
+            const filteredResponse: HomeKeybindingsResponse = {};
+            Object.entries(response).forEach(([className, data]) => {
+                filteredResponse[className] = {
+                    recent: data.recent.filter(k => k && k.keybindingId),
+                    popular: data.popular.filter(k => k && k.keybindingId)
+                };
+            });
+
+            this.classKeybindings = filteredResponse;
             console.log('Updated classKeybindings:', this.classKeybindings);
         });
     }
@@ -56,6 +72,11 @@ export class KeybindsHomeComponent implements OnInit {
     }
 
     navigateToKeybinding(keybinding: Keybinding): void {
-        this.router.navigate(['/keybinds', keybinding.keybinding_id]);
+        console.log('Navigating to keybinding:', keybinding);
+        if (!keybinding || !keybinding.keybindingId) {
+            console.error('Invalid keybinding or missing keybindingId:', keybinding);
+            return;
+        }
+        this.router.navigate(['/keybinds', keybinding.keybindingId]);
     }
 }

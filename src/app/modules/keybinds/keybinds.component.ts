@@ -94,6 +94,7 @@ export class KeybindsComponent implements OnInit {
     isHomeRoute: boolean = false;
     isMyKeybindingsRoute: boolean = false;
     isViewKeybindingRoute: boolean = false;
+    currentUserId: string | null = null;
 
     constructor(
         private keybindingService: KeybindingService,
@@ -116,9 +117,10 @@ export class KeybindsComponent implements OnInit {
 
                 // Check current route
                 const url = this.router.url;
-                this.isHomeRoute = url === '/keybinds';
-                this.isMyKeybindingsRoute = url === '/keybinds/my-keybindings';
-                this.isViewKeybindingRoute = url.includes('/keybinds/') && !this.isHomeRoute && !this.isMyKeybindingsRoute;
+                const path = this.route.snapshot.routeConfig?.path;
+                this.isHomeRoute = path === '' || (path === 'view-all' && authenticated);
+                this.isMyKeybindingsRoute = path === 'my-keybindings';
+                this.isViewKeybindingRoute = path === ':id';
 
                 // If user is not authenticated and tries to access my-keybindings, redirect to home
                 if (!authenticated && this.isMyKeybindingsRoute) {
@@ -126,24 +128,27 @@ export class KeybindsComponent implements OnInit {
                     return;
                 }
 
-                // Set drawer state based on route and authentication
-                if (this.isMyKeybindingsRoute) {
-                    // Always show drawer on my-keybindings route
-                    this.opened = true;
-                } else if (this.isViewKeybindingRoute) {
-                    // Only show drawer on view route if authenticated
-                    this.opened = authenticated;
-                } else {
-                    // Don't show drawer on home route
-                    this.opened = false;
+                // Only show drawer on my-keybindings route
+                this.opened = this.isMyKeybindingsRoute;
+
+                // If user is not authenticated and on /keybinds, ensure they see the home component
+                if (!authenticated && url === '/keybinds') {
+                    this.isHomeRoute = true;
                 }
+            });
+
+        // Subscribe to user service to get current user ID
+        this._userService.user$
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe(user => {
+                this.currentUserId = user?._id || null;
             });
 
         this.nameForm = this._formBuilder.group({
             name: ['', [Validators.required, Validators.maxLength(32)]]
         });
 
-        // Subscribe to route parameters
+        // Subscribe to route parameters and query parameters
         this.route.params
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe(params => {
@@ -159,6 +164,37 @@ export class KeybindsComponent implements OnInit {
                         },
                         error: (error) => {
                             console.error('Error loading keybinding:', error);
+                        }
+                    });
+                }
+            });
+
+        // Check for query parameters
+        this.route.queryParams
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe(params => {
+                if (params['keybindingId'] && this.isMyKeybindingsRoute) {
+                    const keybindingId = params['keybindingId'];
+                    // Ensure drawer is opened
+                    this.opened = true;
+                    // Load and select the keybinding
+                    this.keybindingService.getKeybinding(keybindingId).subscribe({
+                        next: (keybinding) => {
+                            // First select the keybinding
+                            this.onKeybindingSelected(keybinding);
+                            // Then update drawer selection after a short delay to ensure component is ready
+                            setTimeout(() => {
+                                if (this.keybindsDrawerComponent) {
+                                    this.keybindsDrawerComponent.setSelectedKeybinding(keybinding);
+                                }
+                            }, 0);
+                            // Remove the query parameter
+                            this.router.navigate(['/keybinds/my-keybindings'], { replaceUrl: true });
+                        },
+                        error: (error) => {
+                            console.error('Error loading keybinding:', error);
+                            // Remove the query parameter even if there's an error
+                            this.router.navigate(['/keybinds/my-keybindings'], { replaceUrl: true });
                         }
                     });
                 }
@@ -188,7 +224,7 @@ export class KeybindsComponent implements OnInit {
             this.keybindingService.currentKeybindings
                 .pipe(takeUntil(this._unsubscribeAll))
                 .subscribe(keybindings => {
-                    if (keybindings.length > 0 && !this.selectedKeybinding) {
+                    if (keybindings.length > 0 && !this.selectedKeybinding && !this.route.snapshot.queryParams['id']) {
                         const lastKeybinding = keybindings[keybindings.length - 1];
                         this.onKeybindingSelected(lastKeybinding);
                     }
@@ -214,7 +250,7 @@ export class KeybindsComponent implements OnInit {
             this.keybindingService.currentKeybindings
                 .pipe(takeUntil(this._unsubscribeAll))
                 .subscribe(keybindings => {
-                    const updatedKeybinding = keybindings.find(kb => kb.keybinding_id === keybinding.keybinding_id);
+                    const updatedKeybinding = keybindings.find(kb => kb.keybindingId === keybinding.keybindingId);
                     if (updatedKeybinding) {
                         // Update the selected keybinding with the latest data
                         this.selectedKeybinding = updatedKeybinding;
@@ -233,8 +269,8 @@ export class KeybindsComponent implements OnInit {
                             try {
                                 const parsedKeybindings = JSON.parse(savedKeybindings);
                                 const updatedKeybindings = parsedKeybindings.map((kb: Keybinding) => {
-                                    if (kb.keybinding_id === updatedKeybinding.keybinding_id) {
-                                        return { ...kb, is_public: updatedKeybinding.is_public };
+                                    if (kb.keybindingId === updatedKeybinding.keybindingId) {
+                                        return { ...kb, isPublic: updatedKeybinding.isPublic };
                                     }
                                     return kb;
                                 });
@@ -283,7 +319,7 @@ export class KeybindsComponent implements OnInit {
         dialogRef.afterClosed().subscribe(result => {
             if (result) {
                 console.log('deleting keybinding', this.selectedKeybinding);
-                this.keybindingService.removeKeybinding(this.selectedKeybinding.keybinding_id);
+                this.keybindingService.removeKeybinding(this.selectedKeybinding.keybindingId);
                 this.selectedKeybinding = null;
                 this.keybindingSelected = false;
                 this.refreshChildKeybindings();
@@ -340,10 +376,10 @@ export class KeybindsComponent implements OnInit {
     updateKeybinding(update) {
         console.log('updated keybinding?', update);
 
-        this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybinding_id, update)
+        this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybindingId, update)
             .subscribe({
                 next: () => {
-                    this.selectedKeybinding = this.keybindingService.getKeybindingById(this.selectedKeybinding.keybinding_id);
+                    this.selectedKeybinding = this.keybindingService.getKeybindingById(this.selectedKeybinding.keybindingId);
                     // Refresh the view-keyboard component
                     this.refreshChildKeybindings();
                 },
@@ -360,7 +396,7 @@ export class KeybindsComponent implements OnInit {
 
         this.dialog.open(ShareDialogComponent, {
             data: {
-                keybindingId: this.selectedKeybinding.keybinding_id
+                keybindingId: this.selectedKeybinding.keybindingId
             },
             width: '600px',
             maxWidth: '90vw'
@@ -377,7 +413,7 @@ export class KeybindsComponent implements OnInit {
             console.log('Form Submitted', this.nameForm.value);
             this.selectedKeybindingName = this.nameForm.value.name;
             this.selectedKeybinding.name = this.selectedKeybindingName;
-            this.keybindingService.updateKeybinding(this.selectedKeybinding.keybinding_id, { name: this.nameForm.value.name }).subscribe({
+            this.keybindingService.updateKeybinding(this.selectedKeybinding.keybindingId, { name: this.nameForm.value.name }).subscribe({
                 next: (updatedKeybinding) => {
                     console.log('updatedKeybinding', updatedKeybinding);
                     this.editingName = false;
@@ -405,9 +441,9 @@ export class KeybindsComponent implements OnInit {
     togglePublic(): void {
         if (!this.selectedKeybinding) return;
 
-        const newPublicStatus = !this.selectedKeybinding.is_public;
-        this.keybindingService.updateKeybinding(this.selectedKeybinding.keybinding_id, {
-            is_public: newPublicStatus
+        const newPublicStatus = !this.selectedKeybinding.isPublic;
+        this.keybindingService.updateKeybinding(this.selectedKeybinding.keybindingId, {
+            isPublic: newPublicStatus
         }).subscribe({
             next: (updatedKeybinding) => {
                 // Update local storage
@@ -416,8 +452,8 @@ export class KeybindsComponent implements OnInit {
                     try {
                         const parsedKeybindings = JSON.parse(savedKeybindings);
                         const updatedKeybindings = parsedKeybindings.map((kb: Keybinding) => {
-                            if (kb.keybinding_id === this.selectedKeybinding?.keybinding_id) {
-                                return { ...kb, is_public: newPublicStatus };
+                            if (kb.keybindingId === this.selectedKeybinding?.keybindingId) {
+                                return { ...kb, isPublic: newPublicStatus };
                             }
                             return kb;
                         });
@@ -453,9 +489,9 @@ export class KeybindsComponent implements OnInit {
             const newKeybinding = {
                 ...keybinding,
                 name: `${keybinding.name} (Copy)`,
-                keybinding_id: undefined, // Let the server generate a new ID
-                is_public: false, // Default to private
-                user_id: user.id // Use the user ID from UserService
+                keybindingId: undefined, // Let the server generate a new ID
+                isPublic: false, // Default to private
+                userId: user._id // Use the user ID from UserService
             };
 
             this.keybindingService.createKeybinding(newKeybinding).subscribe({
@@ -496,33 +532,25 @@ export class KeybindsComponent implements OnInit {
     }
 
     onKeybindingUpdated(keybinding: Keybinding): void {
-        if (!keybinding.keybinding_id) {
-            // This is a new keybinding (either created or duplicated)
-            this.keybindingService.createKeybinding(keybinding).subscribe({
-                next: (createdKeybinding) => {
-                    this.refreshChildKeybindings();
-                    // Navigate to the view page with the new keybinding selected
-                    this.router.navigate(['/keybinds', createdKeybinding.keybinding_id]);
-                },
-                error: (error) => {
-                    console.error('Error creating keybinding:', error);
-                }
-            });
-        } else {
-            // This is an update to an existing keybinding
-            this.keybindingService.updateKeybinding(keybinding.keybinding_id, keybinding).subscribe({
-                next: () => {
-                    this.refreshChildKeybindings();
-                },
-                error: (error) => {
-                    console.error('Error updating keybinding:', error);
-                }
-            });
+        if (!keybinding.keybindingId) {
+            console.error('Invalid keybinding or missing keybindingId:', keybinding);
+            return;
         }
+        // This is a new keybinding (either created or duplicated)
+        this.keybindingService.createKeybinding(keybinding).subscribe({
+            next: (createdKeybinding) => {
+                this.refreshChildKeybindings();
+                // Navigate to the view page with the new keybinding selected
+                this.router.navigate(['/keybinds', createdKeybinding.keybindingId]);
+            },
+            error: (error) => {
+                console.error('Error creating keybinding:', error);
+            }
+        });
     }
 
     navigateToKeybinding(keybinding: Keybinding): void {
-        this.router.navigate(['/keybinds', keybinding.keybinding_id]);
+        this.router.navigate(['/keybinds', keybinding.keybindingId]);
     }
 
 }

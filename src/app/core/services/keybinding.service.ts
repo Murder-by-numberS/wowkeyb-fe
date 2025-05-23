@@ -35,7 +35,7 @@ export class KeybindingService {
 
     getKeybindingById(id: string): Keybinding | undefined {
         const currentKeybindings = this.keybindingsSource.getValue();
-        return currentKeybindings.find(kb => kb.keybinding_id === id);
+        return currentKeybindings.find(kb => kb.keybindingId === id);
     }
 
     updateKeybindings(keybindings: Keybinding[]) {
@@ -67,7 +67,7 @@ export class KeybindingService {
         console.log('updateKeybindsInKeybinding - currentKeybindings - update:', update);
 
         const updatedKeybindings = currentKeybindings.map(kb => {
-            if (kb.keybinding_id === id) {
+            if (kb.keybindingId === id) {
                 let keybinds = [...kb.keybinds];
                 if (update.removedKeybinds?.length) {
                     console.log('removing keybinds', keybinds);
@@ -92,7 +92,7 @@ export class KeybindingService {
             return kb;
         });
 
-        return this.updateKeybinding(id, updatedKeybindings.find(kb => kb.keybinding_id === id));
+        return this.updateKeybinding(id, updatedKeybindings.find(kb => kb.keybindingId === id));
     }
 
     updateKeybinding(id: string, updatedKeybinding: Partial<Keybinding>): Observable<Keybinding> {
@@ -101,7 +101,7 @@ export class KeybindingService {
                 tap((updatedKeybinding: Keybinding) => {
                     const currentKeybindings = this.keybindingsSource.getValue();
                     const updatedKeybindings = currentKeybindings.map(kb =>
-                        kb.keybinding_id === id ? updatedKeybinding : kb
+                        kb.keybindingId === id ? updatedKeybinding : kb
                     );
                     this.keybindingsSource.next(updatedKeybindings);
                     localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
@@ -112,7 +112,7 @@ export class KeybindingService {
     updateKeybindingName(id: string, name: string) {
         const currentKeybindings = this.keybindingsSource.getValue();
         const updatedKeybindings = currentKeybindings.map(kb =>
-            kb.keybinding_id === id ? { ...kb, name } : kb
+            kb.keybindingId === id ? { ...kb, name } : kb
         );
 
         this.keybindingsSource.next(updatedKeybindings);
@@ -121,7 +121,7 @@ export class KeybindingService {
     // clearKeybinds(keybindingId: string) {
     //     const currentKeybindings = this.keybindingsSource.getValue();
     //     const updatedKeybindings = currentKeybindings.map(kb =>
-    //         kb.keybinding_id === keybindingId ? { ...kb, keybinds: [] } : kb
+    //         kb.keybindingId === keybindingId ? { ...kb, keybinds: [] } : kb
     //     );
     //     this.keybindingsSource.next(updatedKeybindings);
     // }
@@ -153,17 +153,7 @@ export class KeybindingService {
 
     getHomeKeybindings(): Observable<HomeKeybindingsResponse> {
         console.log('getting home keybindings');
-        return this.http.get<HomeKeybindingsResponse>(`${environment.apiUrl}/keybindings/home`).pipe(
-            tap((response: HomeKeybindingsResponse) => {
-                console.log('getHomeKeybindings - response', response);
-                // Flatten all keybindings into a single array for the BehaviorSubject
-                const allKeybindings = Object.values(response).reduce((acc, classData) => {
-                    return [...acc, ...classData.recent, ...classData.popular];
-                }, [] as Keybinding[]);
-                this.keybindingsSource.next(allKeybindings);
-                localStorage.setItem('keybindings', JSON.stringify(allKeybindings));
-            })
-        );
+        return this.http.get<HomeKeybindingsResponse>(`${environment.apiUrl}/keybindings/home`);
     }
 
     clearKeybindings() {

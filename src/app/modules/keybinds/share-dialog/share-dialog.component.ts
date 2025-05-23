@@ -50,7 +50,7 @@ export class ShareDialogComponent implements OnInit {
             // If authenticated, check if the keybinding is public
             if (authenticated) {
                 const keybinding = this.keybindingService.getKeybindingById(this.data.keybindingId);
-                this.isPublic = keybinding?.is_public || false;
+                this.isPublic = keybinding?.isPublic || false;
                 this.showShareLink = this.isPublic;
             } else {
                 // For non-authenticated users, show the share link directly
@@ -67,7 +67,7 @@ export class ShareDialogComponent implements OnInit {
     }
 
     makePublic(): void {
-        this.keybindingService.updateKeybinding(this.data.keybindingId, { is_public: true })
+        this.keybindingService.updateKeybinding(this.data.keybindingId, { isPublic: true })
             .subscribe({
                 next: () => {
                     this.isPublic = true;

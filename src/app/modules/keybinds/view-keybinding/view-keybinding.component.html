@@ -1,15 +1,20 @@
 <div class="flex flex-col w-full h-full">
     <div class="flex items-center justify-between p-4 bg-gray-100">
         <div class="flex items-center gap-4">
-            <button mat-icon-button (click)="toggleDrawer.emit()" *ngIf="isAuthenticated">
-                <mat-icon>{{ opened ? 'menu_open' : 'menu' }}</mat-icon>
-            </button>
             <h1 class="text-2xl font-bold">{{ keybinding?.name }}</h1>
-            <button mat-stroked-button [matTooltip]="!isAuthenticated ? 'Login to duplicate keybinding' : ''"
-                [disabled]="!isAuthenticated" (click)="onDuplicateKeybinding()">
-                <mat-icon>content_copy</mat-icon>
-                <span>Duplicate</span>
+            @if (isAuthenticated) {
+            @if (isOwner) {
+            <button mat-stroked-button (click)="onEditKeybinding()">
+                <mat-icon>edit</mat-icon>
+                <span class="ml-2">Edit</span>
             </button>
+            } @else {
+            <button mat-stroked-button (click)="onDuplicateKeybinding()">
+                <mat-icon>content_copy</mat-icon>
+                <span class="ml-2">Duplicate</span>
+            </button>
+            }
+            }
         </div>
     </div>
 

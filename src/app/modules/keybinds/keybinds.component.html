@@ -18,9 +18,9 @@
                 (toggleDrawer)="opened = !opened">
             </view-all-keybindings>
             } @else if (isViewKeybindingRoute) {
-            <view-keybinding [keybinding]="viewKeybinding" [isAuthenticated]="isAuthenticated" [opened]="opened"
-                (keybindingUpdated)="updateKeybinding($event)" (refreshKeybindings)="refreshChildKeybindings()"
-                (duplicateKeybinding)="duplicateKeybinding($event)" (toggleDrawer)="opened = !opened"></view-keybinding>
+            <view-keybinding [keybinding]="viewKeybinding" [isAuthenticated]="isAuthenticated"
+                (keybindingUpdated)="updateKeybinding($event)" (refreshKeybindings)="refreshChildKeybindings()">
+            </view-keybinding>
             }
         </mat-drawer-content>
     </mat-drawer-container>

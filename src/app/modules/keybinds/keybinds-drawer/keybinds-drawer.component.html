@@ -56,15 +56,15 @@
 
     <!-- Row -->
     @for (keybinding of filteredKeybindings; track trackByKeybindingId($index, keybinding)) {
-    <div [ngClass]="{
-        'bg-blue-500 text-white': isSelected(keybinding.keybinding_id),
-        'bg-gray-200 text-black': !isSelected(keybinding.keybinding_id)
-    }" class="flex items-center justify-between p-4 cursor-pointer" (click)="selectKeybinding(keybinding)">
+    <div class="flex items-center p-3 cursor-pointer" [ngClass]="{
+            'bg-blue-500 text-white': isSelected(keybinding.keybindingId),
+            'bg-gray-200 text-black': !isSelected(keybinding.keybindingId)
+         }" (click)="selectKeybinding(keybinding)">
         <div class="flex-1">
             <p>{{keybinding.name}} - {{keybinding.class}}</p>
         </div>
         <div class="flex items-center">
-            @if (keybinding.is_public) {
+            @if (keybinding.isPublic) {
             <mat-icon class="text-green-500">public</mat-icon>
             } @else {
             <mat-icon class="text-gray-500">public_off</mat-icon>
