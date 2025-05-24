@@ -1,5 +1,5 @@
 //Angular
-import { Component, ViewEncapsulation, OnInit, signal, ViewChild, EventEmitter, Output, Input, SimpleChanges } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, signal, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 
@@ -12,13 +12,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatAccordion } from '@angular/material/expansion';
+import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 //Directives
 import { ClickOutsideDirective } from 'app/core/directives/click-outside/click-outside.directive';
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
-
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { Keybinding } from 'app/core/types/keybinding';
 import { keybinds } from './data';
@@ -42,7 +44,9 @@ import { random } from 'lodash';
         MatSelectModule,
         MatExpansionModule,
         MatAccordion,
-        ClickOutsideDirective
+        ClickOutsideDirective,
+        MatInputModule,
+        MatTooltipModule
     ],
 })
 export class KeybindsDrawerComponent implements OnInit {
@@ -58,16 +62,19 @@ export class KeybindsDrawerComponent implements OnInit {
     @Output() keybindingSelected = new EventEmitter<any>();
     MAX_SIZE = 10;
 
-    selectedClasses = new FormControl([]);
+    selectedClasses = new FormControl<any[]>([]);
 
-    classList = classes.map(obj => obj.name);
+    classList = classes;  // Use the full class data instead of just names
 
     filterApplied: boolean = false;
+
+    keybindingService = inject(KeybindingService);
+    snackBar = inject(MatSnackBar);
 
     /**
      * Constructor
      */
-    constructor(private keybindingService: KeybindingService) {
+    constructor() {
 
     }
 
@@ -83,30 +90,58 @@ export class KeybindsDrawerComponent implements OnInit {
                 // Update the KeybindingService with the saved keybindings
                 this.keybindingService.updateKeybindings(parsedKeybindings);
                 this.applyFilter();
-
-                // Set the first keybinding as selected and emit it
-                if (parsedKeybindings.length > 0) {
-                    this.selectedKeybindingId = parsedKeybindings[0].keybinding_id;
-                    this.keybindingSelected.emit(parsedKeybindings[0]);
-                }
             } catch (error) {
                 console.error('Failed to parse keybindings from localStorage:', error);
             }
         }
+
+        // Subscribe to the keybinding service to update when keybindings change
+        this.keybindingService.currentKeybindings.subscribe(keybindings => {
+            this.keybindings = keybindings;
+            this.applyFilter();
+        });
+
+        this.selectedClasses.valueChanges.subscribe(() => {
+            this.filterKeybindings();
+        });
     }
 
     loadKeybindings() {
         console.log('KeybindsDrawerComponent - loadKeybindings');
-        this.keybindingService.currentKeybindings.subscribe(keybindings => this.keybindings = keybindings);
-        this.applyFilter();
+        this.keybindingService.currentKeybindings.subscribe(keybindings => {
+            this.keybindings = keybindings;
+            this.applyFilter();
+
+            // If we're on the my-keybindings page and no keybinding is selected, select the first one
+            if (window.location.pathname === '/keybinds/my-keybindings' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
+                const firstKeybinding = this.filteredKeybindings[0];
+                this.selectedKeybindingId = firstKeybinding.keybindingId;
+                this.keybindingSelected.emit(firstKeybinding);
+            }
+            // If we're on the view-all page and no keybinding is selected, select the last one
+            else if (window.location.pathname === '/keybinds/view' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
+                const lastKeybinding = this.filteredKeybindings[this.filteredKeybindings.length - 1];
+                this.selectedKeybindingId = lastKeybinding.keybindingId;
+                this.keybindingSelected.emit(lastKeybinding);
+            }
+        });
     }
 
     selectKeybinding(keybinding: any): void {
         console.log('keybinding selected', keybinding);
-
-        this.selectedKeybindingId = keybinding.keybinding_id;
-        console.log('emitting', keybinding)
+        this.selectedKeybindingId = keybinding.keybindingId;
         this.keybindingSelected.emit(keybinding);
+    }
+
+    // Add a method to set the selected keybinding from outside
+    setSelectedKeybinding(keybinding: Keybinding): void {
+        if (keybinding) {
+            this.selectedKeybindingId = keybinding.keybindingId;
+            // Ensure the keybinding is in the filtered list
+            if (!this.filteredKeybindings.some(kb => kb.keybindingId === keybinding.keybindingId)) {
+                this.filteredKeybindings = [...this.filteredKeybindings, keybinding];
+            }
+        }
     }
 
     closeAccordion() {
@@ -114,7 +149,7 @@ export class KeybindsDrawerComponent implements OnInit {
 
         console.log('apply filter')
         console.log('filter:', this.selectedClasses.value);
-        if (this.selectedClasses.value.length > 0) {
+        if (this.selectedClasses.value?.length > 0) {
             this.filterApplied = true;
             console.log('this.selectedClasses.value', typeof this.selectedClasses.value);
             this.applyFilter();
@@ -123,12 +158,14 @@ export class KeybindsDrawerComponent implements OnInit {
             this.filterApplied = false;
             this.filteredKeybindings = this.keybindings;
         }
-
-
     }
 
     isSelected(keybindingId: string): boolean {
         return this.selectedKeybindingId === keybindingId;
+    }
+
+    trackByKeybindingId(index: number, keybinding: Keybinding): string {
+        return `${index}-${keybinding.keybindingId}`;
     }
 
     createKeybinding() {
@@ -136,7 +173,7 @@ export class KeybindsDrawerComponent implements OnInit {
             next: (createdKeybinding) => {
                 console.log('Keybinding created:', createdKeybinding);
                 // Update selected keybinding and emit it
-                this.selectedKeybindingId = createdKeybinding.keybinding_id;
+                this.selectedKeybindingId = createdKeybinding.keybindingId;
                 console.log('selectedKeybindingId', this.selectedKeybindingId);
                 this.keybindingSelected.emit(createdKeybinding);
                 this.loadKeybindings();
@@ -149,29 +186,70 @@ export class KeybindsDrawerComponent implements OnInit {
     }
 
     applyFilter() {
-        if (this.filterApplied) {
-
-            console.log('applying filter');
-            this.filteredKeybindings = this.keybindings.filter(keybinding => this.selectedClasses.value.includes(keybinding.class));
-            console.log('this.filteredKeybindings', this.filteredKeybindings);
-            if (!this.filteredKeybindings.some(keybinding => keybinding.keybinding_id === this.selectedKeybindingId)) {
-                console.log('applying filter - selectedKeybindingId', this.selectedKeybindingId);
+        if (this.filterApplied && this.selectedClasses.value?.length > 0) {
+            this.filteredKeybindings = this.keybindings.filter(keybinding =>
+                this.selectedClasses.value.some(selectedClass => selectedClass.name === keybinding.class)
+            );
+            if (!this.filteredKeybindings.some(keybinding => keybinding.keybindingId === this.selectedKeybindingId)) {
                 this.selectedKeybindingId = null;
                 this.keybindingSelected.emit(null);
             }
         } else {
             this.filteredKeybindings = this.keybindings;
-
-            // Use getValue() to get the current value from the BehaviorSubject
-            if (!this.keybindingService.currentKeybindingsValue.some(keybinding =>
-                keybinding.keybinding_id === this.selectedKeybindingId)) {
-                console.log('applying filter - selectedKeybindingId', this.selectedKeybindingId);
-                if (this.filteredKeybindings.length > 0) {
-                    this.selectedKeybindingId = this.filteredKeybindings[0].keybinding_id;
-                    this.keybindingSelected.emit(this.filteredKeybindings[0]);
-                }
-            }
         }
+    }
 
+    filterKeybindings(): void {
+        const selected = this.selectedClasses.value;
+        if (!selected || selected.length === 0) {
+            this.filteredKeybindings = this.keybindings;
+            this.filterApplied = false;
+            return;
+        }
+        this.filterApplied = true;
+        this.filteredKeybindings = this.keybindings.filter(k =>
+            selected.some(selectedClass => selectedClass.name === k.class)
+        );
+    }
+
+    togglePublic(keybinding: Keybinding): void {
+        this.keybindingService.updateKeybinding(keybinding.keybindingId, { isPublic: !keybinding.isPublic })
+            .subscribe({
+                next: () => {
+                    // Update local storage
+                    const savedKeybindings = localStorage.getItem('keybindings');
+                    if (savedKeybindings) {
+                        try {
+                            const parsedKeybindings = JSON.parse(savedKeybindings);
+                            const updatedKeybindings = parsedKeybindings.map((kb: Keybinding) => {
+                                if (kb.keybindingId === keybinding.keybindingId) {
+                                    return { ...kb, isPublic: !keybinding.isPublic };
+                                }
+                                return kb;
+                            });
+                            localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
+                        } catch (error) {
+                            console.error('Failed to update keybindings in localStorage:', error);
+                        }
+                    }
+
+                    this.loadKeybindings(); // Reload to update the UI
+                    this.snackBar.open(
+                        keybinding.isPublic ? 'Keybinding is now private' : 'Keybinding is now public',
+                        'Close',
+                        { duration: 3000 }
+                    );
+                },
+                error: (error) => {
+                    console.error('Error updating keybinding:', error);
+                    this.snackBar.open('Error updating keybinding status', 'Close', { duration: 3000 });
+                }
+            });
+    }
+
+    // Add a method to get the class icon
+    getClassIcon(className: string): string {
+        const classData = this.classList.find(c => c.name === className);
+        return classData?.icon || '';
     }
 }

@@ -78,7 +78,6 @@ export const appRoutes: Route[] = [
         data: {
             layout: 'modern'
         },
-        // Coming Soon
         children: [{ path: 'keybinds', loadChildren: () => import('app/modules/keybinds/keybinds.routes') },
         ]
     },
@@ -171,7 +170,7 @@ export const appRoutes: Route[] = [
                     //         { path: 'table', loadChildren: () => import('app/modules/admin/pages/pricing/table/table.routes') }
                     //     ]
                     // },
-
+                    //TODO: fix these pages
                     // Welcome
                     { path: 'welcome', loadChildren: () => import('app/modules/admin/pages/welcome/welcome.routes') },
 

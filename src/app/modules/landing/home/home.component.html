@@ -1,23 +1,20 @@
 <div class="flex h-full w-full flex-col items-center justify-center">
-    <div class="w-full max-w-3xl">
+    <div class="w-full max-w-3xl text-center">
         <div class="prose prose-sm mx-auto max-w-none">
-            <!-- <img class="w-20" src="images/logo/logo.svg" alt="Logo image" /> -->
-            LOGO
-            <h1>Landing Module</h1>
-            <p>
-                This can be the landing or the welcome page of your application.
-                If you have an SSR (Server Side Rendering) setup, or if you
-                don't need to have Search engine visibility and optimizations,
-                you can even use this page as your primary landing page.
+            <h1 class="text-4xl font-bold mb-8">Welcome to WoWKeyb</h1>
+            <p class="text-xl mb-12">
+                Your ultimate companion for World of Warcraft keybindings and macros
             </p>
-            <p>
-                This is a separate "module", it has its own directory and
-                routing setup and also it's completely separated from the actual
-                application. This is also a simple example of a multiple
-                applications setup that uses the same codebase. You can have
-                different entry points and essentially have different
-                applications within the same codebase.
-            </p>
+            <div class="flex gap-6 justify-center">
+                <button mat-raised-button color="primary" routerLink="/keybinds/view-all">
+                    <mat-icon class="mr-2">keyboard</mat-icon>
+                    Keybindings
+                </button>
+                <button mat-raised-button color="accent" routerLink="/macros">
+                    <mat-icon class="mr-2">code</mat-icon>
+                    Macros
+                </button>
+            </div>
         </div>
     </div>
 </div>

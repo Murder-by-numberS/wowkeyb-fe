@@ -1,10 +1,13 @@
 {
     "name": "wowkeyb-fe",
-    "version": "1.7.2",
+    "version": "1.8.0",
     "description": "World of Warcraft - Wow Keybinding",
     "author": "Logan Born",
     "license": "https://themeforest.net/licenses/standard",
     "private": true,
+    "engines": {
+        "node": ">=22.0.0"
+    },
     "scripts": {
         "ng": "ng",
         "start": "node server.js",

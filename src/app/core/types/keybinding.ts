@@ -1,10 +1,21 @@
 import { Keybind } from "./keybind";
 
 export interface Keybinding {
-    keybinding_id: string,
+    keybindingId: string;
     name: string;
-    class: string; //TODO: ENUM
-    spec?: string; //TODO: ENUM
-    heroTalent?: string;  //TODO: ENUM
+    userId: string;
+    class: string;
+    spec?: string;
+    heroTalent?: string;
+    isPublic: boolean;
+    createdAt: string;
     keybinds: Keybind[];
+    views?: number;
+}
+
+export interface HomeKeybindingsResponse {
+    [className: string]: {
+        recent: Keybinding[];
+        popular: Keybinding[];
+    }
 }

@@ -1,44 +1,56 @@
 export const classes = [
     {
         name: 'Death Knight',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_deathknight.jpg'
     },
     {
         name: 'Demon Hunter',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_demonhunter.jpg'
     },
     {
         name: 'Druid',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_druid.jpg'
     },
     {
         name: 'Evoker',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_evoker.jpg'
     },
     {
         name: 'Hunter',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_hunter.jpg'
     },
     {
         name: 'Mage',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg'
     },
     {
         name: 'Monk',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_monk.jpg'
     },
     {
         name: 'Paladin',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_paladin.jpg'
     },
     {
         name: 'Priest',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_priest.jpg'
     },
     {
         name: 'Rogue',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_rogue.jpg'
     },
     {
         name: 'Shaman',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_shaman.jpg'
     },
     {
         name: 'Warlock',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_warlock.jpg'
     },
     {
         name: 'Warrior',
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_warrior.jpg'
     }
-
 ]
 
 export const classNames = [
