@@ -12,10 +12,12 @@
             <view-all-keybindings [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
                 [selectedKeybindingName]="selectedKeybindingName" [isAuthenticated]="isAuthenticated"
                 [editingName]="editingName" [nameForm]="nameForm" [opened]="opened"
-                (deleteKeybinding)="deleteKeybinding()" (shareKeybinding)="shareKeybinding()" (editName)="editName()"
-                (saveName)="saveName()" (cancelName)="cancelName()" (togglePublic)="togglePublic()"
-                (refreshChildKeybindings)="refreshChildKeybindings()" (updateKeybinding)="updateKeybinding($event)"
-                (toggleDrawer)="opened = !opened">
+                [currentKeybindingCount]="keybindings.length" [maxKeybindings]="MAX_SIZE"
+                (deleteKeybinding)="deleteKeybinding($event)" (shareKeybinding)="shareKeybinding()"
+                (editName)="editName()" (saveName)="saveName()" (cancelName)="cancelName()"
+                (togglePublic)="togglePublic()" (refreshChildKeybindings)="refreshChildKeybindings()"
+                (updateKeybinding)="updateKeybinding($event)" (toggleDrawer)="opened = !opened"
+                (selectKeybinding)="onKeybindingSelected($event)">
             </view-all-keybindings>
             } @else if (isViewKeybindingRoute) {
             <view-keybinding [keybinding]="viewKeybinding" [isAuthenticated]="isAuthenticated"

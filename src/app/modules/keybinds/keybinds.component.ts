@@ -95,6 +95,8 @@ export class KeybindsComponent implements OnInit {
     isMyKeybindingsRoute: boolean = false;
     isViewKeybindingRoute: boolean = false;
     currentUserId: string | null = null;
+    keybindings: any[] = [];  // Initialize as empty array
+    MAX_SIZE = 10;
 
     constructor(
         private keybindingService: KeybindingService,
@@ -147,6 +149,14 @@ export class KeybindsComponent implements OnInit {
         this.nameForm = this._formBuilder.group({
             name: ['', [Validators.required, Validators.maxLength(32)]]
         });
+
+        // Subscribe to keybindings to keep track of count
+        this.keybindingService.currentKeybindings
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe(keybindings => {
+                this.keybindings = keybindings;
+                console.log('Current keybindings count:', this.keybindings.length);
+            });
 
         // Subscribe to route parameters and query parameters
         this.route.params
@@ -310,16 +320,20 @@ export class KeybindsComponent implements OnInit {
         // You can also perform other actions here
     }
 
-    deleteKeybinding() {
+    deleteKeybinding(keybinding: Keybinding | null) {
+        if (!keybinding) {
+            console.error('No keybinding provided for deletion');
+            return;
+        }
 
         const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-            data: { text: `Are you sure you want to delete "${this.selectedKeybindingName}"?` }
+            data: { text: `Are you sure you want to delete "${keybinding.name}"?` }
         });
 
         dialogRef.afterClosed().subscribe(result => {
             if (result) {
-                console.log('deleting keybinding', this.selectedKeybinding);
-                this.keybindingService.removeKeybinding(this.selectedKeybinding.keybindingId);
+                console.log('deleting keybinding', keybinding);
+                this.keybindingService.removeKeybinding(keybinding.keybindingId);
                 this.selectedKeybinding = null;
                 this.keybindingSelected = false;
                 this.refreshChildKeybindings();
