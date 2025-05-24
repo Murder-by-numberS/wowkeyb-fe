@@ -9,8 +9,9 @@
             </div>
             <div class="ml-6 pr-4 flex">
                 <button class="hidden sm:inline-flex" mat-flat-button color="primary" (click)="onCreateNewKeybinding()"
-                    [disabled]="!isAuthenticated" matTooltip="Create an account to create keybindings"
-                    [matTooltipDisabled]="isAuthenticated">
+                    [disabled]="!isAuthenticated || !canDuplicate"
+                    [matTooltip]="!isAuthenticated ? 'Create an account to create keybindings' : !canDuplicate ? 'Maximum number of keybindings reached' : ''"
+                    [matTooltipDisabled]="isAuthenticated && canDuplicate">
                     <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon>
                     <span class="ml-2">Create New</span>
                 </button>
@@ -23,8 +24,10 @@
                 </button>
 
                 <button class="ml-3 hidden sm:inline-flex" mat-stroked-button
-                    [disabled]="!keybindingSelected || !isAuthenticated" (click)="onDuplicateKeybinding()"
-                    matTooltip="Create an account to duplicate keybindings" [matTooltipDisabled]="isAuthenticated">
+                    [disabled]="!keybindingSelected || !isAuthenticated || !canDuplicate"
+                    (click)="onDuplicateKeybinding()"
+                    [matTooltip]="!isAuthenticated ? 'Create an account to duplicate keybindings' : !canDuplicate ? 'Maximum number of keybindings reached' : ''"
+                    [matTooltipDisabled]="isAuthenticated && canDuplicate">
                     <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:document-duplicate'"></mat-icon>
                     <span class="ml-2">Duplicate</span>
                 </button>

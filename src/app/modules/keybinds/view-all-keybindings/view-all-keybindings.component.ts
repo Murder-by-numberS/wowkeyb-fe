@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Keybinding } from 'app/core/types/keybinding';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +11,8 @@ import { AbilitiesComponent } from '../abilities/abilities.component';
 import { KeyboardComponent } from '../keyboard/keyboard.component';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { KeybindingService } from 'app/core/services/keybinding.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
     selector: 'view-all-keybindings',
@@ -30,7 +32,7 @@ import { Router } from '@angular/router';
         KeyboardComponent
     ]
 })
-export class ViewAllKeybindingsComponent {
+export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
     @Input() keybindingSelected: boolean = false;
     @Input() selectedKeybinding: Keybinding | null = null;
     @Input() selectedKeybindingName: string = '';
@@ -40,8 +42,10 @@ export class ViewAllKeybindingsComponent {
         name: ['', [Validators.required, Validators.maxLength(32)]]
     });
     @Input() opened: boolean = true;
+    @Input() currentKeybindingCount: number = 0;
+    @Input() maxKeybindings: number = 10;
 
-    @Output() deleteKeybinding = new EventEmitter<void>();
+    @Output() deleteKeybinding = new EventEmitter<Keybinding>();
     @Output() shareKeybinding = new EventEmitter<void>();
     @Output() editName = new EventEmitter<void>();
     @Output() saveName = new EventEmitter<void>();
@@ -51,11 +55,40 @@ export class ViewAllKeybindingsComponent {
     @Output() updateKeybinding = new EventEmitter<Keybinding>();
     @Output() toggleDrawer = new EventEmitter<void>();
     @Output() keybindingUpdated = new EventEmitter<Keybinding>();
+    @Output() selectKeybinding = new EventEmitter<Keybinding>();
 
-    constructor(private fb: FormBuilder, private router: Router) { }
+    canDuplicate: boolean = false;
+
+    constructor(
+        private fb: FormBuilder,
+        private router: Router,
+        private keybindingService: KeybindingService,
+        private snackBar: MatSnackBar
+    ) { }
+
+    ngOnInit(): void {
+        this.updateCanDuplicate();
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes['currentKeybindingCount'] || changes['maxKeybindings']) {
+            this.updateCanDuplicate();
+        }
+    }
+
+    private updateCanDuplicate(): void {
+        console.log('Current count:', this.currentKeybindingCount, 'Max:', this.maxKeybindings);
+        this.canDuplicate = this.currentKeybindingCount < this.maxKeybindings;
+        console.log('Can duplicate:', this.canDuplicate);
+    }
 
     onDeleteKeybinding(): void {
-        this.deleteKeybinding.emit();
+        if (!this.selectedKeybinding || !this.isAuthenticated) {
+            console.log('Cannot delete: No keybinding selected or user not authenticated');
+            return;
+        }
+        console.log('Deleting keybinding:', this.selectedKeybinding);
+        this.deleteKeybinding.emit(this.selectedKeybinding);
     }
 
     onShareKeybinding(): void {
@@ -87,11 +120,41 @@ export class ViewAllKeybindingsComponent {
     }
 
     onCreateNewKeybinding(): void {
-        this.router.navigate(['/keybinds/my-keybindings']);
+        if (!this.isAuthenticated || !this.canDuplicate) {
+            return;
+        }
+
+        const newKeybinding: Partial<Keybinding> = {
+            name: 'New Keybinding',
+            class: '',
+            spec: '',
+            heroTalent: '',
+            isPublic: false,
+            keybinds: []
+        };
+
+        this.keybindingService.createKeybinding(newKeybinding as Keybinding).subscribe({
+            next: (createdKeybinding) => {
+                // Refresh the keybindings list
+                this.keybindingService.getKeybindings().subscribe(keybindings => {
+                    // Update the drawer with new keybindings
+                    this.refreshChildKeybindings.emit();
+                    // Set the selected keybinding to the new one
+                    this.updateKeybinding.emit(createdKeybinding);
+                    // Emit the selected keybinding to update the parent component and drawer
+                    this.selectKeybinding.emit(createdKeybinding);
+                    this.snackBar.open('New keybinding created successfully', 'Close', { duration: 3000 });
+                });
+            },
+            error: (error) => {
+                console.error('Error creating keybinding:', error);
+                this.snackBar.open('Error creating keybinding', 'Close', { duration: 3000 });
+            }
+        });
     }
 
     onDuplicateKeybinding(): void {
-        if (!this.selectedKeybinding || !this.isAuthenticated) {
+        if (!this.selectedKeybinding || !this.isAuthenticated || !this.canDuplicate) {
             return;
         }
 
@@ -101,6 +164,23 @@ export class ViewAllKeybindingsComponent {
             keybinding_id: undefined
         };
 
-        this.updateKeybinding.emit(duplicatedKeybinding);
+        this.keybindingService.createKeybinding(duplicatedKeybinding).subscribe({
+            next: (createdKeybinding) => {
+                // Refresh the keybindings list
+                this.keybindingService.getKeybindings().subscribe(keybindings => {
+                    // Update the drawer with new keybindings
+                    this.refreshChildKeybindings.emit();
+                    // Set the selected keybinding to the new one
+                    this.updateKeybinding.emit(createdKeybinding);
+                    // Emit the selected keybinding to update the parent component
+                    this.selectKeybinding.emit(createdKeybinding);
+                    this.snackBar.open('Keybinding duplicated successfully', 'Close', { duration: 3000 });
+                });
+            },
+            error: (error) => {
+                console.error('Error duplicating keybinding:', error);
+                this.snackBar.open('Error duplicating keybinding', 'Close', { duration: 3000 });
+            }
+        });
     }
 }
