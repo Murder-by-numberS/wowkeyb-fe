@@ -348,9 +348,11 @@ export class KeybindsComponent implements OnInit {
                         this.abilitiesComponent.fetchAbilities();
                     }
 
-                    if (!this.selectedKeybinding.spec || !this.selectedKeybinding.heroTalent) {
+                    if (!this.selectedKeybinding?.spec || !this.selectedKeybinding?.heroTalent) {
                         console.log('reseting keyboard')
-                        this.keyboard.resetKeyboard();
+                        if (this.keyboard) {
+                            this.keyboard.resetKeyboard();
+                        }
                     }
 
                 });
@@ -370,7 +372,6 @@ export class KeybindsComponent implements OnInit {
                 }
             }
         });
-
     }
 
     updateKeybinding(update) {

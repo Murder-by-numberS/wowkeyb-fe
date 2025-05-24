@@ -32,7 +32,10 @@
     <div class="max-w-[1400px] mx-auto px-4">
         @for (class of classes; track class.name) {
         <div [id]="'class-' + class.name.toLowerCase().replace(' ', '-')" class="mb-12">
-            <h2 class="text-2xl font-bold mb-4 text-center">{{class.name}}</h2>
+            <div class="flex items-center justify-center gap-3 mb-4">
+                <img [src]="class.icon" [alt]="class.name" class="w-8 h-8">
+                <h2 class="text-2xl font-bold">{{class.name}}</h2>
+            </div>
 
             <div class="grid grid-cols-2 gap-12">
                 <!-- Recent Keybindings -->

@@ -12,7 +12,7 @@
             <mat-expansion-panel hideToggle>
                 <mat-expansion-panel-header>
                     <mat-panel-title>Filter</mat-panel-title>
-                    <mat-panel-description class="text-nowrap">{{selectedClasses.value?.[0] || ''}}
+                    <mat-panel-description class="text-nowrap">{{selectedClasses.value?.[0]?.name || ''}}
                         @if ((selectedClasses.value?.length || 0) > 1) {
                         <span>
                             (+{{(selectedClasses.value?.length || 0) - 1}} {{selectedClasses.value?.length === 2 ?
@@ -27,7 +27,7 @@
                     <mat-label>Classes</mat-label>
                     <mat-select [formControl]="selectedClasses" multiple>
                         <mat-select-trigger>
-                            {{selectedClasses.value?.[0] || ''}}
+                            {{selectedClasses.value?.[0]?.name || ''}}
                             @if ((selectedClasses.value?.length || 0) > 1) {
                             <span>
                                 (+{{(selectedClasses.value?.length || 0) - 1}} {{selectedClasses.value?.length === 2 ?
@@ -37,7 +37,7 @@
                             }
                         </mat-select-trigger>
                         @for (class of classList; track class) {
-                        <mat-option [value]="class">{{class}}</mat-option>
+                        <mat-option [value]="class">{{class.name}}</mat-option>
                         }
                     </mat-select>
                 </mat-form-field>
@@ -60,7 +60,8 @@
             'bg-blue-500 text-white': isSelected(keybinding.keybindingId),
             'bg-gray-200 text-black': !isSelected(keybinding.keybindingId)
          }" (click)="selectKeybinding(keybinding)">
-        <div class="flex-1">
+        <div class="flex-1 flex items-center gap-2">
+            <img [src]="getClassIcon(keybinding.class)" [alt]="keybinding.class" class="w-6 h-6">
             <p>{{keybinding.name}} - {{keybinding.class}}</p>
         </div>
         <div class="flex items-center">

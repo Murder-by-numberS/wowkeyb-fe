@@ -1,55 +1,55 @@
 export const classes = [
     {
         name: 'Death Knight',
-        icon: 'assets/images/classes/death-knight.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_deathknight.jpg'
     },
     {
         name: 'Demon Hunter',
-        icon: 'assets/images/classes/demon-hunter.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_demonhunter.jpg'
     },
     {
         name: 'Druid',
-        icon: 'assets/images/classes/druid.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_druid.jpg'
     },
     {
         name: 'Evoker',
-        icon: 'assets/images/classes/evoker.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_evoker.jpg'
     },
     {
         name: 'Hunter',
-        icon: 'assets/images/classes/hunter.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_hunter.jpg'
     },
     {
         name: 'Mage',
-        icon: 'assets/images/classes/mage.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg'
     },
     {
         name: 'Monk',
-        icon: 'assets/images/classes/monk.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_monk.jpg'
     },
     {
         name: 'Paladin',
-        icon: 'assets/images/classes/paladin.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_paladin.jpg'
     },
     {
         name: 'Priest',
-        icon: 'assets/images/classes/priest.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_priest.jpg'
     },
     {
         name: 'Rogue',
-        icon: 'assets/images/classes/rogue.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_rogue.jpg'
     },
     {
         name: 'Shaman',
-        icon: 'assets/images/classes/shaman.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_shaman.jpg'
     },
     {
         name: 'Warlock',
-        icon: 'assets/images/classes/warlock.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_warlock.jpg'
     },
     {
         name: 'Warrior',
-        icon: 'assets/images/classes/warrior.png'
+        icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_warrior.jpg'
     }
 ]
 

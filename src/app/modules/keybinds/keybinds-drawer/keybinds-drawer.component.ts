@@ -62,9 +62,9 @@ export class KeybindsDrawerComponent implements OnInit {
     @Output() keybindingSelected = new EventEmitter<any>();
     MAX_SIZE = 10;
 
-    selectedClasses = new FormControl<string[]>([]);
+    selectedClasses = new FormControl<any[]>([]);
 
-    classList = classes.map(obj => obj.name);
+    classList = classes;  // Use the full class data instead of just names
 
     filterApplied: boolean = false;
 
@@ -149,7 +149,7 @@ export class KeybindsDrawerComponent implements OnInit {
 
         console.log('apply filter')
         console.log('filter:', this.selectedClasses.value);
-        if (this.selectedClasses.value.length > 0) {
+        if (this.selectedClasses.value?.length > 0) {
             this.filterApplied = true;
             console.log('this.selectedClasses.value', typeof this.selectedClasses.value);
             this.applyFilter();
@@ -158,8 +158,6 @@ export class KeybindsDrawerComponent implements OnInit {
             this.filterApplied = false;
             this.filteredKeybindings = this.keybindings;
         }
-
-        this.selectedClasses.setValue([]);
     }
 
     isSelected(keybindingId: string): boolean {
@@ -188,15 +186,16 @@ export class KeybindsDrawerComponent implements OnInit {
     }
 
     applyFilter() {
-        if (this.filterApplied) {
-            this.filteredKeybindings = this.keybindings.filter(keybinding => this.selectedClasses.value.includes(keybinding.class));
+        if (this.filterApplied && this.selectedClasses.value?.length > 0) {
+            this.filteredKeybindings = this.keybindings.filter(keybinding =>
+                this.selectedClasses.value.some(selectedClass => selectedClass.name === keybinding.class)
+            );
             if (!this.filteredKeybindings.some(keybinding => keybinding.keybindingId === this.selectedKeybindingId)) {
                 this.selectedKeybindingId = null;
                 this.keybindingSelected.emit(null);
             }
         } else {
             this.filteredKeybindings = this.keybindings;
-            // Don't automatically select the first keybinding
         }
     }
 
@@ -204,9 +203,13 @@ export class KeybindsDrawerComponent implements OnInit {
         const selected = this.selectedClasses.value;
         if (!selected || selected.length === 0) {
             this.filteredKeybindings = this.keybindings;
+            this.filterApplied = false;
             return;
         }
-        this.filteredKeybindings = this.keybindings.filter(k => selected.includes(k.class));
+        this.filterApplied = true;
+        this.filteredKeybindings = this.keybindings.filter(k =>
+            selected.some(selectedClass => selectedClass.name === k.class)
+        );
     }
 
     togglePublic(keybinding: Keybinding): void {
@@ -242,5 +245,11 @@ export class KeybindsDrawerComponent implements OnInit {
                     this.snackBar.open('Error updating keybinding status', 'Close', { duration: 3000 });
                 }
             });
+    }
+
+    // Add a method to get the class icon
+    getClassIcon(className: string): string {
+        const classData = this.classList.find(c => c.name === className);
+        return classData?.icon || '';
     }
 }
