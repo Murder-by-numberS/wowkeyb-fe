@@ -47,13 +47,16 @@ export class KeybindingService {
         this.keybindingsSource.next([...currentKeybindings, keybinding]);
     }
 
-    removeKeybinding(id: string) {
-        this.http.delete(`${environment.apiUrl}/keybindings/${id}`).subscribe(() => {
-
-        }, (error) => {
-            console.error('Error deleting keybinding:', error);
-        });
-
+    removeKeybinding(id: string): Observable<void> {
+        return this.http.delete<void>(`${environment.apiUrl}/keybindings/${id}`).pipe(
+            tap(() => {
+                // Update local state after successful deletion
+                const currentKeybindings = this.keybindingsSource.getValue();
+                const updatedKeybindings = currentKeybindings.filter(kb => kb.keybindingId !== id);
+                this.keybindingsSource.next(updatedKeybindings);
+                localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
+            })
+        );
     }
 
     hasKeybindKey(keybindingId: string, key: string): boolean {
@@ -165,6 +168,17 @@ export class KeybindingService {
         return this.http.get<Keybinding>(`${environment.apiUrl}/keybindings/${id}`).pipe(
             tap((keybinding: Keybinding) => {
                 return keybinding;
+            })
+        );
+    }
+
+    duplicateKeybinding(keybindingId: string): Observable<Keybinding> {
+        return this.http.post<Keybinding>(`${environment.apiUrl}/keybindings/${keybindingId}/duplicate`, {}).pipe(
+            tap((newKeybinding: Keybinding) => {
+                // Update the local state with the new keybinding
+                const currentKeybindings = this.keybindingsSource.getValue();
+                this.keybindingsSource.next([...currentKeybindings, newKeybinding]);
+                localStorage.setItem('keybindings', JSON.stringify([...currentKeybindings, newKeybinding]));
             })
         );
     }

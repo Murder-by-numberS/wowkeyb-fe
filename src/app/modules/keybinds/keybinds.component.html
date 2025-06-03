@@ -20,8 +20,10 @@
                 (selectKeybinding)="onKeybindingSelected($event)">
             </view-all-keybindings>
             } @else if (isViewKeybindingRoute) {
-            <view-keybinding [keybinding]="viewKeybinding" [isAuthenticated]="isAuthenticated"
-                (keybindingUpdated)="updateKeybinding($event)" (refreshKeybindings)="refreshChildKeybindings()">
+            <view-keybinding *ngIf="isViewKeybindingRoute" [keybinding]="viewKeybinding"
+                [isAuthenticated]="isAuthenticated" [currentKeybindingCount]="keybindings.length"
+                [maxKeybindings]="MAX_SIZE" (keybindingUpdated)="onKeybindingUpdated($event)"
+                (refreshKeybindings)="refreshChildKeybindings()">
             </view-keybinding>
             }
         </mat-drawer-content>

@@ -333,12 +333,24 @@ export class KeybindsComponent implements OnInit {
         dialogRef.afterClosed().subscribe(result => {
             if (result) {
                 console.log('deleting keybinding', keybinding);
-                this.keybindingService.removeKeybinding(keybinding.keybindingId);
-                this.selectedKeybinding = null;
-                this.keybindingSelected = false;
-                this.refreshChildKeybindings();
-            } else {
-                console.log('Selection cancelled');
+                this.keybindingService.removeKeybinding(keybinding.keybindingId).subscribe({
+                    next: () => {
+                        // Clear the selected keybinding
+                        this.selectedKeybinding = null;
+                        this.keybindingSelected = false;
+                        this.selectedKeybindingName = '';
+                        this.nameForm.get('name')?.setValue('');
+
+                        // Refresh the keybindings list
+                        this.refreshChildKeybindings();
+
+                        this.snackBar.open('Keybinding deleted successfully', 'Close', { duration: 3000 });
+                    },
+                    error: (error) => {
+                        console.error('Error deleting keybinding:', error);
+                        this.snackBar.open('Error deleting keybinding', 'Close', { duration: 3000 });
+                    }
+                });
             }
         });
     }

@@ -13,6 +13,11 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { KeybindingService } from 'app/core/services/keybinding.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
+import { takeUntil } from 'rxjs/operators';
+import { UserService } from 'app/core/user/user.service';
+import { Subject } from 'rxjs';
 
 @Component({
     selector: 'view-all-keybindings',
@@ -58,12 +63,15 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
     @Output() selectKeybinding = new EventEmitter<Keybinding>();
 
     canDuplicate: boolean = false;
+    private _unsubscribeAll: Subject<any> = new Subject<any>();
 
     constructor(
         private fb: FormBuilder,
         private router: Router,
         private keybindingService: KeybindingService,
-        private snackBar: MatSnackBar
+        private snackBar: MatSnackBar,
+        private dialog: MatDialog,
+        private _userService: UserService
     ) { }
 
     ngOnInit(): void {
@@ -158,28 +166,66 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
             return;
         }
 
-        const duplicatedKeybinding = {
-            ...this.selectedKeybinding,
-            name: `${this.selectedKeybinding.name} (Copy)`,
-            keybinding_id: undefined
-        };
+        const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+            data: { text: `Are you sure you want to duplicate "${this.selectedKeybinding.name}"?` }
+        });
 
-        this.keybindingService.createKeybinding(duplicatedKeybinding).subscribe({
-            next: (createdKeybinding) => {
-                // Refresh the keybindings list
-                this.keybindingService.getKeybindings().subscribe(keybindings => {
-                    // Update the drawer with new keybindings
-                    this.refreshChildKeybindings.emit();
-                    // Set the selected keybinding to the new one
-                    this.updateKeybinding.emit(createdKeybinding);
-                    // Emit the selected keybinding to update the parent component
-                    this.selectKeybinding.emit(createdKeybinding);
-                    this.snackBar.open('Keybinding duplicated successfully', 'Close', { duration: 3000 });
+        dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+                this._userService.user$.pipe(takeUntil(this._unsubscribeAll)).subscribe(user => {
+                    if (!user?._id) {
+                        this.snackBar.open('Error: User not found', 'Close', { duration: 3000 });
+                        return;
+                    }
+
+                    // Get all keybindings first
+                    this.keybindingService.getKeybindings().subscribe(allKeybindings => {
+                        const existingKeybindings = allKeybindings;
+                        const originalName = this.selectedKeybinding.name;
+
+                        // Get only the user's keybindings
+                        const userKeybindings = existingKeybindings.filter(kb => kb.userId === user._id);
+                        console.log('User keybindings:', userKeybindings.map(kb => kb.name));
+
+                        // Get the base name without any copy suffix
+                        const baseName = originalName.replace(/ \(copy(?: \d+)?\)$/i, '');
+                        console.log('Base name:', baseName);
+
+                        // Find all copies of this specific keybinding that the user owns
+                        const userCopies = userKeybindings.filter(kb => {
+                            const kbBaseName = kb.name.replace(/ \(copy(?: \d+)?\)$/i, '');
+                            return kbBaseName.toLowerCase() === baseName.toLowerCase();
+                        });
+                        console.log('User copies:', userCopies.map(kb => kb.name));
+
+                        // Count all copies the user has
+                        const userCopyCount = userCopies.length;
+                        const newName = `${baseName} (Copy ${userCopyCount + 1})`;
+
+                        console.log('New name will be:', newName);
+
+                        const duplicatedKeybinding = {
+                            ...this.selectedKeybinding,
+                            name: newName,
+                            keybinding_id: undefined,
+                            userId: user._id
+                        };
+
+                        this.keybindingService.createKeybinding(duplicatedKeybinding).subscribe({
+                            next: (createdKeybinding) => {
+                                this.snackBar.open('Keybinding duplicated successfully', 'Close', { duration: 3000 });
+                                // Navigate to my-keybindings route
+                                this.router.navigate(['/keybinds/my-keybindings'], {
+                                    queryParams: { keybindingId: createdKeybinding.keybindingId }
+                                });
+                            },
+                            error: (error) => {
+                                console.error('Error duplicating keybinding:', error);
+                                this.snackBar.open('Error duplicating keybinding', 'Close', { duration: 3000 });
+                            }
+                        });
+                    });
                 });
-            },
-            error: (error) => {
-                console.error('Error duplicating keybinding:', error);
-                this.snackBar.open('Error duplicating keybinding', 'Close', { duration: 3000 });
             }
         });
     }

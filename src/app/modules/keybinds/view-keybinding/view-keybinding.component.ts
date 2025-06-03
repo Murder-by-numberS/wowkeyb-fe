@@ -8,6 +8,10 @@ import { ViewKeyboardComponent } from '../view-keyboard/view-keyboard.component'
 import { Router, ActivatedRoute } from '@angular/router';
 import { UserService } from 'app/core/user/user.service';
 import { Subject, takeUntil } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
+import { KeybindingService } from 'app/core/services/keybinding.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
     selector: 'view-keybinding',
@@ -24,17 +28,23 @@ import { Subject, takeUntil } from 'rxjs';
 export class ViewKeybindingComponent implements OnInit, OnChanges {
     @Input() keybinding: Keybinding | null = null;
     @Input() isAuthenticated: boolean = false;
+    @Input() currentKeybindingCount: number = 0;
+    @Input() maxKeybindings: number = 10;
     @Output() keybindingUpdated = new EventEmitter<any>();
     @Output() refreshKeybindings = new EventEmitter<void>();
 
     isOwner: boolean = false;
+    canDuplicate: boolean = false;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
     private currentUserId: string | null = null;
 
     constructor(
         private router: Router,
         private route: ActivatedRoute,
-        private _userService: UserService
+        private _userService: UserService,
+        private dialog: MatDialog,
+        private keybindingService: KeybindingService,
+        private snackBar: MatSnackBar
     ) { }
 
     ngOnInit(): void {
@@ -52,6 +62,9 @@ export class ViewKeybindingComponent implements OnInit, OnChanges {
         if (changes['keybinding']) {
             console.log('Keybinding changed:', this.keybinding);
             this.checkOwnership();
+        }
+        if (changes['currentKeybindingCount'] || changes['maxKeybindings']) {
+            this.updateCanDuplicate();
         }
     }
 
@@ -76,6 +89,10 @@ export class ViewKeybindingComponent implements OnInit, OnChanges {
         }
     }
 
+    private updateCanDuplicate(): void {
+        this.canDuplicate = this.currentKeybindingCount < this.maxKeybindings;
+    }
+
     onRefreshChildKeybindings(): void {
         this.refreshKeybindings.emit();
     }
@@ -93,10 +110,71 @@ export class ViewKeybindingComponent implements OnInit, OnChanges {
     }
 
     onDuplicateKeybinding(): void {
-        if (this.keybinding) {
-            this.router.navigate(['/keybinds/my-keybindings'], {
-                state: { duplicateKeybinding: this.keybinding }
-            });
+        if (!this.keybinding || !this.isAuthenticated || !this.canDuplicate) {
+            return;
         }
+
+        const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+            data: { text: `Are you sure you want to duplicate "${this.keybinding.name}"?` }
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+                this._userService.user$.pipe(takeUntil(this._unsubscribeAll)).subscribe(user => {
+                    if (!user?._id) {
+                        this.snackBar.open('Error: User not found', 'Close', { duration: 3000 });
+                        return;
+                    }
+
+                    // Get all keybindings first
+                    this.keybindingService.getKeybindings().subscribe(allKeybindings => {
+                        const existingKeybindings = allKeybindings;
+                        const originalName = this.keybinding.name;
+
+                        // Get only the user's keybindings
+                        const userKeybindings = existingKeybindings.filter(kb => kb.userId === user._id);
+                        console.log('User keybindings:', userKeybindings.map(kb => kb.name));
+
+                        // Get the base name without any copy suffix
+                        const baseName = originalName.replace(/ \(copy(?: \d+)?\)$/i, '');
+                        console.log('Base name:', baseName);
+
+                        // Find all copies of this specific keybinding that the user owns
+                        const userCopies = userKeybindings.filter(kb => {
+                            const kbBaseName = kb.name.replace(/ \(copy(?: \d+)?\)$/i, '');
+                            return kbBaseName.toLowerCase() === baseName.toLowerCase();
+                        });
+                        console.log('User copies:', userCopies.map(kb => kb.name));
+
+                        // Count all copies the user has
+                        const userCopyCount = userCopies.length;
+                        const newName = `${baseName} (Copy ${userCopyCount + 1})`;
+
+                        console.log('New name will be:', newName);
+
+                        const duplicatedKeybinding = {
+                            ...this.keybinding,
+                            name: newName,
+                            keybinding_id: undefined,
+                            userId: user._id
+                        };
+
+                        this.keybindingService.createKeybinding(duplicatedKeybinding).subscribe({
+                            next: (createdKeybinding) => {
+                                this.snackBar.open('Keybinding duplicated successfully', 'Close', { duration: 3000 });
+                                // Navigate to my-keybindings route
+                                this.router.navigate(['/keybinds/my-keybindings'], {
+                                    queryParams: { keybindingId: createdKeybinding.keybindingId }
+                                });
+                            },
+                            error: (error) => {
+                                console.error('Error duplicating keybinding:', error);
+                                this.snackBar.open('Error duplicating keybinding', 'Close', { duration: 3000 });
+                            }
+                        });
+                    });
+                });
+            }
+        });
     }
 }
