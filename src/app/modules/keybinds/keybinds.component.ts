@@ -185,25 +185,33 @@ export class KeybindsComponent implements OnInit {
             .subscribe(params => {
                 if (params['keybindingId'] && this.isMyKeybindingsRoute) {
                     const keybindingId = params['keybindingId'];
+                    const shouldDuplicate = params['duplicate'] === 'true';
+
                     // Ensure drawer is opened
                     this.opened = true;
-                    // Load and select the keybinding
+
+                    // Load the keybinding
                     this.keybindingService.getKeybinding(keybindingId).subscribe({
                         next: (keybinding) => {
-                            // First select the keybinding
-                            this.onKeybindingSelected(keybinding);
-                            // Then update drawer selection after a short delay to ensure component is ready
-                            setTimeout(() => {
-                                if (this.keybindsDrawerComponent) {
-                                    this.keybindsDrawerComponent.setSelectedKeybinding(keybinding);
-                                }
-                            }, 0);
-                            // Remove the query parameter
+                            if (shouldDuplicate) {
+                                // Duplicate the keybinding
+                                this.duplicateKeybinding(keybinding);
+                            } else {
+                                // Just select the keybinding
+                                this.onKeybindingSelected(keybinding);
+                                // Update drawer selection after a short delay
+                                setTimeout(() => {
+                                    if (this.keybindsDrawerComponent) {
+                                        this.keybindsDrawerComponent.setSelectedKeybinding(keybinding);
+                                    }
+                                }, 0);
+                            }
+                            // Remove the query parameters
                             this.router.navigate(['/keybinds/my-keybindings'], { replaceUrl: true });
                         },
                         error: (error) => {
                             console.error('Error loading keybinding:', error);
-                            // Remove the query parameter even if there's an error
+                            // Remove the query parameters even if there's an error
                             this.router.navigate(['/keybinds/my-keybindings'], { replaceUrl: true });
                         }
                     });
@@ -512,10 +520,39 @@ export class KeybindsComponent implements OnInit {
             return;
         }
 
-        this._userService.user$.subscribe(user => {
+        // Get current keybindings to check for existing names
+        const currentKeybindings = this.keybindings;
+
+        // Find all keybindings that start with the same name
+        const baseName = keybinding.name;
+        const existingNames = currentKeybindings
+            .filter(kb => kb.name.startsWith(baseName))
+            .map(kb => kb.name);
+
+        // Generate the new name
+        let newName = `${baseName} (Copy)`;
+        let counter = 1;
+
+        // If there are existing copies, find the highest number and increment
+        const copyRegex = /\(Copy\)(?:\s*(\d+))?$/;
+        const existingCopies = existingNames
+            .map(name => {
+                const match = name.match(copyRegex);
+                return match ? (match[1] ? parseInt(match[1]) : 1) : 0;
+            })
+            .filter(num => !isNaN(num));
+
+        if (existingCopies.length > 0) {
+            counter = Math.max(...existingCopies) + 1;
+            newName = `${baseName} (Copy ${counter})`;
+        }
+
+        this._userService.user$.pipe(
+            takeUntil(this._unsubscribeAll)
+        ).subscribe(user => {
             const newKeybinding = {
                 ...keybinding,
-                name: `${keybinding.name} (Copy)`,
+                name: newName,
                 keybindingId: undefined, // Let the server generate a new ID
                 isPublic: false, // Default to private
                 userId: user._id // Use the user ID from UserService
@@ -531,8 +568,10 @@ export class KeybindsComponent implements OnInit {
                         }
                         // Set the selected keybinding to the new one
                         this.onKeybindingSelected(createdKeybinding);
-                        // Navigate to view all keybindings
-                        this.router.navigate(['/keybinds/view']);
+                        // Navigate to my-keybindings with the new keybinding selected
+                        this.router.navigate(['/keybinds/my-keybindings'], {
+                            queryParams: { keybindingId: createdKeybinding.keybindingId }
+                        });
                     });
                     this.snackBar.open('Keybinding duplicated successfully', 'Close', { duration: 3000 });
                 },

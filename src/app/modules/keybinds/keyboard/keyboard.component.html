@@ -31,9 +31,9 @@
     </div>
 
     <div class="flex-1 overflow-hidden min-h-[500px]">
-        <ngx-panzoom #PanZoom [zoomLevels]="10" [scalePerZoomLevel]="scalePerZoomLevel()" [zoomStepDuration]="0.2"
+        <div #PanZoom appPanZoom [zoomLevels]="10" [scalePerZoomLevel]="scalePerZoomLevel()" [zoomStepDuration]="0.2"
             [freeMouseWheelFactor]="0.01" [zoomToFitZoomLevelFactor]="0.9" [neutralZoomLevel]="neutralZoomLevel()"
-            [zoomOnMouseWheel]="zoomEnabled()" (modelChange)="panzoomModel.set($event)">
+            [zoomOnMouseWheel]="zoomEnabled()" (modelChange)="panzoomModel.set($event)" class="w-full h-full">
             <div class="relative p-5 bg-gray-800 rounded-lg shadow-lg min-w-[800px]">
                 <div class="flex flex-col gap-1">
                     <div *ngFor="let row of keyboardLayout" class="flex gap-1">
@@ -58,6 +58,6 @@
                     </div>
                 </div>
             </div>
-        </ngx-panzoom>
+        </div>
     </div>
 </div>

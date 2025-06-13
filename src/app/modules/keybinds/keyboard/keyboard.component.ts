@@ -1,8 +1,7 @@
 import { Component, ViewEncapsulation, OnInit, viewChild, Input, signal, SimpleChanges, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-
-import { NgxPanZoomModule, PanZoomComponent, PanZoomModel } from 'ngx-panzoom';
+import { PanZoomDirective, PanZoomModel } from 'app/shared/directives/pan-zoom.directive';
 
 //Material
 import { MatButtonModule } from '@angular/material/button';
@@ -28,14 +27,12 @@ interface Key {
     standalone: true,
     imports: [
         CommonModule,
-
         MatButtonModule,
         MatIconModule,
         MatMenuModule,
         MatSidenavModule,
         MatDialogModule,
-
-        NgxPanZoomModule
+        PanZoomDirective
     ],
 })
 export class KeyboardComponent implements OnInit {
@@ -45,7 +42,7 @@ export class KeyboardComponent implements OnInit {
 
     @Output() refreshKeybindings = new EventEmitter<void>();
 
-    readonly panZoom = viewChild(PanZoomComponent);
+    readonly panZoom = viewChild(PanZoomDirective);
     readonly panzoomModel = signal<PanZoomModel>(undefined!);
 
     canZoom: boolean = true;
@@ -148,19 +145,19 @@ export class KeyboardComponent implements OnInit {
     }
 
     onPanDown100Clicked(): void {
-        this.panZoom()?.panDelta({ x: 0, y: 100 });
-    }
-
-    onPanUp100Clicked(): void {
         this.panZoom()?.panDelta({ x: 0, y: -100 });
     }
 
+    onPanUp100Clicked(): void {
+        this.panZoom()?.panDelta({ x: 0, y: 100 });
+    }
+
     onPanRight100Clicked(): void {
-        this.panZoom()?.panDelta({ x: 100, y: 0 });
+        this.panZoom()?.panDelta({ x: -100, y: 0 });
     }
 
     onPanLeft100Clicked(): void {
-        this.panZoom()?.panDelta({ x: -100, y: 0 });
+        this.panZoom()?.panDelta({ x: 100, y: 0 });
     }
 
     zoomEnabled() {

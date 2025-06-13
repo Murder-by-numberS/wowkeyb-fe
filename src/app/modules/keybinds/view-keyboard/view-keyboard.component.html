@@ -1,21 +1,4 @@
 <div class="flex flex-col w-full h-full">
-    <div class="flex items-center justify-between p-4 bg-gray-100">
-        <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2">
-                <span class="text-gray-600">Class:</span>
-                <span class="font-semibold">{{ keybinding?.class }}</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="text-gray-600">Spec:</span>
-                <span class="font-semibold">{{ keybinding?.spec }}</span>
-            </div>
-            <div class="flex items-center gap-2" *ngIf="keybinding?.heroTalent">
-                <span class="text-gray-600">Hero Talent:</span>
-                <span class="font-semibold">{{ keybinding?.heroTalent }}</span>
-            </div>
-        </div>
-    </div>
-
     <div class="flex flex-row p-2 bg-gray-300">
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="reset()">
             <span class="ml-2">Reset</span>
@@ -26,47 +9,50 @@
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="zoomOut()">
             <span class="ml-2">ZoomOut</span>
         </button>
-        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanDown100Clicked()">
+        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panUp()">
             <span class="ml-2">Up</span>
         </button>
-        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanUp100Clicked()">
+        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panDown()">
             <span class="ml-2">Down</span>
         </button>
-        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanRight100Clicked()">
+        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panLeft()">
             <span class="ml-2">Left</span>
         </button>
-        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanLeft100Clicked()">
+        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panRight()">
             <span class="ml-2">Right</span>
         </button>
     </div>
 
     <div class="flex-1 overflow-hidden min-h-[500px]">
-        <ngx-pan-zoom #panZoom [zoomLevels]="10" [scalePerZoomLevel]="scalePerZoomLevel()" [zoomStepDuration]="0.2"
+        <div #panZoom appPanZoom [zoomLevels]="10" [scalePerZoomLevel]="scalePerZoomLevel()" [zoomStepDuration]="0.2"
             [freeMouseWheelFactor]="0.01" [zoomToFitZoomLevelFactor]="0.9" [neutralZoomLevel]="neutralZoomLevel()"
-            [zoomOnMouseWheel]="zoomEnabled()">
+            [zoomOnMouseWheel]="zoomEnabled()" (modelChange)="panzoomModel = $event" class="w-full h-full">
             <div class="relative p-5 bg-gray-800 rounded-lg shadow-lg min-w-[800px]">
                 <div class="flex flex-col gap-1">
-                    <div *ngFor="let row of keyboardLayout" class="flex gap-1">
-                        <div *ngFor="let key of row" cdkDropList
-                            class="bg-gray-700 text-white font-semibold flex justify-center items-center h-12 {{ key.width }} rounded border border-gray-600 shadow-md transition-transform transform duration-300 ease-in-out hover:bg-gray-300 cursor-pointer"
-                            [ngClass]="{ 'bg-green-500': key.keybinds?.length, 'bg-gray-700': !key.keybinds?.length, 'cursor-default': !key.keybinds?.length }">
+                    @for (row of keyboardLayout; track row) {
+                    <div class="flex gap-1">
+                        @for (key of row; track key) {
+                        <div class="bg-gray-700 text-white font-semibold flex justify-center items-center h-12 {{ key.width }} rounded border border-gray-600 shadow-md transition-transform transform duration-300 ease-in-out hover:bg-gray-300 cursor-pointer"
+                            [class.bg-green-500]="key.keybinds?.length" [class.bg-gray-700]="!key.keybinds?.length"
+                            [class.cursor-default]="!key.keybinds?.length">
                             {{ key.label }}
 
-                            <!-- Show up to 3 dots horizontally underneath the key if key has keybinds -->
-                            <div *ngIf="key.keybinds?.length"
-                                class="absolute bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center">
-                                <!-- Loop through up to 3 keybindings and display dots horizontally -->
-                                <div *ngFor="let keybind of key.keybinds.slice(0, 3)"
-                                    class="w-2 h-2 bg-white rounded-full mx-1"></div>
-
-                                <!-- If there are more than 3 keybinds, show the plus sign -->
-                                <div *ngIf="key.keybinds?.length > 3" class="text-white text-sm">+
-                                </div>
+                            @if (key.keybinds?.length) {
+                            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center">
+                                @for (keybind of key.keybinds.slice(0, 3); track keybind) {
+                                <div class="w-2 h-2 bg-white rounded-full mx-1"></div>
+                                }
+                                @if (key.keybinds.length > 3) {
+                                <div class="text-white text-sm">+</div>
+                                }
                             </div>
+                            }
                         </div>
+                        }
                     </div>
+                    }
                 </div>
             </div>
-        </ngx-pan-zoom>
+        </div>
     </div>
 </div>
