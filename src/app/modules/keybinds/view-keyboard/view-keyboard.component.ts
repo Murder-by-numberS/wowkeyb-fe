@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +11,7 @@ interface KeyboardKey {
     label: string;
     width: string;
     isHovered?: boolean;
-    keybinds?: Keybind[];
+    keybinds?: { key: string, spell?: any }[];
 }
 
 @Component({
@@ -27,18 +27,15 @@ interface KeyboardKey {
     ]
 })
 export class ViewKeyboardComponent implements OnChanges {
-    @ViewChild(PanZoomDirective) panZoom!: PanZoomDirective;
     @Input() keybinding: Keybinding | null = null;
-    @Input() zoomEnabled: () => boolean = () => true;
-    @Input() scalePerZoomLevel: () => number = () => 2.0;
-    @Input() neutralZoomLevel: () => number = () => 2;
-
-    canZoom: boolean = true;
-    panzoomModel: PanZoomModel = { zoomLevel: 2, pan: { x: 0, y: 0 } };
+    @Input() zoomEnabled: boolean = true;
+    @Input() scalePerZoomLevel: number = 2.0;
+    @Output() keyClick = new EventEmitter<{ key: string, spell?: any }>();
+    @ViewChild('panZoom') panZoom!: PanZoomDirective;
 
     keyboardLayout: KeyboardKey[][] = [
         [
-            { label: 'ESC', width: 'w-16' },
+            { label: 'Esc', width: 'w-16' },
             { label: 'F1', width: 'w-16' },
             { label: 'F2', width: 'w-16' },
             { label: 'F3', width: 'w-16' },
@@ -96,7 +93,7 @@ export class ViewKeyboardComponent implements OnChanges {
             { label: 'K', width: 'w-16' },
             { label: 'L', width: 'w-16' },
             { label: ';', width: 'w-16' },
-            { label: '\'', width: 'w-16' },
+            { label: "'", width: 'w-16' },
             { label: 'Enter', width: 'w-28' }
         ],
         [
@@ -114,62 +111,63 @@ export class ViewKeyboardComponent implements OnChanges {
             { label: 'Shift', width: 'w-36' }
         ],
         [
-            { label: 'Ctrl', width: 'w-20' },
-            { label: 'Win', width: 'w-20' },
-            { label: 'Alt', width: 'w-20' },
-            { label: 'Space', width: 'w-64' },
-            { label: 'Alt', width: 'w-20' },
-            { label: 'Win', width: 'w-20' },
-            { label: 'Menu', width: 'w-20' },
-            { label: 'Ctrl', width: 'w-20' },
-            { label: '◄', width: 'w-16' },
-            { label: '▲', width: 'w-16' },
-            { label: '▼', width: 'w-16' },
-            { label: '►', width: 'w-16' }
+            { label: 'Ctrl', width: 'w-24' },
+            { label: 'Win', width: 'w-24' },
+            { label: 'Alt', width: 'w-24' },
+            { label: 'Space', width: 'w-96' },
+            { label: 'Alt', width: 'w-24' },
+            { label: 'Win', width: 'w-24' },
+            { label: 'Menu', width: 'w-24' },
+            { label: 'Ctrl', width: 'w-24' }
         ]
     ];
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['keybinding']) {
-            console.log('ViewKeyboard - keybinding changed:', this.keybinding);
+            console.log('Keybinding changed:', this.keybinding);
             this.updateKeyboardBindings();
         }
     }
 
     private updateKeyboardBindings(): void {
-        // First, clear all existing keybindings and hover states
+        // Clear existing keybindings
         this.keyboardLayout.forEach(row => {
-            row.forEach(keyItem => {
-                keyItem.keybinds = [];
-                keyItem.isHovered = false;
+            row.forEach(key => {
+                key.keybinds = [];
+                key.isHovered = false;
             });
         });
 
-        if (this.keybinding?.keybinds) {
-            console.log('ViewKeyboard - updating keybinds:', this.keybinding.keybinds);
-            this.keybinding.keybinds.forEach(keybind => {
-                this.addKeybinding(keybind);
-            });
-        }
+        if (!this.keybinding?.keybinds) return;
+
+        console.log('Updating keybinds:', this.keybinding.keybinds);
+        this.keybinding.keybinds.forEach(keybind => {
+            this.addKeybinding(keybind);
+        });
     }
 
     private addKeybinding(keybind: Keybind): void {
-        const keyParts = keybind.key.toLowerCase().split('+');
-        const mainKey = keyParts[keyParts.length - 1].toUpperCase();
+        const key = this.findKey(keybind.key);
+        if (key) {
+            if (!key.keybinds) {
+                key.keybinds = [];
+            }
+            key.keybinds.push(keybind);
+        }
+    }
 
-        // Find the key in the keyboard layout directly
-        this.keyboardLayout.forEach(row => {
-            row.forEach(keyItem => {
-                if (keyItem.label.toUpperCase() === mainKey) {
-                    // Initialize keybinds if undefined
-                    if (!keyItem.keybinds) {
-                        keyItem.keybinds = [];
-                    }
-                    // Add new keybind
-                    keyItem.keybinds.push(keybind);
-                }
-            });
-        });
+    private findKey(keyLabel: string): KeyboardKey | undefined {
+        for (const row of this.keyboardLayout) {
+            const key = row.find(k => k.label.toLowerCase() === keyLabel.toLowerCase());
+            if (key) return key;
+        }
+        return undefined;
+    }
+
+    onKeyClick(key: string, spell?: any): void {
+        if (spell) {
+            this.keyClick.emit({ key, spell });
+        }
     }
 
     public reset(): void {
@@ -185,11 +183,11 @@ export class ViewKeyboardComponent implements OnChanges {
     }
 
     public panUp(): void {
-        this.panZoom.panDelta({ x: 0, y: -100 });
+        this.panZoom.panDelta({ x: 0, y: 100 });
     }
 
     public panDown(): void {
-        this.panZoom.panDelta({ x: 0, y: 100 });
+        this.panZoom.panDelta({ x: 0, y: -100 });
     }
 
     public panLeft(): void {

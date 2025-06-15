@@ -19,6 +19,7 @@ export class PanZoomDirective implements OnDestroy, OnInit {
     @Input() zoomToFitZoomLevelFactor: number = 0.9;
     @Input() neutralZoomLevel: number = 2;
     @Input() zoomOnMouseWheel: boolean = true;
+    @Input() zoomEnabled: boolean = true;
 
     @Output() modelChange = new EventEmitter<PanZoomModel>();
 
@@ -39,7 +40,7 @@ export class PanZoomDirective implements OnDestroy, OnInit {
 
     @HostListener('wheel', ['$event'])
     onMouseWheel(event: WheelEvent): void {
-        if (!this.zoomOnMouseWheel) return;
+        if (!this.zoomEnabled || !this.zoomOnMouseWheel) return;
         event.preventDefault();
 
         const delta = event.deltaY * this.freeMouseWheelFactor;
@@ -53,6 +54,7 @@ export class PanZoomDirective implements OnDestroy, OnInit {
 
     @HostListener('mousedown', ['$event'])
     onMouseDown(event: MouseEvent): void {
+        if (!this.zoomEnabled) return;
         this.isDragging = true;
         this.lastMousePosition = { x: event.clientX, y: event.clientY };
         this.el.nativeElement.style.cursor = 'grabbing';
@@ -60,7 +62,7 @@ export class PanZoomDirective implements OnDestroy, OnInit {
 
     @HostListener('mousemove', ['$event'])
     onMouseMove(event: MouseEvent): void {
-        if (!this.isDragging) return;
+        if (!this.zoomEnabled || !this.isDragging) return;
 
         const deltaX = event.clientX - this.lastMousePosition.x;
         const deltaY = event.clientY - this.lastMousePosition.y;
@@ -81,18 +83,17 @@ export class PanZoomDirective implements OnDestroy, OnInit {
 
     @HostListener('touchstart', ['$event'])
     onTouchStart(event: TouchEvent): void {
-        if (event.touches.length === 1) {
-            this.isDragging = true;
-            this.lastMousePosition = {
-                x: event.touches[0].clientX,
-                y: event.touches[0].clientY
-            };
-        }
+        if (!this.zoomEnabled || event.touches.length !== 1) return;
+        this.isDragging = true;
+        this.lastMousePosition = {
+            x: event.touches[0].clientX,
+            y: event.touches[0].clientY
+        };
     }
 
     @HostListener('touchmove', ['$event'])
     onTouchMove(event: TouchEvent): void {
-        if (!this.isDragging || event.touches.length !== 1) return;
+        if (!this.zoomEnabled || !this.isDragging || event.touches.length !== 1) return;
 
         const deltaX = event.touches[0].clientX - this.lastMousePosition.x;
         const deltaY = event.touches[0].clientY - this.lastMousePosition.y;
@@ -113,32 +114,33 @@ export class PanZoomDirective implements OnDestroy, OnInit {
     }
 
     public zoomIn(center: 'viewCenter' | 'mousePosition' = 'viewCenter'): void {
-        if (this.currentZoomLevel < this.zoomLevels - 1) {
-            this.currentZoomLevel++;
-            this.updateTransform();
-        }
+        if (!this.zoomEnabled || this.currentZoomLevel >= this.zoomLevels - 1) return;
+        this.currentZoomLevel++;
+        this.updateTransform();
     }
 
     public zoomOut(center: 'viewCenter' | 'mousePosition' = 'viewCenter'): void {
-        if (this.currentZoomLevel > 0) {
-            this.currentZoomLevel--;
-            this.updateTransform();
-        }
+        if (!this.zoomEnabled || this.currentZoomLevel <= 0) return;
+        this.currentZoomLevel--;
+        this.updateTransform();
     }
 
     public panDelta(delta: { x: number; y: number }): void {
+        if (!this.zoomEnabled) return;
         this.currentPan.x += delta.x;
         this.currentPan.y += delta.y;
         this.updateTransform();
     }
 
     public resetView(): void {
+        if (!this.zoomEnabled) return;
         this.currentZoomLevel = this.neutralZoomLevel;
         this.currentPan = { x: 0, y: 0 };
         this.updateTransform();
     }
 
     private updateTransform(): void {
+        if (!this.zoomEnabled) return;
         const scale = Math.pow(this.scalePerZoomLevel, this.currentZoomLevel - this.neutralZoomLevel);
         const transform = `translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${scale})`;
         this.el.nativeElement.style.transform = transform;

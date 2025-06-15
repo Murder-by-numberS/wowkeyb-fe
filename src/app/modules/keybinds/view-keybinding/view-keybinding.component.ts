@@ -4,11 +4,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { Subject, takeUntil } from 'rxjs';
 import { KeybindingService } from '../../../core/services/keybinding.service';
 import { Keybinding } from '../../../core/types/keybinding';
 import { ViewKeyboardComponent } from '../view-keyboard/view-keyboard.component';
 import { AuthService } from '../../../core/services/auth.service';
+import { KeybindDetailsDialogComponent } from './keybind-details-dialog/keybind-details-dialog.component';
 
 @Component({
     selector: 'app-view-keybinding',
@@ -32,7 +34,8 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
         private router: Router,
         private keybindingService: KeybindingService,
         private snackBar: MatSnackBar,
-        private authService: AuthService
+        private authService: AuthService,
+        private dialog: MatDialog
     ) { }
 
     ngOnInit(): void {
@@ -103,6 +106,16 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
                 console.error('Error duplicating keybinding:', error);
                 this.snackBar.open('Error duplicating keybinding', 'Close', { duration: 3000 });
             }
+        });
+    }
+
+    onKeyClick(key: string, spell: any): void {
+        this.dialog.open(KeybindDetailsDialogComponent, {
+            data: {
+                key,
+                spell
+            },
+            width: '400px'
         });
     }
 }

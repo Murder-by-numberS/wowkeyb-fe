@@ -42,6 +42,8 @@
     </div>
 
     <div class="flex-1 overflow-hidden min-h-[500px] relative">
-        <app-view-keyboard [keybinding]="keybinding" class="absolute inset-0"></app-view-keyboard>
+        <app-view-keyboard [keybinding]="keybinding" (keyClick)="onKeyClick($event.key, $event.spell)"
+            class="absolute inset-0">
+        </app-view-keyboard>
     </div>
 </div>
