@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -26,12 +26,12 @@ interface KeyboardKey {
         DragDropModule
     ]
 })
-export class ViewKeyboardComponent implements OnChanges {
+export class ViewKeyboardComponent implements OnChanges, AfterViewInit {
     @Input() keybinding: Keybinding | null = null;
     @Input() zoomEnabled: boolean = true;
     @Input() scalePerZoomLevel: number = 2.0;
     @Output() keyClick = new EventEmitter<{ key: string, spell?: any }>();
-    @ViewChild('panZoom') panZoom!: PanZoomDirective;
+    @ViewChild('panZoom', { read: PanZoomDirective }) panZoom!: PanZoomDirective;
 
     keyboardLayout: KeyboardKey[][] = [
         [
@@ -129,6 +129,13 @@ export class ViewKeyboardComponent implements OnChanges {
         }
     }
 
+    ngAfterViewInit(): void {
+        // Ensure panZoom is initialized
+        if (this.panZoom) {
+            console.log('PanZoom directive initialized');
+        }
+    }
+
     private updateKeyboardBindings(): void {
         // Clear existing keybindings
         this.keyboardLayout.forEach(row => {
@@ -171,30 +178,46 @@ export class ViewKeyboardComponent implements OnChanges {
     }
 
     public reset(): void {
-        this.panZoom.resetView();
+        if (this.panZoom) {
+            this.panZoom.resetView();
+        } else {
+            console.warn('PanZoom directive not initialized');
+        }
     }
 
     public zoomIn(): void {
-        this.panZoom.zoomIn('viewCenter');
+        if (this.panZoom) {
+            this.panZoom.zoomIn('viewCenter');
+        }
     }
 
     public zoomOut(): void {
-        this.panZoom.zoomOut('viewCenter');
+        if (this.panZoom) {
+            this.panZoom.zoomOut('viewCenter');
+        }
     }
 
     public panUp(): void {
-        this.panZoom.panDelta({ x: 0, y: 100 });
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: 0, y: -100 });
+        }
     }
 
     public panDown(): void {
-        this.panZoom.panDelta({ x: 0, y: -100 });
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: 0, y: 100 });
+        }
     }
 
     public panLeft(): void {
-        this.panZoom.panDelta({ x: -100, y: 0 });
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: -100, y: 0 });
+        }
     }
 
     public panRight(): void {
-        this.panZoom.panDelta({ x: 100, y: 0 });
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: 100, y: 0 });
+        }
     }
 }
