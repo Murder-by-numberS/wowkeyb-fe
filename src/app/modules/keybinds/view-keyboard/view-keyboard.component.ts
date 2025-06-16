@@ -1,170 +1,223 @@
-import { Component, Input, ViewChild, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { NgxPanZoomModule, PanZoomComponent } from 'ngx-panzoom';
 import { Keybinding } from 'app/core/types/keybinding';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { Keybind } from 'app/core/types/keybind';
+import { PanZoomDirective, PanZoomModel } from 'app/shared/directives/pan-zoom.directive';
 
-interface Key {
+interface KeyboardKey {
     label: string;
     width: string;
     isHovered?: boolean;
-    keybinds?: Keybind[];
+    keybinds?: { key: string, spell?: any }[];
 }
 
 @Component({
-    selector: 'view-keyboard',
+    selector: 'app-view-keyboard',
     templateUrl: './view-keyboard.component.html',
     standalone: true,
     imports: [
         CommonModule,
         MatButtonModule,
         MatIconModule,
-        NgxPanZoomModule,
+        PanZoomDirective,
         DragDropModule
     ]
 })
-export class ViewKeyboardComponent implements OnChanges {
+export class ViewKeyboardComponent implements OnChanges, AfterViewInit {
     @Input() keybinding: Keybinding | null = null;
-    @ViewChild('panZoom') panZoom: PanZoomComponent | undefined;
+    @Input() zoomEnabled: boolean = true;
+    @Input() scalePerZoomLevel: number = 2.0;
+    @Output() keyClick = new EventEmitter<{ key: string, spell?: any }>();
+    @ViewChild('panZoom', { read: PanZoomDirective }) panZoom!: PanZoomDirective;
 
-    canZoom: boolean = true;
-
-    keyboardLayout: Key[][] = [
-        // Define rows and keys with their respective widths
+    keyboardLayout: KeyboardKey[][] = [
         [
-            { label: 'Esc', width: 'w-12', isHovered: false },
-            { label: 'F1', width: 'w-12', isHovered: false }, { label: 'F2', width: 'w-12', isHovered: false },
-            { label: 'F3', width: 'w-12', isHovered: false }, { label: 'F4', width: 'w-12', isHovered: false },
-            { label: 'F5', width: 'w-12', isHovered: false }, { label: 'F6', width: 'w-12', isHovered: false },
-            { label: 'F7', width: 'w-12', isHovered: false }, { label: 'F8', width: 'w-12', isHovered: false },
-            { label: 'F9', width: 'w-12', isHovered: false }, { label: 'F10', width: 'w-12', isHovered: false },
-            { label: 'F11', width: 'w-12', isHovered: false }, { label: 'F12', width: 'w-12', isHovered: false }
+            { label: 'Esc', width: 'w-16' },
+            { label: 'F1', width: 'w-16' },
+            { label: 'F2', width: 'w-16' },
+            { label: 'F3', width: 'w-16' },
+            { label: 'F4', width: 'w-16' },
+            { label: 'F5', width: 'w-16' },
+            { label: 'F6', width: 'w-16' },
+            { label: 'F7', width: 'w-16' },
+            { label: 'F8', width: 'w-16' },
+            { label: 'F9', width: 'w-16' },
+            { label: 'F10', width: 'w-16' },
+            { label: 'F11', width: 'w-16' },
+            { label: 'F12', width: 'w-16' }
         ],
         [
-            { label: '~', width: 'w-12', isHovered: false }, { label: '1', width: 'w-12', isHovered: false },
-            { label: '2', width: 'w-12', isHovered: false }, { label: '3', width: 'w-12', isHovered: false },
-            { label: '4', width: 'w-12', isHovered: false }, { label: '5', width: 'w-12', isHovered: false },
-            { label: '6', width: 'w-12', isHovered: false }, { label: '7', width: 'w-12', isHovered: false },
-            { label: '8', width: 'w-12', isHovered: false }, { label: '9', width: 'w-12', isHovered: false },
-            { label: '0', width: 'w-12', isHovered: false }, { label: '-', width: 'w-12', isHovered: false },
-            { label: '=', width: 'w-12', isHovered: false }, { label: 'Backspace', width: 'w-24', isHovered: false }
+            { label: '`', width: 'w-16' },
+            { label: '1', width: 'w-16' },
+            { label: '2', width: 'w-16' },
+            { label: '3', width: 'w-16' },
+            { label: '4', width: 'w-16' },
+            { label: '5', width: 'w-16' },
+            { label: '6', width: 'w-16' },
+            { label: '7', width: 'w-16' },
+            { label: '8', width: 'w-16' },
+            { label: '9', width: 'w-16' },
+            { label: '0', width: 'w-16' },
+            { label: '-', width: 'w-16' },
+            { label: '=', width: 'w-16' },
+            { label: 'Backspace', width: 'w-32' }
         ],
         [
-            { label: 'Tab', width: 'w-16', isHovered: false }, { label: 'Q', width: 'w-12', isHovered: false },
-            { label: 'W', width: 'w-12', isHovered: false }, { label: 'E', width: 'w-12', isHovered: false },
-            { label: 'R', width: 'w-12', isHovered: false }, { label: 'T', width: 'w-12', isHovered: false },
-            { label: 'Y', width: 'w-12', isHovered: false }, { label: 'U', width: 'w-12', isHovered: false },
-            { label: 'I', width: 'w-12', isHovered: false }, { label: 'O', width: 'w-12', isHovered: false },
-            { label: 'P', width: 'w-12', isHovered: false }, { label: '[', width: 'w-12', isHovered: false },
-            { label: ']', width: 'w-12', isHovered: false }, { label: '\\', width: 'w-16', isHovered: false }
+            { label: 'Tab', width: 'w-24' },
+            { label: 'Q', width: 'w-16' },
+            { label: 'W', width: 'w-16' },
+            { label: 'E', width: 'w-16' },
+            { label: 'R', width: 'w-16' },
+            { label: 'T', width: 'w-16' },
+            { label: 'Y', width: 'w-16' },
+            { label: 'U', width: 'w-16' },
+            { label: 'I', width: 'w-16' },
+            { label: 'O', width: 'w-16' },
+            { label: 'P', width: 'w-16' },
+            { label: '[', width: 'w-16' },
+            { label: ']', width: 'w-16' },
+            { label: '\\', width: 'w-24' }
         ],
         [
-            { label: 'Caps Lock', width: 'w-20', isHovered: false }, { label: 'A', width: 'w-12', isHovered: false },
-            { label: 'S', width: 'w-12', isHovered: false }, { label: 'D', width: 'w-12', isHovered: false },
-            { label: 'F', width: 'w-12', isHovered: false }, { label: 'G', width: 'w-12', isHovered: false },
-            { label: 'H', width: 'w-12', isHovered: false }, { label: 'J', width: 'w-12', isHovered: false },
-            { label: 'K', width: 'w-12', isHovered: false }, { label: 'L', width: 'w-12', isHovered: false },
-            { label: ';', width: 'w-12', isHovered: false }, { label: '\'', width: 'w-12', isHovered: false },
-            { label: 'Enter', width: 'w-24', isHovered: false }
+            { label: 'Caps', width: 'w-28' },
+            { label: 'A', width: 'w-16' },
+            { label: 'S', width: 'w-16' },
+            { label: 'D', width: 'w-16' },
+            { label: 'F', width: 'w-16' },
+            { label: 'G', width: 'w-16' },
+            { label: 'H', width: 'w-16' },
+            { label: 'J', width: 'w-16' },
+            { label: 'K', width: 'w-16' },
+            { label: 'L', width: 'w-16' },
+            { label: ';', width: 'w-16' },
+            { label: "'", width: 'w-16' },
+            { label: 'Enter', width: 'w-28' }
         ],
         [
-            { label: 'Shift', width: 'w-24', isHovered: false }, { label: 'Z', width: 'w-12', isHovered: false },
-            { label: 'X', width: 'w-12', isHovered: false }, { label: 'C', width: 'w-12', isHovered: false },
-            { label: 'V', width: 'w-12', isHovered: false }, { label: 'B', width: 'w-12', isHovered: false },
-            { label: 'N', width: 'w-12', isHovered: false }, { label: 'M', width: 'w-12', isHovered: false },
-            { label: ',', width: 'w-12', isHovered: false }, { label: '.', width: 'w-12', isHovered: false },
-            { label: '/', width: 'w-12', isHovered: false }, { label: 'Shift', width: 'w-32', isHovered: false }
+            { label: 'Shift', width: 'w-36' },
+            { label: 'Z', width: 'w-16' },
+            { label: 'X', width: 'w-16' },
+            { label: 'C', width: 'w-16' },
+            { label: 'V', width: 'w-16' },
+            { label: 'B', width: 'w-16' },
+            { label: 'N', width: 'w-16' },
+            { label: 'M', width: 'w-16' },
+            { label: ',', width: 'w-16' },
+            { label: '.', width: 'w-16' },
+            { label: '/', width: 'w-16' },
+            { label: 'Shift', width: 'w-36' }
         ],
         [
-            { label: 'Ctrl', width: 'w-16', isHovered: false, }, { label: 'Fn', width: 'w-16', isHovered: false },
-            { label: 'Alt', width: 'w-16', isHovered: false }, { label: 'Space', width: 'w-64', isHovered: false },
-            { label: 'Alt', width: 'w-16', isHovered: false }, { label: 'Ctrl', width: 'w-16', isHovered: false },
-            { label: '◄', width: 'w-16', isHovered: false }, { label: '▲', width: 'w-16', isHovered: false },
-            { label: '▼', width: 'w-16', isHovered: false }, { label: '►', width: 'w-16', isHovered: false }
+            { label: 'Ctrl', width: 'w-24' },
+            { label: 'Win', width: 'w-24' },
+            { label: 'Alt', width: 'w-24' },
+            { label: 'Space', width: 'w-96' },
+            { label: 'Alt', width: 'w-24' },
+            { label: 'Win', width: 'w-24' },
+            { label: 'Menu', width: 'w-24' },
+            { label: 'Ctrl', width: 'w-24' }
         ]
     ];
 
-    scalePerZoomLevel(): number {
-        return 2.0;
-    }
-
-    neutralZoomLevel(): number {
-        return 2;
-    }
-
-    zoomEnabled(): boolean {
-        return this.canZoom;
-    }
-
-    zoomIn(): void {
-        this.panZoom?.zoomIn('viewCenter');
-    }
-
-    zoomOut(): void {
-        this.panZoom?.zoomOut('viewCenter');
-    }
-
-    reset(): void {
-        this.panZoom?.resetView();
-    }
-
-    onPanDown100Clicked(): void {
-        this.panZoom?.panDelta({ x: 0, y: 100 });
-    }
-
-    onPanUp100Clicked(): void {
-        this.panZoom?.panDelta({ x: 0, y: -100 });
-    }
-
-    onPanRight100Clicked(): void {
-        this.panZoom?.panDelta({ x: 100, y: 0 });
-    }
-
-    onPanLeft100Clicked(): void {
-        this.panZoom?.panDelta({ x: -100, y: 0 });
-    }
-
-    ngOnChanges(changes: SimpleChanges) {
+    ngOnChanges(changes: SimpleChanges): void {
         if (changes['keybinding']) {
+            console.log('Keybinding changed:', this.keybinding);
             this.updateKeyboardBindings();
         }
     }
 
-    private updateKeyboardBindings(): void {
-        // First, clear all existing keybindings and hover states
-        this.keyboardLayout.forEach(row => {
-            row.forEach(keyItem => {
-                keyItem.keybinds = [];
-                keyItem.isHovered = false;
-            });
-        });
-
-        if (this.keybinding?.keybinds) {
-            this.keybinding.keybinds.forEach(keybind => {
-                this.addKeybinding(keybind);
-            });
+    ngAfterViewInit(): void {
+        // Ensure panZoom is initialized
+        if (this.panZoom) {
+            console.log('PanZoom directive initialized');
         }
     }
 
-    private addKeybinding(keybind: Keybind): void {
-        const keyParts = keybind.key.toLowerCase().split('+');
-        const mainKey = keyParts[keyParts.length - 1].toUpperCase();
-
-        // Find the key in the keyboard layout directly
+    private updateKeyboardBindings(): void {
+        // Clear existing keybindings
         this.keyboardLayout.forEach(row => {
-            row.forEach(keyItem => {
-                if (keyItem.label.toUpperCase() === mainKey) {
-                    // Initialize keybinds if undefined
-                    if (!keyItem.keybinds) {
-                        keyItem.keybinds = [];
-                    }
-                    // Add new keybind
-                    keyItem.keybinds.push(keybind);
-                }
+            row.forEach(key => {
+                key.keybinds = [];
+                key.isHovered = false;
             });
         });
+
+        if (!this.keybinding?.keybinds) return;
+
+        console.log('Updating keybinds:', this.keybinding.keybinds);
+        this.keybinding.keybinds.forEach(keybind => {
+            this.addKeybinding(keybind);
+        });
+    }
+
+    private addKeybinding(keybind: Keybind): void {
+        const key = this.findKey(keybind.key);
+        if (key) {
+            if (!key.keybinds) {
+                key.keybinds = [];
+            }
+            key.keybinds.push(keybind);
+        }
+    }
+
+    private findKey(keyLabel: string): KeyboardKey | undefined {
+        for (const row of this.keyboardLayout) {
+            const key = row.find(k => k.label.toLowerCase() === keyLabel.toLowerCase());
+            if (key) return key;
+        }
+        return undefined;
+    }
+
+    onKeyClick(key: string, spell?: any): void {
+        if (spell) {
+            this.keyClick.emit({ key, spell });
+        }
+    }
+
+    public reset(): void {
+        if (this.panZoom) {
+            this.panZoom.resetView();
+        } else {
+            console.warn('PanZoom directive not initialized');
+        }
+    }
+
+    public zoomIn(): void {
+        if (this.panZoom) {
+            this.panZoom.zoomIn('viewCenter');
+        }
+    }
+
+    public zoomOut(): void {
+        if (this.panZoom) {
+            this.panZoom.zoomOut('viewCenter');
+        }
+    }
+
+    public panUp(): void {
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: 0, y: -100 });
+        }
+    }
+
+    public panDown(): void {
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: 0, y: 100 });
+        }
+    }
+
+    public panLeft(): void {
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: -100, y: 0 });
+        }
+    }
+
+    public panRight(): void {
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: 100, y: 0 });
+        }
     }
 }

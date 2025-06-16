@@ -5,15 +5,22 @@
             <div class="flex items-center gap-3 mb-2">
                 <img [src]="bind.spell?.icon" class="w-8 h-8" [alt]="bind.spell?.name">
                 <div class="flex-grow">
-                    <div class="font-medium">{{bind.key}}</div>
-                    <div class="font-semibold">{{bind.spell?.name}}</div>
+                    <div class="font-semibold text-lg">{{bind.spell?.name}}</div>
                 </div>
                 <button mat-icon-button color="warn" (click)="toggleRemoval(bind)"
                     [matTooltip]="markedForRemoval.has(bind) ? 'Undo remove' : 'Remove keybind'">
                     <mat-icon>{{markedForRemoval.has(bind) ? 'undo' : 'delete'}}</mat-icon>
                 </button>
             </div>
-            <div class="text-gray-600">{{bind.spell?.description}}</div>
+            <div class="mt-2 flex items-center gap-3">
+                <div class="text-gray-600">Bound to:</div>
+                <div class="px-3 py-1.5 bg-gray-700 text-white rounded-md font-mono text-sm">
+                    {{bind.key}}
+                </div>
+            </div>
+            @if (bind.spell?.description) {
+            <div class="mt-2 text-gray-600">{{bind.spell?.description}}</div>
+            }
         </div>
     </div>
 </mat-dialog-content>

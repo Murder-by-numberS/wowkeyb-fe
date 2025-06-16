@@ -19,12 +19,6 @@
                 (updateKeybinding)="updateKeybinding($event)" (toggleDrawer)="opened = !opened"
                 (selectKeybinding)="onKeybindingSelected($event)">
             </view-all-keybindings>
-            } @else if (isViewKeybindingRoute) {
-            <view-keybinding *ngIf="isViewKeybindingRoute" [keybinding]="viewKeybinding"
-                [isAuthenticated]="isAuthenticated" [currentKeybindingCount]="keybindings.length"
-                [maxKeybindings]="MAX_SIZE" (keybindingUpdated)="onKeybindingUpdated($event)"
-                (refreshKeybindings)="refreshChildKeybindings()">
-            </view-keybinding>
             }
         </mat-drawer-content>
     </mat-drawer-container>

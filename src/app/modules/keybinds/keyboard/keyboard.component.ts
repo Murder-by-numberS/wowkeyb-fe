@@ -1,8 +1,7 @@
-import { Component, ViewEncapsulation, OnInit, viewChild, Input, signal, SimpleChanges, EventEmitter, Output } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, viewChild, Input, signal, SimpleChanges, EventEmitter, Output, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-
-import { NgxPanZoomModule, PanZoomComponent, PanZoomModel } from 'ngx-panzoom';
+import { PanZoomDirective, PanZoomModel } from 'app/shared/directives/pan-zoom.directive';
 
 //Material
 import { MatButtonModule } from '@angular/material/button';
@@ -28,27 +27,25 @@ interface Key {
     standalone: true,
     imports: [
         CommonModule,
-
         MatButtonModule,
         MatIconModule,
         MatMenuModule,
         MatSidenavModule,
         MatDialogModule,
-
-        NgxPanZoomModule
+        PanZoomDirective
     ],
 })
-export class KeyboardComponent implements OnInit {
+export class KeyboardComponent implements OnInit, AfterViewInit {
+    @ViewChild('panZoom', { read: PanZoomDirective }) panZoom!: PanZoomDirective;
+    @Input() scalePerZoomLevel: number = 2.0;
 
     @Input()
     selectedKeybinding: Keybinding;
 
     @Output() refreshKeybindings = new EventEmitter<void>();
 
-    readonly panZoom = viewChild(PanZoomComponent);
-    readonly panzoomModel = signal<PanZoomModel>(undefined!);
-
     canZoom: boolean = true;
+    readonly panzoomModel = signal<PanZoomModel>(undefined!);
 
     keyboardLayout: Key[][] = [
         // Define rows and keys with their respective widths
@@ -127,44 +124,57 @@ export class KeyboardComponent implements OnInit {
         });
     }
 
-    scalePerZoomLevel() {
-        return 2.0;
+    ngAfterViewInit(): void {
+        // Ensure panZoom is initialized
+        if (this.panZoom) {
+            console.log('PanZoom directive initialized');
+        } else {
+            console.warn('PanZoom directive not initialized');
+        }
     }
 
-    neutralZoomLevel() {
-        return 2;
-    }
-
-    reset(): void {
-        this.panZoom()?.resetView();
+    resetView(): void {
+        if (this.panZoom) {
+            this.panZoom.resetView();
+        } else {
+            console.warn('PanZoom directive not initialized');
+        }
     }
 
     zoomIn(): void {
-        this.panZoom()?.zoomIn('viewCenter');
+        if (this.panZoom) {
+            this.panZoom.zoomIn('viewCenter');
+        }
     }
 
     zoomOut(): void {
-        this.panZoom()?.zoomOut('viewCenter');
-    }
-
-    onPanDown100Clicked(): void {
-        this.panZoom()?.panDelta({ x: 0, y: 100 });
+        if (this.panZoom) {
+            this.panZoom.zoomOut('viewCenter');
+        }
     }
 
     onPanUp100Clicked(): void {
-        this.panZoom()?.panDelta({ x: 0, y: -100 });
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: 0, y: -100 });
+        }
     }
 
-    onPanRight100Clicked(): void {
-        this.panZoom()?.panDelta({ x: 100, y: 0 });
+    onPanDown100Clicked(): void {
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: 0, y: 100 });
+        }
     }
 
     onPanLeft100Clicked(): void {
-        this.panZoom()?.panDelta({ x: -100, y: 0 });
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: -100, y: 0 });
+        }
     }
 
-    zoomEnabled() {
-        return this.canZoom;
+    onPanRight100Clicked(): void {
+        if (this.panZoom) {
+            this.panZoom.panDelta({ x: 100, y: 0 });
+        }
     }
 
     private calculateDialogWidth(keybindsCount: number): string {

@@ -1,39 +1,32 @@
 <div class="flex flex-col w-full h-full">
     <div class="flex flex-row p-2 bg-gray-300">
-        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="reset()">
-            <!-- <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon> -->
+        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="resetView()">
             <span class="ml-2">Reset</span>
         </button>
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="zoomIn()">
-            <!-- <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon> -->
             <span class="ml-2">ZoomIn</span>
         </button>
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="zoomOut()">
-            <!-- <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon> -->
             <span class="ml-2">ZoomOut</span>
         </button>
-        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanDown100Clicked()">
-            <!-- <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon> -->
+        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanUp100Clicked()">
             <span class="ml-2">Up</span>
         </button>
-        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanUp100Clicked()">
-            <!-- <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon> -->
+        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanDown100Clicked()">
             <span class="ml-2">Down</span>
         </button>
-        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanRight100Clicked()">
-            <!-- <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon> -->
+        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanLeft100Clicked()">
             <span class="ml-2">Left</span>
         </button>
-        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanLeft100Clicked()">
-            <!-- <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon> -->
+        <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="onPanRight100Clicked()">
             <span class="ml-2">Right</span>
         </button>
     </div>
 
     <div class="flex-1 overflow-hidden min-h-[500px]">
-        <ngx-panzoom #PanZoom [zoomLevels]="10" [scalePerZoomLevel]="scalePerZoomLevel()" [zoomStepDuration]="0.2"
-            [freeMouseWheelFactor]="0.01" [zoomToFitZoomLevelFactor]="0.9" [neutralZoomLevel]="neutralZoomLevel()"
-            [zoomOnMouseWheel]="zoomEnabled()" (modelChange)="panzoomModel.set($event)">
+        <div #panZoom appPanZoom [zoomLevels]="10" [scalePerZoomLevel]="scalePerZoomLevel" [zoomStepDuration]="0.2"
+            [freeMouseWheelFactor]="0.01" [zoomToFitZoomLevelFactor]="0.9" [neutralZoomLevel]="2"
+            [zoomEnabled]="canZoom" (modelChange)="panzoomModel.set($event)" class="w-full h-full">
             <div class="relative p-5 bg-gray-800 rounded-lg shadow-lg min-w-[800px]">
                 <div class="flex flex-col gap-1">
                     <div *ngFor="let row of keyboardLayout" class="flex gap-1">
@@ -51,13 +44,12 @@
                                     class="w-2 h-2 bg-white rounded-full mx-1"></div>
 
                                 <!-- If there are more than 3 keybinds, show the plus sign -->
-                                <div *ngIf="key.keybinds?.length > 3" class="text-white text-sm">+
-                                </div>
+                                <div *ngIf="key.keybinds?.length > 3" class="text-white text-sm">+</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </ngx-panzoom>
+        </div>
     </div>
 </div>
