@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +11,7 @@ import { Keybinding } from '../../../core/types/keybinding';
 import { ViewKeyboardComponent } from '../view-keyboard/view-keyboard.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { KeybindDetailsDialogComponent } from './keybind-details-dialog/keybind-details-dialog.component';
+import { ExpandedKeyboardComponent } from '../expanded-keyboard/expanded-keyboard.component';
 
 @Component({
     selector: 'app-view-keybinding',
@@ -19,7 +20,8 @@ import { KeybindDetailsDialogComponent } from './keybind-details-dialog/keybind-
         CommonModule,
         MatButtonModule,
         MatIconModule,
-        ViewKeyboardComponent
+        ViewKeyboardComponent,
+        ExpandedKeyboardComponent
     ],
     templateUrl: './view-keybinding.component.html'
 })
@@ -27,7 +29,9 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
     keybinding: Keybinding | null = null;
     isOwner = false;
     isAuthenticated = false;
+    isExpanded = false;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
+    @ViewChild('expandedKeyboard') expandedKeyboardComponent?: ExpandedKeyboardComponent;
 
     constructor(
         private route: ActivatedRoute,
@@ -109,13 +113,24 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
         });
     }
 
-    onKeyClick(key: string, spell: any): void {
+    onKeyClick(key: string, keybinds: any[]): void {
         this.dialog.open(KeybindDetailsDialogComponent, {
             data: {
                 key,
-                spell
+                keybinds
             },
             width: '400px'
         });
+    }
+
+    onExpand(): void {
+        this.isExpanded = true;
+        setTimeout(() => {
+            this.expandedKeyboardComponent?.reset();
+        }, 50);
+    }
+
+    onCollapse(): void {
+        this.isExpanded = false;
     }
 }

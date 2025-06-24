@@ -20,6 +20,7 @@ export class PanZoomDirective implements OnDestroy, OnInit {
     @Input() neutralZoomLevel: number = 2;
     @Input() zoomOnMouseWheel: boolean = true;
     @Input() zoomEnabled: boolean = true;
+    @Input() minZoomLevel: number = -4;
 
     @Output() modelChange = new EventEmitter<PanZoomModel>();
 
@@ -36,15 +37,21 @@ export class PanZoomDirective implements OnDestroy, OnInit {
         this.el.nativeElement.style.transformOrigin = 'center center';
         this.el.nativeElement.style.cursor = 'grab';
         this.updateTransform();
+
+        // Add event listener to handle wheel events on the entire container
+        this.el.nativeElement.addEventListener('wheel', this.onMouseWheel.bind(this), { passive: false });
     }
 
     @HostListener('wheel', ['$event'])
     onMouseWheel(event: WheelEvent): void {
         if (!this.zoomEnabled || !this.zoomOnMouseWheel) return;
+
+        // Always prevent default scroll behavior
         event.preventDefault();
+        event.stopPropagation();
 
         const delta = event.deltaY * this.freeMouseWheelFactor;
-        const newZoomLevel = Math.max(0, Math.min(this.zoomLevels - 1, this.currentZoomLevel - delta));
+        const newZoomLevel = Math.max(this.minZoomLevel, Math.min(this.zoomLevels - 1, this.currentZoomLevel - delta));
 
         if (newZoomLevel !== this.currentZoomLevel) {
             this.currentZoomLevel = newZoomLevel;
@@ -120,7 +127,7 @@ export class PanZoomDirective implements OnDestroy, OnInit {
     }
 
     public zoomOut(center: 'viewCenter' | 'mousePosition' = 'viewCenter'): void {
-        if (!this.zoomEnabled || this.currentZoomLevel <= 0) return;
+        if (!this.zoomEnabled || this.currentZoomLevel <= this.minZoomLevel) return;
         this.currentZoomLevel--;
         this.updateTransform();
     }
@@ -152,6 +159,9 @@ export class PanZoomDirective implements OnDestroy, OnInit {
     }
 
     ngOnDestroy(): void {
+        // Remove the wheel event listener
+        this.el.nativeElement.removeEventListener('wheel', this.onMouseWheel.bind(this));
+
         this.destroy$.next();
         this.destroy$.complete();
     }

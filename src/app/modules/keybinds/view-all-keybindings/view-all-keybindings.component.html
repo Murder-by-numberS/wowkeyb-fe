@@ -39,6 +39,14 @@
                     <span class="ml-2">Share</span>
                 </button>
 
+                <button class="ml-3 hidden sm:inline-flex" mat-stroked-button [disabled]="!keybindingSelected"
+                    (click)="isExpanded ? onCollapse() : onExpand()"
+                    [matTooltip]="isExpanded ? 'Collapse Keyboard' : 'Expand Keyboard'">
+                    <mat-icon class="icon-size-5"
+                        [svgIcon]="isExpanded ? 'heroicons_solid:arrows-pointing-in' : 'heroicons_solid:arrows-pointing-out'"></mat-icon>
+                    <span class="ml-2">{{ isExpanded ? 'Collapse' : 'Expand' }}</span>
+                </button>
+
                 <div class="sm:hidden">
                     <button [matMenuTriggerFor]="actionsMenu" mat-icon-button>
                         <mat-icon [svgIcon]="'heroicons_outline:ellipsis-vertical'"></mat-icon>
@@ -51,6 +59,8 @@
                         <button mat-menu-item (click)="onDuplicateKeybinding()"
                             [disabled]="!isAuthenticated">Duplicate</button>
                         <button mat-menu-item (click)="onShareKeybinding()" [disabled]="!isAuthenticated">Share</button>
+                        <button mat-menu-item (click)="isExpanded ? onCollapse() : onExpand()"
+                            [disabled]="!keybindingSelected">{{ isExpanded ? 'Collapse' : 'Expand' }}</button>
                     </mat-menu>
                 </div>
             </div>
@@ -111,14 +121,22 @@
     </div>
 
     <div class="flex flex-col w-full relative">
+        @if (!isExpanded) {
         <div class="w-full bg-gray-300 max-h-48 min-h-48">
             <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
                 (selectionClassChanged)="onRefreshChildKeybindings()"
                 (keybindingUpdated)="onUpdateKeybinding($event)" />
         </div>
+        }
         <div class="w-full relative" style="height: 500px;">
+            @if (isExpanded) {
+            <app-expanded-keyboard [keybinding]="selectedKeybinding" (collapse)="onCollapse()" #expandedKeyboard
+                class="absolute inset-0">
+            </app-expanded-keyboard>
+            } @else {
             <keyboard (refreshKeybindings)="onRefreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding">
             </keyboard>
+            }
         </div>
     </div>
 </div>

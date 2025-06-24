@@ -1,24 +1,31 @@
 <div class="flex flex-col w-full h-full">
     <div class="flex flex-row p-2 bg-gray-300">
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="reset()">
+            <mat-icon>restart_alt</mat-icon>
             <span class="ml-2">Reset</span>
         </button>
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="zoomIn()">
-            <span class="ml-2">ZoomIn</span>
+            <mat-icon>zoom_in</mat-icon>
+            <span class="ml-2">Zoom In</span>
         </button>
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="zoomOut()">
-            <span class="ml-2">ZoomOut</span>
+            <mat-icon>zoom_out</mat-icon>
+            <span class="ml-2">Zoom Out</span>
         </button>
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panUp()">
+            <mat-icon>arrow_upward</mat-icon>
             <span class="ml-2">Up</span>
         </button>
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panDown()">
+            <mat-icon>arrow_downward</mat-icon>
             <span class="ml-2">Down</span>
         </button>
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panLeft()">
+            <mat-icon>arrow_back</mat-icon>
             <span class="ml-2">Left</span>
         </button>
         <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panRight()">
+            <mat-icon>arrow_forward</mat-icon>
             <span class="ml-2">Right</span>
         </button>
     </div>
@@ -33,7 +40,7 @@
                         <div *ngFor="let key of row" cdkDropList
                             class="bg-gray-700 text-white font-semibold flex justify-center items-center h-12 {{ key.width }} rounded border border-gray-600 shadow-md transition-transform transform duration-300 ease-in-out hover:bg-gray-300 cursor-pointer"
                             [ngClass]="{ 'bg-green-500': key.keybinds?.length, 'bg-gray-700': !key.keybinds?.length, 'cursor-default': !key.keybinds?.length }"
-                            (click)="onKeyClick(key.label, key.keybinds?.[0]?.spell)">
+                            (click)="onKeyClick(key.label, key.keybinds)">
                             {{ key.label }}
 
                             <!-- Show up to 3 dots horizontally underneath the key if key has keybinds -->

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Keybinding } from 'app/core/types/keybinding';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { AbilitiesComponent } from '../abilities/abilities.component';
 import { KeyboardComponent } from '../keyboard/keyboard.component';
+import { ExpandedKeyboardComponent } from '../expanded-keyboard/expanded-keyboard.component';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -34,7 +35,8 @@ import { Subject } from 'rxjs';
         MatInputModule,
         MatFormFieldModule,
         AbilitiesComponent,
-        KeyboardComponent
+        KeyboardComponent,
+        ExpandedKeyboardComponent
     ]
 })
 export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
@@ -62,7 +64,10 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
     @Output() keybindingUpdated = new EventEmitter<Keybinding>();
     @Output() selectKeybinding = new EventEmitter<Keybinding>();
 
+    @ViewChild('expandedKeyboard') expandedKeyboardComponent?: ExpandedKeyboardComponent;
+
     canDuplicate: boolean = false;
+    isExpanded: boolean = false;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
 
     constructor(
@@ -125,6 +130,21 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
 
     onUpdateKeybinding(keybinding: Keybinding): void {
         this.updateKeybinding.emit(keybinding);
+    }
+
+    onExpand(): void {
+        this.isExpanded = true;
+        // Collapse the drawer when expanding
+        this.toggleDrawer.emit();
+        setTimeout(() => {
+            this.expandedKeyboardComponent?.reset();
+        }, 50);
+    }
+
+    onCollapse(): void {
+        this.isExpanded = false;
+        // Re-expand the drawer when collapsing
+        this.toggleDrawer.emit();
     }
 
     onCreateNewKeybinding(): void {
