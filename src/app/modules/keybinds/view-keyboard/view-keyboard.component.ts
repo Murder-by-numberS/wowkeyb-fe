@@ -11,7 +11,19 @@ interface KeyboardKey {
     label: string;
     width: string;
     isHovered?: boolean;
-    keybinds?: { key: string, spell?: any }[];
+    keybinds?: {
+        key: string,
+        spell: {
+            key: string,
+            description: string,
+            icon: string,
+            id: number,
+            keybinding: string,
+            name: string,
+            spellId: string
+        },
+        modifiers?: string[]
+    }[];
 }
 
 @Component({
@@ -30,7 +42,7 @@ export class ViewKeyboardComponent implements OnChanges, AfterViewInit {
     @Input() keybinding: Keybinding | null = null;
     @Input() zoomEnabled: boolean = true;
     @Input() scalePerZoomLevel: number = 2.0;
-    @Output() keyClick = new EventEmitter<{ key: string, spell?: any }>();
+    @Output() keyClick = new EventEmitter<{ key: string, keybinds: any[] }>();
     @ViewChild('panZoom', { read: PanZoomDirective }) panZoom!: PanZoomDirective;
 
     keyboardLayout: KeyboardKey[][] = [
@@ -154,12 +166,24 @@ export class ViewKeyboardComponent implements OnChanges, AfterViewInit {
     }
 
     private addKeybinding(keybind: Keybind): void {
-        const key = this.findKey(keybind.key);
+        // Parse modifiers and base key
+        let modifiers: string[] = [];
+        let baseKey = keybind.key;
+        if (keybind.key.includes('+')) {
+            const parts = keybind.key.split('+');
+            modifiers = parts.slice(0, -1);
+            baseKey = parts[parts.length - 1];
+        }
+        const key = this.findKey(baseKey);
         if (key) {
             if (!key.keybinds) {
                 key.keybinds = [];
             }
-            key.keybinds.push(keybind);
+            key.keybinds.push({
+                key: baseKey,
+                spell: keybind.spell,
+                modifiers: modifiers
+            });
         }
     }
 
@@ -171,9 +195,9 @@ export class ViewKeyboardComponent implements OnChanges, AfterViewInit {
         return undefined;
     }
 
-    onKeyClick(key: string, spell?: any): void {
-        if (spell) {
-            this.keyClick.emit({ key, spell });
+    onKeyClick(key: string, keybinds?: any[]): void {
+        if (keybinds && keybinds.length > 0) {
+            this.keyClick.emit({ key, keybinds });
         }
     }
 

@@ -16,6 +16,16 @@
             }
             }
         </div>
+        <div class="flex items-center gap-4">
+            <button mat-stroked-button (click)="onExpand()" *ngIf="!isExpanded">
+                <mat-icon>expand</mat-icon>
+                <span class="ml-2">Expand View</span>
+            </button>
+            <button mat-stroked-button (click)="onCollapse()" *ngIf="isExpanded">
+                <mat-icon>compress</mat-icon>
+                <span class="ml-2">Collapse</span>
+            </button>
+        </div>
     </div>
 
     <div class="flex flex-row p-4 bg-gray-100 border-t border-gray-200">
@@ -42,8 +52,14 @@
     </div>
 
     <div class="flex-1 overflow-hidden min-h-[500px] relative">
-        <app-view-keyboard [keybinding]="keybinding" (keyClick)="onKeyClick($event.key, $event.spell)"
+        @if (isExpanded) {
+        <app-expanded-keyboard [keybinding]="keybinding" (collapse)="onCollapse()" #expandedKeyboard
+            class="absolute inset-0">
+        </app-expanded-keyboard>
+        } @else {
+        <app-view-keyboard [keybinding]="keybinding" (keyClick)="onKeyClick($event.key, $event.keybinds)"
             class="absolute inset-0">
         </app-view-keyboard>
+        }
     </div>
 </div>

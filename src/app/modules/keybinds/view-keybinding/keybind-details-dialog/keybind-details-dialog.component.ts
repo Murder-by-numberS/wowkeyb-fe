@@ -7,11 +7,19 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 interface KeybindDetailsDialogData {
     key: string;
-    spell: {
-        name: string;
-        icon: string;
-        description?: string;
-    };
+    keybinds: {
+        key: string;
+        modifiers?: string[];
+        spell: {
+            key: string,
+            description: string,
+            icon: string,
+            id: number,
+            keybinding: string,
+            name: string,
+            spellId: string
+        };
+    }[];
 }
 
 @Component({
@@ -28,22 +36,20 @@ interface KeybindDetailsDialogData {
         <h2 mat-dialog-title>Keybind Details</h2>
         <mat-dialog-content>
             <div class="py-4">
-                <div class="mb-4">
+                <div *ngFor="let keybind of data.keybinds" class="mb-6">
                     <div class="flex items-center gap-3 mb-2">
-                        <img [src]="data.spell.icon" class="w-8 h-8" [alt]="data.spell.name">
+                        <img [src]="keybind.spell.icon" class="w-8 h-8" [alt]="keybind.spell.name">
                         <div class="flex-grow">
-                            <div class="font-semibold text-lg">{{ data.spell.name }}</div>
+                            <div class="font-semibold text-lg">{{ keybind.spell.name }}</div>
                         </div>
                     </div>
-                    <div class="mt-4 flex items-center gap-3">
+                    <div class="mt-2 flex items-center gap-3">
                         <div class="text-gray-600">Bound to:</div>
                         <div class="px-3 py-1.5 bg-gray-700 text-white rounded-md font-mono text-sm">
-                            {{ data.key }}
+                            <span *ngIf="keybind.modifiers?.length">{{ keybind.modifiers.join('+') }}+</span>{{ data.key }}
                         </div>
                     </div>
-                    @if (data.spell.description) {
-                        <div class="mt-4 text-gray-600">{{ data.spell.description }}</div>
-                    }
+                    <div *ngIf="keybind.spell.description" class="mt-2 text-gray-600">{{ keybind.spell.description }}</div>
                 </div>
             </div>
         </mat-dialog-content>

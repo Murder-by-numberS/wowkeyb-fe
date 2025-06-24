@@ -8,5 +8,6 @@ export interface Keybind {
         keybinding: string,
         name: string,
         spellId: string
-    }
+    };
+    modifiers?: string[];
 }
