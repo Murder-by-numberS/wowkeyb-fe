@@ -79,7 +79,7 @@
                             <span>Edit</span>
                         </button>
                     </div>
-                    <div class="px-2">
+                    <div class="px-2 flex items-center gap-2">
                         @if (selectedKeybinding.is_public) {
                         <button mat-stroked-button color="primary" matTooltip="Make Private" (click)="onTogglePublic()"
                             [disabled]="!isAuthenticated"
@@ -94,6 +94,15 @@
                             <mat-icon>public_off</mat-icon>
                             <span class="ml-2">Private</span>
                         </button>
+                        }
+                        @if (selectedKeybinding.version?.game_version) {
+                        <span class="ml-2">Game Version:</span>
+                        <span class="ml-1">{{ selectedKeybinding.version.game_version }}</span>
+                        @if (isOutdated$ | async) {
+                        <button class="ml-2" mat-stroked-button color="warn" (click)="onMigrateVersion()">
+                            Migrate Version
+                        </button>
+                        }
                         }
                     </div>
                     }

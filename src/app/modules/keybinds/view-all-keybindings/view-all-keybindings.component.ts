@@ -16,9 +16,10 @@ import { KeybindingService } from 'app/core/services/keybinding.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, map } from 'rxjs/operators';
 import { UserService } from 'app/core/user/user.service';
-import { Subject } from 'rxjs';
+import { Subject, Observable, of } from 'rxjs';
+import { VersionCompareService } from 'app/core/services/version-compare.service';
 
 @Component({
     selector: 'view-all-keybindings',
@@ -69,6 +70,7 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
     canDuplicate: boolean = false;
     isExpanded: boolean = false;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
+    isOutdated$: Observable<boolean> = of(false);
 
     constructor(
         private fb: FormBuilder,
@@ -76,7 +78,8 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
         private keybindingService: KeybindingService,
         private snackBar: MatSnackBar,
         private dialog: MatDialog,
-        private _userService: UserService
+        private _userService: UserService,
+        private versionCompare: VersionCompareService
     ) { }
 
     ngOnInit(): void {
@@ -87,12 +90,31 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
         if (changes['currentKeybindingCount'] || changes['maxKeybindings']) {
             this.updateCanDuplicate();
         }
+        if (changes['selectedKeybinding']) {
+            this.checkIfOutdated();
+        }
     }
 
     private updateCanDuplicate(): void {
         console.log('Current count:', this.currentKeybindingCount, 'Max:', this.maxKeybindings);
         this.canDuplicate = this.currentKeybindingCount < this.maxKeybindings;
         console.log('Can duplicate:', this.canDuplicate);
+    }
+
+    checkIfOutdated() {
+        const version = this.selectedKeybinding?.version?.game_version;
+        if (version) {
+            this.isOutdated$ = this.versionCompare.compareToLatest(version).pipe(
+                map(result => result < 0)
+            );
+        } else {
+            this.isOutdated$ = of(false);
+        }
+    }
+
+    onMigrateVersion() {
+        // Implement your migration logic here
+        alert('Migrate version logic goes here!');
     }
 
     onDeleteKeybinding(): void {

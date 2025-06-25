@@ -11,6 +11,17 @@ export interface Keybinding {
     createdAt: string;
     keybinds: Keybind[];
     views?: number;
+    version?: {
+        _id: string;
+        game_version: string;
+        createdAt: string;
+        updatedAt: string;
+        __v: number;
+    };
+    versionDetails?: {
+        versionId: string;
+        gameVersion: string;
+    };
 }
 
 export interface HomeKeybindingsResponse {

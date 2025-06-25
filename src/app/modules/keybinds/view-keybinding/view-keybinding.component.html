@@ -48,6 +48,12 @@
                 <span class="font-medium">{{ keybinding.heroTalent }}</span>
             </div>
             }
+            @if (keybinding?.version?.game_version) {
+            <div class="flex items-center gap-2">
+                <span class="text-gray-600">Game Version:</span>
+                <span class="font-medium">{{ keybinding.version.game_version }}</span>
+            </div>
+            }
         </div>
     </div>
 
