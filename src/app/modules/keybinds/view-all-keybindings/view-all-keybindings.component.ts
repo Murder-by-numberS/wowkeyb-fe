@@ -143,8 +143,10 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
 
     onCollapse(): void {
         this.isExpanded = false;
-        // Re-expand the drawer when collapsing
-        this.toggleDrawer.emit();
+        // Always ensure the drawer is open when collapsing
+        if (!this.opened) {
+            this.toggleDrawer.emit();
+        }
     }
 
     onCreateNewKeybinding(): void {
