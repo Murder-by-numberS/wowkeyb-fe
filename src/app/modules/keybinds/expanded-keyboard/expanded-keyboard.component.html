@@ -35,7 +35,7 @@
     <!-- Keyboard area -->
     <div class="flex-1 overflow-hidden min-h-0">
         <div class="w-full h-full bg-gray-800" #panZoom appPanZoom [zoomLevels]="10"
-            [scalePerZoomLevel]="scalePerZoomLevel" [zoomStepDuration]="0.2" [freeMouseWheelFactor]="0.01"
+            [scalePerZoomLevel]="scalePerZoomLevel" [zoomStepDuration]="0.15" [freeMouseWheelFactor]="mouseWheelFactor"
             [zoomToFitZoomLevelFactor]="0.9" [neutralZoomLevel]="-6" [minZoomLevel]="-8" [zoomEnabled]="zoomEnabled">
             <div class="flex items-center justify-center w-full h-full">
                 <div class="relative p-5 bg-gray-800 rounded-lg shadow-lg min-w-[4800px]"

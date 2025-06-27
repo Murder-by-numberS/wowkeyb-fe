@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ViewChild, AfterViewInit, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -38,10 +38,11 @@ interface KeyboardKey {
         DragDropModule
     ]
 })
-export class ViewKeyboardComponent implements OnChanges, AfterViewInit {
+export class ViewKeyboardComponent implements OnChanges, AfterViewInit, OnInit {
     @Input() keybinding: Keybinding | null = null;
     @Input() zoomEnabled: boolean = true;
     @Input() scalePerZoomLevel: number = 2.0;
+    @Input() mouseWheelFactor: number = 0.005; // Configurable zoom sensitivity
     @Output() keyClick = new EventEmitter<{ key: string, keybinds: any[] }>();
     @ViewChild('panZoom', { read: PanZoomDirective }) panZoom!: PanZoomDirective;
 
@@ -146,6 +147,45 @@ export class ViewKeyboardComponent implements OnChanges, AfterViewInit {
         if (this.panZoom) {
             console.log('PanZoom directive initialized');
         }
+    }
+
+    ngOnInit(): void {
+        // Detect input device and adjust zoom sensitivity
+        this.detectInputDevice();
+    }
+
+    private detectInputDevice(): void {
+        // Check if the device supports touch events (likely a laptop with touchpad)
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        // Check if it's a mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        if (isTouchDevice && !isMobile) {
+            // Likely a laptop with touchpad - use higher sensitivity
+            this.mouseWheelFactor = 0.008;
+        } else if (isMobile) {
+            // Mobile device - use very high sensitivity for touch gestures
+            this.mouseWheelFactor = 0.015;
+        } else {
+            // Desktop with mouse wheel - use lower sensitivity
+            this.mouseWheelFactor = 0.003;
+        }
+    }
+
+    /**
+     * Manually adjust zoom sensitivity
+     * @param factor - The zoom factor (0.001 to 0.02 recommended)
+     */
+    public setZoomSensitivity(factor: number): void {
+        this.mouseWheelFactor = Math.max(0.001, Math.min(0.02, factor));
+    }
+
+    /**
+     * Get current zoom sensitivity
+     */
+    public getZoomSensitivity(): number {
+        return this.mouseWheelFactor;
     }
 
     private updateKeyboardBindings(): void {
