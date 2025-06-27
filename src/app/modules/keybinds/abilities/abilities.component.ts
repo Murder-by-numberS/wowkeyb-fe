@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
 import { AbilitiesService } from 'app/core/services/abilities.service';
+import { VersionCompareService } from 'app/core/services/version-compare.service';
 
 //Components
 import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog.component';
@@ -72,6 +73,7 @@ export class AbilitiesComponent implements OnInit {
     constructor(
         private keybindingService: KeybindingService,
         private abilitiesService: AbilitiesService,
+        private versionCompare: VersionCompareService,
         private dialog: MatDialog
     ) {
         this.keybindingSelected = false;
@@ -323,20 +325,38 @@ export class AbilitiesComponent implements OnInit {
                 formattedHeroTalent = 'san-layn';
             }
 
-            this.abilitiesService.getAbilities(
-                formattedClass,
-                formattedSpec,
-                formattedHeroTalent
-            ).subscribe((data) => {
-                //loop through abilities and add the keybindings to the abilities from the selectedKeybinding
-                data.forEach(ability => {
-                    ability.keybindings = this.selectedKeybinding.keybinds.filter(keybind => keybind.spell.spellId == ability.spellId).map(keybind => keybind.key);
+            // Get game version from selected keybinding, fallback to latest version
+            const gameVersion = this.selectedKeybinding?.version?.game_version;
+
+            if (gameVersion) {
+                // Use keybinding's game version
+                this.fetchAbilitiesWithVersion(formattedClass, formattedSpec, formattedHeroTalent, gameVersion);
+            } else {
+                // Fallback to latest version
+                this.versionCompare.getLatestVersion().subscribe(latestVersion => {
+                    this.fetchAbilitiesWithVersion(formattedClass, formattedSpec, formattedHeroTalent, latestVersion);
+                }, error => {
+                    console.error('Error getting latest version:', error);
                 });
-                this.abilities = data;
-            }, (err) => {
-                console.log('getAbilities - err', err);
-            });
+            }
         }
+    }
+
+    private fetchAbilitiesWithVersion(formattedClass: string, formattedSpec: string, formattedHeroTalent: string, gameVersion: string) {
+        this.abilitiesService.getAbilities(
+            formattedClass,
+            formattedSpec,
+            formattedHeroTalent,
+            gameVersion
+        ).subscribe((data) => {
+            //loop through abilities and add the keybindings to the abilities from the selectedKeybinding
+            data.forEach(ability => {
+                ability.keybindings = this.selectedKeybinding.keybinds.filter(keybind => keybind.spell.spellId == ability.spellId).map(keybind => keybind.key);
+            });
+            this.abilities = data;
+        }, (err) => {
+            console.log('getAbilities - err', err);
+        });
     }
 
     selectKey(ability: Ability) {

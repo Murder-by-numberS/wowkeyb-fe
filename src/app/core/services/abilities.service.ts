@@ -26,12 +26,9 @@ export class AbilitiesService {
     // }
 
     // //gets all proposals
-    getAbilities(wowClass: string, spec: string, heroTalent: string): Observable<any> {
-
+    getAbilities(wowClass: string, spec: string, heroTalent: string, gameVersion: string): Observable<any> {
         //lowercase class spec and heroTalent
-
-        const urlString = `${environment.apiUrl}/abilities/${formatString(wowClass.toLowerCase())}/${formatString(spec.toLowerCase())}/${formatString(heroTalent.toLowerCase())}`;
-
+        const urlString = `${environment.apiUrl}/abilities/${formatString(wowClass.toLowerCase())}/${formatString(spec.toLowerCase())}/${formatString(heroTalent.toLowerCase())}/${gameVersion}`;
         return this.http.get(urlString);
     }
 

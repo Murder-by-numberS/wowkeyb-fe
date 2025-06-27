@@ -1,6 +1,6 @@
 <div class="flex flex-col w-full h-full">
     <!-- Toolbar -->
-    <div class="sticky top-0 z-20 bg-white">
+    <div class="sticky top-0 z-20 bg-white flex-shrink-0">
         <div class="flex flex-row p-2 bg-gray-300" #toolbarElem>
             <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="reset()">
                 <mat-icon>restart_alt</mat-icon>
@@ -33,12 +33,13 @@
         </div>
     </div>
     <!-- Keyboard area -->
-    <div class="flex-1 overflow-hidden">
+    <div class="flex-1 overflow-hidden min-h-0">
         <div class="w-full h-full bg-gray-800" #panZoom appPanZoom [zoomLevels]="10"
             [scalePerZoomLevel]="scalePerZoomLevel" [zoomStepDuration]="0.2" [freeMouseWheelFactor]="0.01"
             [zoomToFitZoomLevelFactor]="0.9" [neutralZoomLevel]="-6" [minZoomLevel]="-8" [zoomEnabled]="zoomEnabled">
             <div class="flex items-center justify-center w-full h-full">
-                <div class="relative p-5 bg-gray-800 rounded-lg shadow-lg min-w-[4800px]" #keyboardContainer>
+                <div class="relative p-5 bg-gray-800 rounded-lg shadow-lg min-w-[4800px]"
+                    [ngStyle]="{'min-height.px': keyboardLayout.length * 250}" #keyboardContainer>
                     <div class="flex flex-col gap-12">
                         <div *ngFor="let row of keyboardLayout; let rowIdx = index" class="flex gap-12">
                             <div *ngFor="let key of row; let colIdx = index" cdkDropList

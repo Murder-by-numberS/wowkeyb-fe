@@ -129,23 +129,23 @@
         </div>
     </div>
 
-    <div class="flex flex-col w-full relative">
+    <div class="flex flex-col w-full relative flex-1">
         @if (!isExpanded) {
         <div class="w-full bg-gray-300 max-h-48 min-h-48">
             <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
                 (selectionClassChanged)="onRefreshChildKeybindings()"
                 (keybindingUpdated)="onUpdateKeybinding($event)" />
         </div>
-        }
         <div class="w-full relative" style="height: 500px;">
-            @if (isExpanded) {
+            <keyboard (refreshKeybindings)="onRefreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding">
+            </keyboard>
+        </div>
+        } @else {
+        <div class="w-full relative flex-1">
             <app-expanded-keyboard [keybinding]="selectedKeybinding" (collapse)="onCollapse()" #expandedKeyboard
                 class="absolute inset-0">
             </app-expanded-keyboard>
-            } @else {
-            <keyboard (refreshKeybindings)="onRefreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding">
-            </keyboard>
-            }
         </div>
+        }
     </div>
 </div>
