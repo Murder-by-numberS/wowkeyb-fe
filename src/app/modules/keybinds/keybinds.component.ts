@@ -397,7 +397,10 @@ export class KeybindsComponent implements OnInit {
 
                     if (this.abilitiesComponent) {
                         this.abilitiesComponent.abilities = [];
-                        this.abilitiesComponent.fetchAbilities();
+                        // Only fetch abilities if both spec and hero talent are selected
+                        if (this.selectedKeybinding?.spec && this.selectedKeybinding?.heroTalent) {
+                            this.abilitiesComponent.fetchAbilities();
+                        }
                     }
 
                     if (!this.selectedKeybinding?.spec || !this.selectedKeybinding?.heroTalent) {
@@ -436,7 +439,10 @@ export class KeybindsComponent implements OnInit {
 
                     if (this.abilitiesComponent) {
                         this.abilitiesComponent.abilities = [];
-                        this.abilitiesComponent.fetchAbilities();
+                        // Only fetch abilities if both spec and hero talent are selected
+                        if (this.selectedKeybinding?.spec && this.selectedKeybinding?.heroTalent) {
+                            this.abilitiesComponent.fetchAbilities();
+                        }
                     }
                 }
             }

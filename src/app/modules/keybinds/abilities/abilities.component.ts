@@ -96,12 +96,27 @@ export class AbilitiesComponent implements OnInit {
                         : this.selectedKeybinding.heroTalent === 'Elunes Chosen'
                             ? 'Elune\'s Chosen'
                             : this.selectedKeybinding.heroTalent;
-                this.specs = Object.keys(fullClasses[this.selectedKeybindingClass].specs);
-                this.heroTalents = fullClasses[this.selectedKeybindingClass].specs[this.selectedKeybindingSpec]
-                if (this.selectedKeybindingSpec && this.selectedKeybindingHeroTalent) {
-                    this.fetchAbilities();
+
+                // Clear abilities first to prevent showing previous keybinding's abilities
+                this.abilities = [];
+
+                if (this.selectedKeybindingClass) {
+                    this.specs = Object.keys(fullClasses[this.selectedKeybindingClass].specs);
+
+                    // Only set hero talents if spec is selected
+                    if (this.selectedKeybindingSpec) {
+                        this.heroTalents = fullClasses[this.selectedKeybindingClass].specs[this.selectedKeybindingSpec];
+                    } else {
+                        this.heroTalents = [];
+                    }
+
+                    // Only fetch abilities if both spec and hero talent are selected
+                    if (this.selectedKeybindingSpec && this.selectedKeybindingHeroTalent) {
+                        this.fetchAbilities();
+                    }
                 } else {
-                    this.abilities = [];
+                    this.specs = [];
+                    this.heroTalents = [];
                 }
             } else {
                 // Reset all values when no keybinding is selected
@@ -316,7 +331,7 @@ export class AbilitiesComponent implements OnInit {
             heroTalent: this.selectedKeybindingHeroTalent
         });
 
-        if (this.selectedKeybindingClass, this.selectedKeybindingSpec, this.selectedKeybindingHeroTalent) {
+        if (this.selectedKeybindingClass && this.selectedKeybindingSpec && this.selectedKeybindingHeroTalent) {
             const formattedClass = this.selectedKeybindingClass?.replace(/\s+/g, '');
             const formattedSpec = this.selectedKeybindingSpec?.replace(/\s+/g, '-');
             let formattedHeroTalent = this.selectedKeybindingHeroTalent?.toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
