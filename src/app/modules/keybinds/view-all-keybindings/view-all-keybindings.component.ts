@@ -113,8 +113,67 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
     }
 
     onMigrateVersion() {
-        // Implement your migration logic here
-        alert('Migrate version logic goes here!');
+        if (!this.selectedKeybinding?.keybindingId) {
+            this.snackBar.open('No keybinding selected for migration', 'Close', { duration: 3000 });
+            return;
+        }
+
+        const currentVersion = this.selectedKeybinding?.version?.game_version || 'Unknown';
+
+        // Get the latest version and show confirmation dialog
+        this.versionCompare.getLatestVersion().subscribe({
+            next: (latestVersion) => {
+                const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+                    data: {
+                        text: `Are you sure you want to migrate "${this.selectedKeybinding.name}" from version ${currentVersion} to version ${latestVersion}?`
+                    }
+                });
+
+                dialogRef.afterClosed().subscribe(result => {
+                    if (result) {
+                        this.performMigration();
+                    }
+                });
+            },
+            error: (error) => {
+                console.error('Error getting latest version:', error);
+                this.snackBar.open('Error getting latest version information', 'Close', { duration: 3000 });
+            }
+        });
+    }
+
+    private performMigration() {
+        if (!this.selectedKeybinding?.keybindingId) {
+            return;
+        }
+
+        this.keybindingService.migrateToLatest(this.selectedKeybinding.keybindingId).subscribe({
+            next: (migratedKeybinding) => {
+                this.snackBar.open('Keybinding migrated to latest version successfully', 'Close', { duration: 3000 });
+
+                // Update the selected keybinding with the migrated version
+                this.selectedKeybinding = migratedKeybinding;
+
+                // Update the selected keybinding name
+                this.selectedKeybindingName = migratedKeybinding.name;
+
+                // Re-check if the keybinding is outdated (should now be false)
+                this.checkIfOutdated();
+
+                // Emit events to update parent components
+                this.updateKeybinding.emit(migratedKeybinding);
+                this.selectKeybinding.emit(migratedKeybinding);
+
+                // Refresh the keybindings list with a delay to ensure proper selection
+                setTimeout(() => {
+                    this.refreshChildKeybindings.emit();
+                }, 100);
+            },
+            error: (error) => {
+                console.error('Error migrating keybinding:', error);
+                this.snackBar.open('Error migrating keybinding to latest version', 'Close', { duration: 3000 });
+            }
+        });
     }
 
     onDeleteKeybinding(): void {

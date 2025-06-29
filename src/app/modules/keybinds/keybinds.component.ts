@@ -366,12 +366,30 @@ export class KeybindsComponent implements OnInit {
     refreshChildKeybindings() {
         console.log('refreshChildKeybindings');
 
+        // Store the current selected keybinding ID to maintain selection
+        const currentSelectedId = this.selectedKeybinding?.keybindingId;
+
         //check if loggedin
         this._authService.check().subscribe((authenticated) => {
             if (authenticated) {
                 //refetch the keybindings from server
                 this.keybindingService.getKeybindings().subscribe((keybindings) => {
                     console.log('refreshChildKeybindings - keybindings', keybindings);
+
+                    // Maintain the current selection if we had a selected keybinding
+                    if (currentSelectedId) {
+                        const updatedKeybinding = keybindings.find(kb => kb.keybindingId === currentSelectedId);
+                        if (updatedKeybinding) {
+                            // Update the selected keybinding with the latest data
+                            this.selectedKeybinding = updatedKeybinding;
+                            this.selectedKeybindingName = updatedKeybinding.name;
+
+                            // Set the drawer selection BEFORE loading keybindings to prevent auto-selection
+                            if (this.keybindsDrawerComponent) {
+                                this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
+                            }
+                        }
+                    }
 
                     if (this.keybindsDrawerComponent) {
                         this.keybindsDrawerComponent.loadKeybindings();
@@ -394,7 +412,24 @@ export class KeybindsComponent implements OnInit {
                 //check local storage for keybindings
                 const keybindings = localStorage.getItem('keybindings');
                 if (keybindings) {
-                    this.keybindingService.updateKeybindings(JSON.parse(keybindings));
+                    const parsedKeybindings = JSON.parse(keybindings);
+                    this.keybindingService.updateKeybindings(parsedKeybindings);
+
+                    // Maintain the current selection if we had a selected keybinding
+                    if (currentSelectedId) {
+                        const updatedKeybinding = parsedKeybindings.find(kb => kb.keybindingId === currentSelectedId);
+                        if (updatedKeybinding) {
+                            // Update the selected keybinding with the latest data
+                            this.selectedKeybinding = updatedKeybinding;
+                            this.selectedKeybindingName = updatedKeybinding.name;
+
+                            // Set the drawer selection BEFORE loading keybindings to prevent auto-selection
+                            if (this.keybindsDrawerComponent) {
+                                this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
+                            }
+                        }
+                    }
+
                     if (this.keybindsDrawerComponent) {
                         this.keybindsDrawerComponent.loadKeybindings();
                     }

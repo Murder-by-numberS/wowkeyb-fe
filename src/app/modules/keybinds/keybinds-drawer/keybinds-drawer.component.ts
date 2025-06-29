@@ -67,6 +67,7 @@ export class KeybindsDrawerComponent implements OnInit {
     classList = classes;  // Use the full class data instead of just names
 
     filterApplied: boolean = false;
+    preventAutoSelection: boolean = false; // Flag to prevent auto-selection
 
     keybindingService = inject(KeybindingService);
     snackBar = inject(MatSnackBar);
@@ -112,17 +113,20 @@ export class KeybindsDrawerComponent implements OnInit {
             this.keybindings = keybindings;
             this.applyFilter();
 
-            // If we're on the my-keybindings page and no keybinding is selected, select the first one
-            if (window.location.pathname === '/keybinds/my-keybindings' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
-                const firstKeybinding = this.filteredKeybindings[0];
-                this.selectedKeybindingId = firstKeybinding.keybindingId;
-                this.keybindingSelected.emit(firstKeybinding);
-            }
-            // If we're on the view-all page and no keybinding is selected, select the last one
-            else if (window.location.pathname === '/keybinds/view' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
-                const lastKeybinding = this.filteredKeybindings[this.filteredKeybindings.length - 1];
-                this.selectedKeybindingId = lastKeybinding.keybindingId;
-                this.keybindingSelected.emit(lastKeybinding);
+            // Only auto-select if we're not preventing auto-selection
+            if (!this.preventAutoSelection) {
+                // If we're on the my-keybindings page and no keybinding is selected, select the first one
+                if (window.location.pathname === '/keybinds/my-keybindings' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
+                    const firstKeybinding = this.filteredKeybindings[0];
+                    this.selectedKeybindingId = firstKeybinding.keybindingId;
+                    this.keybindingSelected.emit(firstKeybinding);
+                }
+                // If we're on the view-all page and no keybinding is selected, select the last one
+                else if (window.location.pathname === '/keybinds/view' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
+                    const lastKeybinding = this.filteredKeybindings[this.filteredKeybindings.length - 1];
+                    this.selectedKeybindingId = lastKeybinding.keybindingId;
+                    this.keybindingSelected.emit(lastKeybinding);
+                }
             }
         });
     }
@@ -136,11 +140,19 @@ export class KeybindsDrawerComponent implements OnInit {
     // Add a method to set the selected keybinding from outside
     setSelectedKeybinding(keybinding: Keybinding): void {
         if (keybinding) {
+            // Prevent auto-selection while we're setting the keybinding
+            this.preventAutoSelection = true;
+
             this.selectedKeybindingId = keybinding.keybindingId;
             // Ensure the keybinding is in the filtered list
             if (!this.filteredKeybindings.some(kb => kb.keybindingId === keybinding.keybindingId)) {
                 this.filteredKeybindings = [...this.filteredKeybindings, keybinding];
             }
+
+            // Reset the flag after a short delay to allow normal auto-selection in the future
+            setTimeout(() => {
+                this.preventAutoSelection = false;
+            }, 1000);
         }
     }
 

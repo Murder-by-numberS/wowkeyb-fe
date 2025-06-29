@@ -183,4 +183,18 @@ export class KeybindingService {
         );
     }
 
+    migrateToLatest(keybindingId: string): Observable<Keybinding> {
+        return this.http.post<Keybinding>(`${environment.apiUrl}/keybindings/${keybindingId}/migrate-to-latest`, {}).pipe(
+            tap((migratedKeybinding: Keybinding) => {
+                // Update the local state with the migrated keybinding
+                const currentKeybindings = this.keybindingsSource.getValue();
+                const updatedKeybindings = currentKeybindings.map(kb =>
+                    kb.keybindingId === keybindingId ? migratedKeybinding : kb
+                );
+                this.keybindingsSource.next(updatedKeybindings);
+                localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
+            })
+        );
+    }
+
 }
