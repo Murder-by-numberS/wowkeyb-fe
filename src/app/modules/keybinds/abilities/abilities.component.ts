@@ -449,7 +449,7 @@ export class AbilitiesComponent implements OnInit {
 
     // Calculate the maximum page index
     maxPage() {
-        return Math.floor(this.abilities.length / this.abilitiesPerPage);
+        return Math.ceil(this.abilities.length / this.abilitiesPerPage) - 1;
     }
 
     // Get the start index of the current page
