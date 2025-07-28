@@ -31,6 +31,15 @@ export class VersionCompareService {
     }
 
     /**
+     * Fetches all available game versions from the backend.
+     */
+    getAllVersions(): Observable<string[]> {
+        return this.http.get<Array<{ _id: string; game_version: string; createdAt: string; updatedAt: string; __v: number }>>(`${environment.apiUrl}/versions`).pipe(
+            map(versions => versions.map(v => v.game_version))
+        );
+    }
+
+    /**
      * Compares two version strings (e.g., '11.1.0' and '11.0.5')
      * Returns:
      *   0 if equal,

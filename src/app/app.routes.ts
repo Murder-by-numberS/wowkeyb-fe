@@ -93,6 +93,17 @@ export const appRoutes: Route[] = [
             { path: 'macros', loadChildren: () => import('app/modules/macros/macros.routes') },
         ]
     },
+    // Abilities
+    {
+        path: '',
+        component: LayoutComponent,
+        data: {
+            layout: 'modern'
+        },
+        children: [
+            { path: 'abilities', loadChildren: () => import('app/modules/abilities/abilities.routes') },
+        ]
+    },
 
     // Admin routes
     {
