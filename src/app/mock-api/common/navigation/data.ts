@@ -1249,38 +1249,31 @@ export const futuristicNavigation: FuseNavigationItem[] = [
 ];
 export const horizontalNavigation: FuseNavigationItem[] = [
     {
-        id: 'dashboards',
-        title: 'Dashboards',
-        type: 'group',
+        id: 'home',
+        title: 'Home',
+        type: 'basic',
         icon: 'heroicons_outline:home',
-        children: [], // This will be filled from defaultNavigation so we don't have to manage multiple sets of the same navigation
+        link: '/home',
     },
     {
-        id: 'apps',
-        title: 'Apps',
-        type: 'group',
-        icon: 'heroicons_outline:squares-2x2',
-        children: [], // This will be filled from defaultNavigation so we don't have to manage multiple sets of the same navigation
+        id: 'keybinds',
+        title: 'Keybindings',
+        type: 'basic',
+        icon: 'heroicons_outline:keyboard',
+        link: '/keybinds/view-all',
     },
     {
-        id: 'pages',
-        title: 'Pages',
-        type: 'group',
-        icon: 'heroicons_outline:document-duplicate',
-        children: [], // This will be filled from defaultNavigation so we don't have to manage multiple sets of the same navigation
+        id: 'macros',
+        title: 'Macros',
+        type: 'basic',
+        icon: 'heroicons_outline:code',
+        link: '/macros',
     },
     {
-        id: 'user-interface',
-        title: 'UI',
-        type: 'group',
-        icon: 'heroicons_outline:rectangle-stack',
-        children: [], // This will be filled from defaultNavigation so we don't have to manage multiple sets of the same navigation
-    },
-    {
-        id: 'navigation-features',
-        title: 'Misc',
-        type: 'group',
-        icon: 'heroicons_outline:bars-3',
-        children: [], // This will be filled from defaultNavigation so we don't have to manage multiple sets of the same navigation
+        id: 'abilities',
+        title: 'Abilities',
+        type: 'basic',
+        icon: 'heroicons_outline:auto_awesome',
+        link: '/abilities',
     },
 ];

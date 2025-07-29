@@ -32,4 +32,46 @@ export class AbilitiesService {
         return this.http.get(urlString);
     }
 
+    // Gets abilities with optional filters and pagination
+    getAbilitiesWithFilters(filters: {
+        gameVersion?: string;
+        class?: string;
+        spec?: string;
+        heroTalent?: string;
+        page?: number;
+        limit?: number;
+    }): Observable<any> {
+        let urlString = `${environment.apiUrl}/abilities`;
+        const params = new URLSearchParams();
+
+        // Add filters as query parameters
+        if (filters.gameVersion) {
+            params.append('gameVersion', filters.gameVersion);
+        }
+        if (filters.class) {
+            params.append('class', filters.class);
+        }
+        if (filters.spec) {
+            params.append('spec', filters.spec);
+        }
+        if (filters.heroTalent) {
+            params.append('heroTalent', filters.heroTalent);
+        }
+
+        // Add pagination parameters
+        if (filters.page !== undefined) {
+            params.append('page', filters.page.toString());
+        }
+        if (filters.limit !== undefined) {
+            params.append('limit', filters.limit.toString());
+        }
+
+        // Append query parameters if any exist
+        if (params.toString()) {
+            urlString += `?${params.toString()}`;
+        }
+
+        return this.http.get(urlString);
+    }
+
 }
