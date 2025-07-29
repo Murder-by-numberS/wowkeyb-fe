@@ -17,43 +17,68 @@
                 <!-- Class Filter -->
                 <mat-form-field appearance="fill" class="w-48">
                     <mat-label>Class</mat-label>
-                    <mat-select [(value)]="selectedClass" (selectionChange)="onClassChange($event)">
+                    <mat-select #classSelect [(value)]="selectedClass" (selectionChange)="onClassChange($event)">
                         @for (class of classes; track $index) {
                         <mat-option [value]="class.name">{{class.name}}</mat-option>
                         }
                     </mat-select>
+                    @if (selectedClass) {
+                    <button matSuffix mat-icon-button type="button" (click)="clearClassFilter()"
+                        matTooltip="Clear class filter">
+                        <mat-icon>clear</mat-icon>
+                    </button>
+                    }
                 </mat-form-field>
 
                 <!-- Spec Filter -->
                 <mat-form-field appearance="fill" class="w-48">
                     <mat-label>Spec</mat-label>
-                    <mat-select [(value)]="selectedSpec" [disabled]="!selectedClass"
+                    <mat-select #specSelect [(value)]="selectedSpec" [disabled]="!selectedClass"
                         (selectionChange)="onSpecChange($event)">
                         @for (spec of specs; track $index) {
                         <mat-option [value]="spec">{{spec}}</mat-option>
                         }
                     </mat-select>
+                    @if (selectedSpec) {
+                    <button matSuffix mat-icon-button type="button" (click)="clearSpecFilter()"
+                        matTooltip="Clear spec filter">
+                        <mat-icon>clear</mat-icon>
+                    </button>
+                    }
                 </mat-form-field>
 
                 <!-- Hero Talent Filter -->
                 <mat-form-field appearance="fill" class="w-48">
                     <mat-label>Hero Talent</mat-label>
-                    <mat-select [(value)]="selectedHeroTalent" [disabled]="!selectedClass"
+                    <mat-select #heroTalentSelect [(value)]="selectedHeroTalent" [disabled]="!selectedClass"
                         (selectionChange)="onHeroTalentChange($event)">
                         @for (heroTalent of heroTalents; track $index) {
                         <mat-option [value]="heroTalent">{{heroTalent}}</mat-option>
                         }
                     </mat-select>
+                    @if (selectedHeroTalent) {
+                    <button matSuffix mat-icon-button type="button" (click)="clearHeroTalentFilter()"
+                        matTooltip="Clear hero talent filter">
+                        <mat-icon>clear</mat-icon>
+                    </button>
+                    }
                 </mat-form-field>
 
                 <!-- Game Version Filter -->
                 <mat-form-field appearance="fill" class="w-48">
                     <mat-label>Game Version</mat-label>
-                    <mat-select [(value)]="selectedGameVersion" (selectionChange)="onGameVersionChange($event)">
+                    <mat-select #gameVersionSelect [(value)]="selectedGameVersion"
+                        (selectionChange)="onGameVersionChange($event)">
                         @for (version of gameVersions; track $index) {
                         <mat-option [value]="version">{{version}}</mat-option>
                         }
                     </mat-select>
+                    @if (selectedGameVersion) {
+                    <button matSuffix mat-icon-button type="button" (click)="clearGameVersionFilter()"
+                        matTooltip="Clear game version filter">
+                        <mat-icon>clear</mat-icon>
+                    </button>
+                    }
                 </mat-form-field>
 
                 <!-- Clear Filters Button -->

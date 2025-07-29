@@ -1,5 +1,7 @@
-import { Component, ViewEncapsulation, OnInit } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
+import { MatSelect } from '@angular/material/select';
 
 //Material
 import { MatButtonModule } from '@angular/material/button';
@@ -75,18 +77,34 @@ export class AbilitiesComponent implements OnInit {
     currentPage = 1; // Changed to 1-based indexing for backend compatibility
     abilitiesPerPage = 100; // Changed to 100 for server-side pagination
 
+    // ViewChild references for dropdowns
+    @ViewChild('classSelect') classSelect: MatSelect;
+    @ViewChild('specSelect') specSelect: MatSelect;
+    @ViewChild('heroTalentSelect') heroTalentSelect: MatSelect;
+    @ViewChild('gameVersionSelect') gameVersionSelect: MatSelect;
+
     /**
      * Constructor
      */
     constructor(
         private abilitiesService: AbilitiesService,
         private versionCompare: VersionCompareService,
-        private dialog: MatDialog
+        private dialog: MatDialog,
+        private router: Router,
+        private route: ActivatedRoute
     ) { }
 
     ngOnInit(): void {
-        // Load all abilities initially
-        this.loadAllAbilities();
+        // Check for URL parameters first
+        this.route.queryParams.subscribe(params => {
+            if (params['class'] || params['spec'] || params['heroTalent'] || params['gameVersion']) {
+                // Load filters from URL
+                this.loadFiltersFromUrl(params);
+            } else {
+                // Load all abilities initially
+                this.loadAllAbilities();
+            }
+        });
     }
 
     /**
@@ -120,6 +138,67 @@ export class AbilitiesComponent implements OnInit {
                 ];
                 this.selectedGameVersion = this.gameVersions[0];
             }
+        });
+    }
+
+    /**
+     * Load filters from URL parameters
+     */
+    loadFiltersFromUrl(params: any) {
+        // Load game versions first
+        this.loadGameVersions();
+
+        // Set filters from URL parameters
+        if (params['class']) {
+            this.selectedClass = params['class'];
+            // Load specs for this class
+            this.specs = Object.keys(fullClasses[this.selectedClass].specs);
+            const allHeroTalents = Object.values(fullClasses[this.selectedClass].specs).flat();
+            this.heroTalents = [...new Set(allHeroTalents)];
+        }
+
+        if (params['spec']) {
+            this.selectedSpec = params['spec'];
+            // Load hero talents for this spec
+            if (this.selectedClass && this.selectedSpec) {
+                this.heroTalents = fullClasses[this.selectedClass].specs[this.selectedSpec];
+            }
+        }
+
+        if (params['heroTalent']) {
+            this.selectedHeroTalent = params['heroTalent'];
+        }
+
+        if (params['gameVersion']) {
+            this.selectedGameVersion = params['gameVersion'];
+        }
+
+        // Fetch abilities with the loaded filters
+        this.fetchAbilities();
+    }
+
+    /**
+ * Update URL with current filters
+ */
+    updateUrl() {
+        const queryParams: any = {};
+
+        if (this.selectedClass) {
+            queryParams.class = this.selectedClass;
+        }
+        if (this.selectedSpec) {
+            queryParams.spec = this.selectedSpec;
+        }
+        if (this.selectedHeroTalent) {
+            queryParams.heroTalent = this.selectedHeroTalent;
+        }
+        if (this.selectedGameVersion) {
+            queryParams.gameVersion = this.selectedGameVersion;
+        }
+
+        this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: queryParams
         });
     }
 
@@ -162,7 +241,8 @@ export class AbilitiesComponent implements OnInit {
             this.heroTalents = [];
         }
 
-        // Fetch abilities with current filters
+        // Update URL and fetch abilities with current filters
+        this.updateUrl();
         this.fetchAbilities();
     }
 
@@ -187,7 +267,8 @@ export class AbilitiesComponent implements OnInit {
             this.heroTalents = [];
         }
 
-        // Fetch abilities with current filters
+        // Update URL and fetch abilities with current filters
+        this.updateUrl();
         this.fetchAbilities();
     }
 
@@ -198,7 +279,8 @@ export class AbilitiesComponent implements OnInit {
         const selectedHeroTalent = event.value;
         this.selectedHeroTalent = selectedHeroTalent;
 
-        // Fetch abilities with current filters
+        // Update URL and fetch abilities with current filters
+        this.updateUrl();
         this.fetchAbilities();
     }
 
@@ -209,7 +291,8 @@ export class AbilitiesComponent implements OnInit {
         const selectedGameVersion = event.value;
         this.selectedGameVersion = selectedGameVersion;
 
-        // Always fetch abilities when game version changes since abilities may differ between versions
+        // Update URL and fetch abilities when game version changes since abilities may differ between versions
+        this.updateUrl();
         this.fetchAbilities();
     }
 
@@ -344,8 +427,11 @@ export class AbilitiesComponent implements OnInit {
         const uniqueAbilities = new Map<string, Ability>();
 
         abilities.forEach(ability => {
-            if (!uniqueAbilities.has(ability.spellId)) {
-                uniqueAbilities.set(ability.spellId, ability);
+            // Create a unique key based on spellId, class, spec, and heroTalent
+            const uniqueKey = `${ability.spellId}-${ability.class}-${ability.spec || 'null'}-${ability.heroTalent || 'null'}`;
+
+            if (!uniqueAbilities.has(uniqueKey)) {
+                uniqueAbilities.set(uniqueKey, ability);
             }
         });
 
@@ -717,6 +803,89 @@ export class AbilitiesComponent implements OnInit {
     }
 
     /**
+ * Clear class filter only
+ */
+    clearClassFilter() {
+        this.selectedClass = undefined;
+        this.selectedSpec = undefined;
+        this.selectedHeroTalent = undefined;
+        this.specs = [];
+        this.heroTalents = [];
+
+        // Update URL and fetch abilities
+        this.updateUrl();
+        this.fetchAbilities();
+
+        // Close the dropdown
+        setTimeout(() => {
+            if (this.classSelect) {
+                this.classSelect.close();
+            }
+        }, 0);
+    }
+
+    /**
+ * Clear spec filter only
+ */
+    clearSpecFilter() {
+        this.selectedSpec = undefined;
+        this.selectedHeroTalent = undefined;
+
+        // Reload hero talents for the current class (all hero talents)
+        if (this.selectedClass) {
+            const allHeroTalents = Object.values(fullClasses[this.selectedClass].specs).flat();
+            this.heroTalents = [...new Set(allHeroTalents)];
+        }
+
+        // Update URL and fetch abilities
+        this.updateUrl();
+        this.fetchAbilities();
+
+        // Close the dropdown
+        setTimeout(() => {
+            if (this.specSelect) {
+                this.specSelect.close();
+            }
+        }, 0);
+    }
+
+    /**
+ * Clear hero talent filter only
+ */
+    clearHeroTalentFilter() {
+        this.selectedHeroTalent = undefined;
+
+        // Update URL and fetch abilities
+        this.updateUrl();
+        this.fetchAbilities();
+
+        // Close the dropdown
+        setTimeout(() => {
+            if (this.heroTalentSelect) {
+                this.heroTalentSelect.close();
+            }
+        }, 0);
+    }
+
+    /**
+ * Clear game version filter only
+ */
+    clearGameVersionFilter() {
+        this.selectedGameVersion = this.gameVersions[0]; // Reset to latest version
+
+        // Update URL and fetch abilities
+        this.updateUrl();
+        this.fetchAbilities();
+
+        // Close the dropdown
+        setTimeout(() => {
+            if (this.gameVersionSelect) {
+                this.gameVersionSelect.close();
+            }
+        }, 0);
+    }
+
+    /**
  * Clear all filters
  */
     clearFilters() {
@@ -727,7 +896,16 @@ export class AbilitiesComponent implements OnInit {
         this.specs = [];
         this.heroTalents = [];
 
-        // Fetch abilities with only game version filter
+        // Update URL and fetch abilities with only game version filter
+        this.updateUrl();
         this.fetchAbilities();
+
+        // Remove focus from any active element
+        setTimeout(() => {
+            const activeElement = document.activeElement as HTMLElement;
+            if (activeElement) {
+                activeElement.blur();
+            }
+        }, 0);
     }
 }
