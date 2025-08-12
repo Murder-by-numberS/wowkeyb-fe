@@ -13,7 +13,7 @@
             <mat-card-title>Filters</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-            <div class="flex flex-row gap-4 items-end">
+            <div class="flex flex-row gap-4 items-center justify-start">
                 <!-- Class Filter -->
                 <mat-form-field appearance="fill" class="w-48">
                     <mat-label>Class</mat-label>
@@ -82,10 +82,12 @@
                 </mat-form-field>
 
                 <!-- Clear Filters Button -->
-                <button mat-stroked-button color="warn" (click)="clearFilters()">
-                    <mat-icon class="mr-2">clear</mat-icon>
-                    Clear Filters
-                </button>
+                <div class="flex items-center h-16">
+                    <button mat-stroked-button color="warn" (click)="clearFilters()">
+                        <mat-icon class="mr-2">clear</mat-icon>
+                        Clear Filters
+                    </button>
+                </div>
             </div>
         </mat-card-content>
     </mat-card>

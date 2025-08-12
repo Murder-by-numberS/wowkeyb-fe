@@ -126,15 +126,11 @@ export class AbilitiesComponent implements OnInit {
                 console.error('Error fetching game versions:', error);
                 // Fallback to static list if backend fails
                 this.gameVersions = [
-                    '10.2.5',
-                    '10.2.0',
-                    '10.1.7',
-                    '10.1.5',
-                    '10.1.0',
-                    '10.0.7',
-                    '10.0.5',
-                    '10.0.2',
-                    '10.0.0'
+                    '11.1.7',
+                    '11.1.0',
+                    '11.0.5',
+                    '11.0.2',
+                    '11.0.0'
                 ];
                 this.selectedGameVersion = this.gameVersions[0];
             }
@@ -421,19 +417,27 @@ export class AbilitiesComponent implements OnInit {
     }
 
     /**
- * Remove duplicate abilities based on spellId and sort alphabetically
- */
+     * Remove duplicate abilities based on spellId and sort alphabetically
+     */
     private removeDuplicateAbilities(abilities: Ability[]): Ability[] {
+        console.log('removeDuplicateAbilities called with:', abilities.length, 'abilities');
+        console.log('Sample ability:', abilities[0]);
+
         const uniqueAbilities = new Map<string, Ability>();
 
         abilities.forEach(ability => {
+            // Ensure spellId exists, fallback to name if not
+            const spellId = ability.spellId || ability.name;
+
             // Create a unique key based on spellId, class, spec, and heroTalent
-            const uniqueKey = `${ability.spellId}-${ability.class}-${ability.spec || 'null'}-${ability.heroTalent || 'null'}`;
+            const uniqueKey = `${spellId}-${ability.class}-${ability.spec || 'null'}-${ability.heroTalent || 'null'}`;
 
             if (!uniqueAbilities.has(uniqueKey)) {
                 uniqueAbilities.set(uniqueKey, ability);
             }
         });
+
+        console.log('Unique abilities map size:', uniqueAbilities.size);
 
         // Convert to array, mark core abilities, and sort alphabetically by name
         const uniqueAbilitiesArray = Array.from(uniqueAbilities.values());
@@ -449,7 +453,7 @@ export class AbilitiesComponent implements OnInit {
                 const sameClassAbilities = uniqueAbilitiesArray.filter(a =>
                     a.class === ability.class &&
                     a.name === ability.name &&
-                    a.spellId === ability.spellId
+                    (a.spellId === ability.spellId || a.name === ability.name)
                 );
 
                 if (sameClassAbilities.length > 1) {
@@ -459,6 +463,9 @@ export class AbilitiesComponent implements OnInit {
                 // If it only appears in one spec, keep the original spec
             }
         });
+
+        console.log('Final processed abilities:', uniqueAbilitiesArray.length);
+        console.log('Sample processed ability:', uniqueAbilitiesArray[0]);
 
         return uniqueAbilitiesArray.sort((a, b) =>
             a.name.localeCompare(b.name)
@@ -510,8 +517,6 @@ export class AbilitiesComponent implements OnInit {
             'Fade',
 
             'Sinister Strike', // Rogue
-            'Backstab',
-            'Eviscerate',
             'Stealth',
             'Pick Pocket',
 
@@ -521,7 +526,7 @@ export class AbilitiesComponent implements OnInit {
             'Water Walking',
             'Ghost Wolf',
 
-            'Shadow Bolt', // Warlock
+
             'Life Tap',
             'Drain Life',
             'Fear',
@@ -534,8 +539,9 @@ export class AbilitiesComponent implements OnInit {
             'Taunt'
         ];
 
+        // Use exact match instead of partial match to prevent false positives
         return coreAbilityNames.some(coreName =>
-            ability.name.toLowerCase().includes(coreName.toLowerCase())
+            ability.name.toLowerCase() === coreName.toLowerCase()
         );
     }
 
