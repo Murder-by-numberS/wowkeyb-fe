@@ -8,10 +8,10 @@ on:
             environment:
                 description: "Environment to deploy to"
                 required: true
-                default: "staging"
+                default: "develop"
                 type: choice
                 options:
-                    - staging
+                    - develop
                     - production
 
 env:
@@ -40,8 +40,8 @@ jobs:
                     ENV="${{ github.event.inputs.environment }}"
                   elif [ "${{ github.ref }}" = "refs/heads/master" ]; then
                     ENV="production"
-                  elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
-                    ENV="staging"
+                                     elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+                     ENV="develop"
                   else
                     echo "Unknown branch: ${{ github.ref }}"
                     exit 1
@@ -49,15 +49,15 @@ jobs:
 
                   echo "environment=$ENV" >> $GITHUB_OUTPUT
 
-                  if [ "$ENV" = "production" ]; then
-                    echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_PROD }}" >> $GITHUB_OUTPUT
-                    echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_PROD }}" >> $GITHUB_OUTPUT
-                    echo "build-config=production" >> $GITHUB_OUTPUT
-                  else
-                    echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_STAGING }}" >> $GITHUB_OUTPUT
-                    echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_STAGING }}" >> $GITHUB_OUTPUT
-                    echo "build-config=staging" >> $GITHUB_OUTPUT
-                  fi
+                                     if [ "$ENV" = "production" ]; then
+                     echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_PROD }}" >> $GITHUB_OUTPUT
+                     echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_PROD }}" >> $GITHUB_OUTPUT
+                     echo "build-config=production" >> $GITHUB_OUTPUT
+                   else
+                     echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_DEVELOP }}" >> $GITHUB_OUTPUT
+                     echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_DEVELOP }}" >> $GITHUB_OUTPUT
+                     echo "build-config=develop" >> $GITHUB_OUTPUT
+                   fi
 
             - name: 🏗️ Setup Node.js
               uses: actions/setup-node@v4

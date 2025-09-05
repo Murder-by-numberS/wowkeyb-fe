@@ -4,10 +4,10 @@ This project uses GitHub Actions for automated deployment to AWS S3 and CloudFro
 
 ## Environment Setup
 
-### Staging Environment
+### Develop Environment
 - **Branch**: `develop`
-- **Build Config**: `staging`
-- **Purpose**: Testing and preview of new features
+- **Build Config**: `develop`
+- **Purpose**: Development and testing of new features
 
 ### Production Environment
 - **Branch**: `master`
@@ -22,9 +22,9 @@ To enable automated deployment, you need to configure the following secrets in y
 - `AWS_ACCESS_KEY_ID` - Your AWS access key ID
 - `AWS_SECRET_ACCESS_KEY` - Your AWS secret access key
 
-### 2. Staging Environment Resources
-- `S3_BUCKET_NAME_STAGING` - The name of your staging S3 bucket (`wowkeyb-staging`)
-- `CLOUDFRONT_DISTRIBUTION_ID_STAGING` - The staging CloudFront distribution ID (`E9VUEP9RT5Q3M`)
+### 2. Develop Environment Resources
+- `S3_BUCKET_NAME_DEVELOP` - The name of your develop S3 bucket (`wowkeyb-develop`)
+- `CLOUDFRONT_DISTRIBUTION_ID_DEVELOP` - The develop CloudFront distribution ID (`E2QBAYP1I5UG5T`)
 
 ### 3. Production Environment Resources
 - `S3_BUCKET_NAME_PROD` - The name of your production S3 bucket (`wowkeyb-production`)
@@ -41,16 +41,16 @@ To enable automated deployment, you need to configure the following secrets in y
 
 The workflow will automatically run when:
 - Code is pushed to the `master` branch → **Production deployment**
-- Code is pushed to the `develop` branch → **Staging deployment**
+- Code is pushed to the `develop` branch → **Develop deployment**
 - Manually triggered via the GitHub Actions tab with environment selection
 
 ## Build Configurations
 
-### Staging Build (`develop` branch)
-- Uses `staging` configuration
-- Optimized for testing with staging environment variables
+### Develop Build (`develop` branch)
+- Uses `develop` configuration
+- Optimized for development with develop environment variables
 - Enables output hashing for cache busting
-- Uses staging environment file
+- Uses develop environment file
 
 ### Production Build (`master` branch)
 - Uses `production` configuration
@@ -65,10 +65,10 @@ The Angular build outputs to `dist/fuse/` directory, which is then synced to the
 
 ## CloudFront Distribution URLs
 
-### Staging Environment
-- **CloudFront URL**: `https://d1epgrrdit2v00.cloudfront.net`
-- **S3 Website URL**: `http://wowkeyb-staging.s3-website-us-east-1.amazonaws.com`
-- **Distribution ID**: `E9VUEP9RT5Q3M`
+### Develop Environment
+- **CloudFront URL**: `https://d1fr0oji1jx8rx.cloudfront.net`
+- **S3 Website URL**: `http://wowkeyb-develop.s3-website-us-east-1.amazonaws.com`
+- **Distribution ID**: `E2QBAYP1I5UG5T`
 
 ### Production Environment
 - **CloudFront URL**: `https://d2e16vwymso8fj.cloudfront.net`
@@ -91,14 +91,14 @@ After deployment, all CloudFront paths (`/*`) are invalidated for the appropriat
 ### Automatic Environment Detection
 - The workflow automatically detects the environment based on the branch
 - `master` → Production
-- `develop` → Staging
+- `develop` → Develop
 
 ### Manual Deployment
 You can trigger a manual deployment by:
 1. Going to the **Actions** tab in your GitHub repository
 2. Selecting the **Deploy to AWS** workflow
 3. Clicking **Run workflow**
-4. Choosing the environment (staging or production)
+4. Choosing the environment (develop or production)
 
 ### Environment-Specific Logging
 - Clear logging shows which environment is being deployed
@@ -111,7 +111,7 @@ This GitHub Actions workflow replaces your previous CodePipeline setup. You can 
 1. Remove the CodePipeline configuration from AWS
 2. Delete the `buildspec.yml` file (if no longer needed)
 3. Use this GitHub Actions workflow for all deployments
-4. Deploy to staging for testing before production
+4. Deploy to develop for testing before production
 
 ## Testing
 
@@ -120,7 +120,7 @@ The workflow includes automated testing with Karma and Chrome Headless before de
 ## Recommended Workflow
 
 1. **Development**: Work on feature branches
-2. **Staging**: Merge to `develop` branch for staging deployment
+2. **Develop**: Merge to `develop` branch for develop deployment
 3. **Production**: Merge `develop` to `master` for production deployment
 
-This ensures proper testing in staging before production releases.
+This ensures proper testing in develop before production releases.
