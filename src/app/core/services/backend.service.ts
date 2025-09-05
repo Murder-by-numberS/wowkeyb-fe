@@ -20,7 +20,12 @@ export class BackendService {
 
     getBackendURL(): void {
 
-        console.log('environment', environment);
+        console.log('🔍 BackendService - Environment debug:', {
+            apiUrl: environment.apiUrl,
+            envName: environment.envName,
+            debugFlag: environment.debugFlag,
+            production: environment.production
+        });
 
         // if (environment.production === true) {
         //     this.apiUrl = sessionStorage.getItem('backend_url');
