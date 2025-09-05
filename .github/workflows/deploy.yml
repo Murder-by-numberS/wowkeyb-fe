@@ -104,13 +104,13 @@ jobs:
                   echo "Deploying to ${{ steps.set-env.outputs.environment }} environment..."
                   echo "S3 Bucket: ${{ steps.set-env.outputs.s3-bucket }}"
 
-                  aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/browser/ \
+                  aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/ \
                     --delete \
                     --cache-control "public,max-age=31536000,immutable" \
                     --exclude "*.html" \
                     --exclude "*.json"
 
-                  aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/browser/ \
+                  aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/ \
                     --delete \
                     --cache-control "public,max-age=0,s-maxage=31536000" \
                     --include "*.html" \
