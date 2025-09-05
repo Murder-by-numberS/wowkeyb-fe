@@ -1,112 +1,112 @@
 name: Deploy to AWS
 
 on:
-  push:
-    branches: [master, develop]
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
+    push:
+        branches: [master, develop]
+    workflow_dispatch:
+        inputs:
+            environment:
+                description: "Environment to deploy to"
+                required: true
+                default: "staging"
+                type: choice
+                options:
+                    - staging
+                    - production
 
 env:
-  NODE_VERSION: "22"
-  AWS_REGION: "us-east-1"
+    NODE_VERSION: "22"
+    AWS_REGION: "us-east-1"
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    deploy:
+        runs-on: ubuntu-latest
 
-    # Determine environment based on branch or manual input
-    outputs:
-      environment: ${{ steps.set-env.outputs.environment }}
-      s3-bucket: ${{ steps.set-env.outputs.s3-bucket }}
-      cloudfront-id: ${{ steps.set-env.outputs.cloudfront-id }}
-      build-config: ${{ steps.set-env.outputs.build-config }}
+        # Determine environment based on branch or manual input
+        outputs:
+            environment: ${{ steps.set-env.outputs.environment }}
+            s3-bucket: ${{ steps.set-env.outputs.s3-bucket }}
+            cloudfront-id: ${{ steps.set-env.outputs.cloudfront-id }}
+            build-config: ${{ steps.set-env.outputs.build-config }}
 
-    steps:
-      - name: 🛎️ Checkout code
-        uses: actions/checkout@v4
+        steps:
+            - name: 🛎️ Checkout code
+              uses: actions/checkout@v4
 
-      - name: 🏷️ Set environment variables
-        id: set-env
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            ENV="${{ github.event.inputs.environment }}"
-          elif [ "${{ github.ref }}" = "refs/heads/master" ]; then
-            ENV="production"
-          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
-            ENV="staging"
-          else
-            echo "Unknown branch: ${{ github.ref }}"
-            exit 1
-          fi
+            - name: 🏷️ Set environment variables
+              id: set-env
+              run: |
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                    ENV="${{ github.event.inputs.environment }}"
+                  elif [ "${{ github.ref }}" = "refs/heads/master" ]; then
+                    ENV="production"
+                  elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+                    ENV="staging"
+                  else
+                    echo "Unknown branch: ${{ github.ref }}"
+                    exit 1
+                  fi
 
-          echo "environment=$ENV" >> $GITHUB_OUTPUT
+                  echo "environment=$ENV" >> $GITHUB_OUTPUT
 
-          if [ "$ENV" = "production" ]; then
-            echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_PROD }}" >> $GITHUB_OUTPUT
-            echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_PROD }}" >> $GITHUB_OUTPUT
-            echo "build-config=production" >> $GITHUB_OUTPUT
-          else
-            echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_STAGING }}" >> $GITHUB_OUTPUT
-            echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_STAGING }}" >> $GITHUB_OUTPUT
-            echo "build-config=staging" >> $GITHUB_OUTPUT
-          fi
+                  if [ "$ENV" = "production" ]; then
+                    echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_PROD }}" >> $GITHUB_OUTPUT
+                    echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_PROD }}" >> $GITHUB_OUTPUT
+                    echo "build-config=production" >> $GITHUB_OUTPUT
+                  else
+                    echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_STAGING }}" >> $GITHUB_OUTPUT
+                    echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_STAGING }}" >> $GITHUB_OUTPUT
+                    echo "build-config=staging" >> $GITHUB_OUTPUT
+                  fi
 
-      - name: 🏗️ Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
+            - name: 🏗️ Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: "npm"
 
-      - name: 📦 Install dependencies
-        run: npm ci
+            - name: 📦 Install dependencies
+              run: npm ci
 
-      - name: 🧪 Run tests
-        run: npm run test -- --watch=false --browsers=ChromeHeadless
+            - name: 🧪 Run tests
+              run: npm run test -- --watch=false --browsers=ChromeHeadless
 
-      - name: 🔨 Build Angular app
-        run: npm run build --configuration=${{ steps.set-env.outputs.build-config }}
+            - name: 🔨 Build Angular app
+              run: npm run build --configuration=${{ steps.set-env.outputs.build-config }}
 
-      - name: 🔧 Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+            - name: 🔧 Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ env.AWS_REGION }}
 
-      - name: 🚀 Deploy to S3
-        run: |
-          echo "Deploying to ${{ steps.set-env.outputs.environment }} environment..."
-          echo "S3 Bucket: ${{ steps.set-env.outputs.s3-bucket }}"
+            - name: 🚀 Deploy to S3
+              run: |
+                  echo "Deploying to ${{ steps.set-env.outputs.environment }} environment..."
+                  echo "S3 Bucket: ${{ steps.set-env.outputs.s3-bucket }}"
 
-          aws s3 sync dist/fuse/ s3://${{ steps.set-env.outputs.s3-bucket }} \
-            --delete \
-            --cache-control "public,max-age=31536000,immutable" \
-            --exclude "*.html" \
-            --exclude "*.json"
+                  aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/browser/ \
+                    --delete \
+                    --cache-control "public,max-age=31536000,immutable" \
+                    --exclude "*.html" \
+                    --exclude "*.json"
 
-          aws s3 sync dist/fuse/ s3://${{ steps.set-env.outputs.s3-bucket }} \
-            --delete \
-            --cache-control "public,max-age=0,s-maxage=31536000" \
-            --include "*.html" \
-            --include "*.json"
+                  aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/browser/ \
+                    --delete \
+                    --cache-control "public,max-age=0,s-maxage=31536000" \
+                    --include "*.html" \
+                    --include "*.json"
 
-      - name: ♻️ Invalidate CloudFront
-        run: |
-          echo "Invalidating CloudFront distribution: ${{ steps.set-env.outputs.cloudfront-id }}"
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ steps.set-env.outputs.cloudfront-id }} \
-            --paths "/*"
+            - name: ♻️ Invalidate CloudFront
+              run: |
+                  echo "Invalidating CloudFront distribution: ${{ steps.set-env.outputs.cloudfront-id }}"
+                  aws cloudfront create-invalidation \
+                    --distribution-id ${{ steps.set-env.outputs.cloudfront-id }} \
+                    --paths "/*"
 
-      - name: ✅ Deployment complete
-        run: |
-          echo "🎉 Successfully deployed to ${{ steps.set-env.outputs.environment }} environment!"
-          echo "S3 Bucket: ${{ steps.set-env.outputs.s3-bucket }}"
-          echo "CloudFront Distribution: ${{ steps.set-env.outputs.cloudfront-id }}"
+            - name: ✅ Deployment complete
+              run: |
+                  echo "🎉 Successfully deployed to ${{ steps.set-env.outputs.environment }} environment!"
+                  echo "S3 Bucket: ${{ steps.set-env.outputs.s3-bucket }}"
+                  echo "CloudFront Distribution: ${{ steps.set-env.outputs.cloudfront-id }}"
