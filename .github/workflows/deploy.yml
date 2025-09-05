@@ -104,6 +104,11 @@ jobs:
                   echo "Deploying to ${{ steps.set-env.outputs.environment }} environment..."
                   echo "S3 Bucket: ${{ steps.set-env.outputs.s3-bucket }}"
 
+                  echo "Build output contents:"
+                  ls -la dist/fuse/browser/
+                  echo "i18n directory contents:"
+                  ls -la dist/fuse/browser/i18n/ || echo "i18n directory not found"
+
                   aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/ \
                     --delete \
                     --cache-control "public,max-age=31536000,immutable" \
