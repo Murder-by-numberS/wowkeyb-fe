@@ -57,14 +57,17 @@ jobs:
                   echo "environment=$ENV" >> $GITHUB_OUTPUT
 
                   if [ "$ENV" = "production" ]; then
+                    echo "Using PRODUCTION configuration"
                     echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_PROD }}" >> $GITHUB_OUTPUT
                     echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_PROD }}" >> $GITHUB_OUTPUT
                     echo "build-config=production" >> $GITHUB_OUTPUT
                   elif [ "$ENV" = "staging" ]; then
+                    echo "Using STAGING configuration"
                     echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_STAGING }}" >> $GITHUB_OUTPUT
                     echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_STAGING }}" >> $GITHUB_OUTPUT
                     echo "build-config=staging" >> $GITHUB_OUTPUT
                   else
+                    echo "Using DEVELOP configuration (else clause)"
                     echo "s3-bucket=${{ secrets.S3_BUCKET_NAME_DEVELOP }}" >> $GITHUB_OUTPUT
                     echo "cloudfront-id=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_DEVELOP }}" >> $GITHUB_OUTPUT
                     echo "build-config=develop" >> $GITHUB_OUTPUT

@@ -4,4 +4,5 @@ export const environment = {
     apiUrl: 'https://develop-api.wowkeyb.gg',
     hmr: false,
     // Force rebuild to ensure correct API URL is used
+    debugFlag: 'DEVELOP_ENV_ACTIVE_2024'
 };

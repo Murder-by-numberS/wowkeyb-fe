@@ -41,6 +41,12 @@ export class AbilitiesService {
         page?: number;
         limit?: number;
     }): Observable<any> {
+        console.log('🔍 AbilitiesService - Environment debug:', {
+            apiUrl: environment.apiUrl,
+            envName: environment.envName,
+            debugFlag: environment.debugFlag,
+            production: environment.production
+        });
         let urlString = `${environment.apiUrl}/abilities`;
         const params = new URLSearchParams();
 
