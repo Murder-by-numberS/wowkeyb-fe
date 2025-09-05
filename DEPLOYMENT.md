@@ -83,16 +83,20 @@ The Angular build outputs to `dist/fuse/` directory, which is then synced to the
 
 ### Develop Environment
 - **CloudFront URL**: `https://d1fr0oji1jx8rx.cloudfront.net`
+- **Custom Domain**: `https://develop.wowkeyb.gg`
 - **S3 Website URL**: `http://wowkeyb-develop.s3-website-us-east-1.amazonaws.com`
 - **Distribution ID**: `E2QBAYP1I5UG5T`
 
 ### Staging Environment
 - **CloudFront URL**: `https://d1epgrrdit2v00.cloudfront.net`
+- **Custom Domain**: `https://staging.wowkeyb.gg`
 - **S3 Website URL**: `http://wowkeyb-staging.s3-website-us-east-1.amazonaws.com`
 - **Distribution ID**: `E9VUEP9RT5Q3M`
 
 ### Production Environment
 - **CloudFront URL**: `https://d2e16vwymso8fj.cloudfront.net`
+- **Custom Domain**: `https://wowkeyb.gg`
+- **WWW Domain**: `https://www.wowkeyb.gg`
 - **S3 Website URL**: `http://wowkeyb-production.s3-website-us-east-1.amazonaws.com`
 - **Distribution ID**: `E3FA3CXEIQEBUK`
 
@@ -106,6 +110,59 @@ The Angular build outputs to `dist/fuse/` directory, which is then synced to the
 ## CloudFront Invalidation
 
 After deployment, all CloudFront paths (`/*`) are invalidated for the appropriate environment to ensure users get the latest content.
+
+## Custom Domain Setup
+
+### DNS Records Configuration
+
+Configure the following CNAME records in your DNS provider for the `wowkeyb.gg` domain:
+
+#### Production Environment
+- **Name**: `@` (root domain)
+- **Type**: `CNAME`
+- **Value**: `d2e16vwymso8fj.cloudfront.net`
+- **TTL**: 300
+
+- **Name**: `www`
+- **Type**: `CNAME`
+- **Value**: `d2e16vwymso8fj.cloudfront.net`
+- **TTL**: 300
+
+#### Develop Environment
+- **Name**: `develop`
+- **Type**: `CNAME`
+- **Value**: `d1fr0oji1jx8rx.cloudfront.net`
+- **TTL**: 300
+
+#### Staging Environment
+- **Name**: `staging`
+- **Type**: `CNAME`
+- **Value**: `d1epgrrdit2v00.cloudfront.net`
+- **TTL**: 300
+
+### CloudFront Configuration
+
+Update each CloudFront distribution to accept the custom domains:
+
+#### Production Distribution (ID: `E3FA3CXEIQEBUK`)
+- Add `wowkeyb.gg` and `www.wowkeyb.gg` to "Alternate Domain Names (CNAMEs)"
+
+#### Develop Distribution (ID: `E2QBAYP1I5UG5T`)
+- Add `develop.wowkeyb.gg` to "Alternate Domain Names (CNAMEs)"
+
+#### Staging Distribution (ID: `E9VUEP9RT5Q3M`)
+- Add `staging.wowkeyb.gg` to "Alternate Domain Names (CNAMEs)"
+
+### SSL Certificates
+
+CloudFront will automatically provision SSL certificates for all custom domains. This process may take 15-20 minutes to complete.
+
+### Access URLs
+
+Once configured, the environments will be accessible at:
+- **Production**: `https://wowkeyb.gg` and `https://www.wowkeyb.gg`
+- **Develop**: `https://develop.wowkeyb.gg`
+- **Staging**: `https://staging.wowkeyb.gg`
 
 ## Workflow Features
 
