@@ -37,6 +37,9 @@ jobs:
             - name: 🏷️ Set environment variables
               id: set-env
               run: |
+                  echo "GitHub ref: ${{ github.ref }}"
+                  echo "GitHub event: ${{ github.event_name }}"
+
                   if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
                     ENV="${{ github.event.inputs.environment }}"
                   elif [ "${{ github.ref }}" = "refs/heads/master" ]; then
@@ -50,6 +53,7 @@ jobs:
                     exit 1
                   fi
 
+                  echo "Detected environment: $ENV"
                   echo "environment=$ENV" >> $GITHUB_OUTPUT
 
                   if [ "$ENV" = "production" ]; then
@@ -79,7 +83,11 @@ jobs:
               run: npm run test -- --watch=false --browsers=ChromeHeadless
 
             - name: 🔨 Build Angular app
-              run: npm run build --configuration=${{ steps.set-env.outputs.build-config }}
+              run: |
+                  echo "Building with configuration: ${{ steps.set-env.outputs.build-config }}"
+                  echo "Environment: ${{ steps.set-env.outputs.environment }}"
+                  echo "Running build command: ng build fuse --configuration=${{ steps.set-env.outputs.build-config }}"
+                  ng build fuse --configuration=${{ steps.set-env.outputs.build-config }}
 
             - name: 🔧 Configure AWS credentials
               uses: aws-actions/configure-aws-credentials@v4
