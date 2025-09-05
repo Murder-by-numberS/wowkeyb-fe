@@ -109,13 +109,13 @@ jobs:
                   echo "i18n directory contents:"
                   ls -la dist/fuse/browser/i18n/ || echo "i18n directory not found"
 
-                  aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/ \
+                  aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/browser/ \
                     --delete \
                     --cache-control "public,max-age=31536000,immutable" \
                     --exclude "*.html" \
                     --exclude "*.json"
 
-                  aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/ \
+                  aws s3 sync dist/fuse/browser/ s3://${{ steps.set-env.outputs.s3-bucket }}/browser/ \
                     --delete \
                     --cache-control "public,max-age=0,s-maxage=31536000" \
                     --include "*.html" \
