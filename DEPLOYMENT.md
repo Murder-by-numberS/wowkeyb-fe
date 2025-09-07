@@ -1,6 +1,6 @@
 # GitHub Actions Multi-Environment Deployment Guide
 
-This project uses GitHub Actions for automated deployment to AWS S3 and CloudFront with separate develop, staging, and production environments, replacing the previous CodePipeline setup.
+This project uses GitHub Actions for automated deployment to AWS S3 and CloudFront with separate develop, staging, and production environments.
 
 ## Environment Setup
 
@@ -183,14 +183,14 @@ You can trigger a manual deployment by:
 - Clear logging shows which environment is being deployed
 - Displays the S3 bucket and CloudFront distribution being used
 
-## Migration from CodePipeline
+## Deployment Architecture
 
-This GitHub Actions workflow replaces your previous CodePipeline setup. You can now:
+This GitHub Actions workflow provides automated deployment with the following benefits:
 
-1. Remove the CodePipeline configuration from AWS
-2. Delete the `buildspec.yml` file (if no longer needed)
-3. Use this GitHub Actions workflow for all deployments
-4. Deploy to develop and staging for testing before production
+1. Simplified deployment process
+2. Environment-specific configurations
+3. Automated testing before deployment
+4. Cost-effective deployment with GitHub Actions
 
 ## Testing
 
