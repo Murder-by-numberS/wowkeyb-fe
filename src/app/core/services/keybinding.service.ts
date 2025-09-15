@@ -69,45 +69,50 @@ export class KeybindingService {
         const currentKeybindings = this.keybindingsSource.getValue();
         console.log('updateKeybindsInKeybinding - currentKeybindings - update:', update);
 
-        const updatedKeybindings = currentKeybindings.map(kb => {
-            if (kb.keybindingId === id) {
-                let keybinds = [...kb.keybinds];
-                if (update.removedKeybinds?.length) {
-                    console.log('removing keybinds', keybinds);
-                    console.log('update.removedKeybinds', update.removedKeybinds);
-                    keybinds = keybinds.filter(existing =>
-                        !update.removedKeybinds.some(remove =>
-                            remove.key === existing.key &&
-                            String(remove.spell.spellId) === String(existing.spell.spellId)
-                        )
-                    );
-                }
-                if (update.addedKeybinds?.length) {
-                    keybinds.push(...update.addedKeybinds);
+        // Find the current keybinding
+        const currentKeybinding = currentKeybindings.find(kb => kb.keybindingId === id);
+        if (!currentKeybinding) {
+            throw new Error('Keybinding not found');
+        }
 
-                    console.log('updateKeybindsInKeybinding - keybinds', keybinds);
+        // Calculate the new keybinds array
+        let keybinds = [...currentKeybinding.keybinds];
+        if (update.removedKeybinds?.length) {
+            console.log('removing keybinds - before:', keybinds.length);
+            console.log('update.removedKeybinds', update.removedKeybinds);
+            keybinds = keybinds.filter(existing =>
+                !update.removedKeybinds.some(remove =>
+                    String(remove.spell.spellId) === String(existing.spell.spellId)
+                )
+            );
+            console.log('removing keybinds - after:', keybinds.length);
+        }
+        if (update.addedKeybinds?.length) {
+            console.log('adding keybinds - before:', keybinds.length);
+            keybinds.push(...update.addedKeybinds);
+            console.log('adding keybinds - after:', keybinds.length);
+        }
 
-                }
+        console.log('after updateKeybindsInKeybinding - keybinds', keybinds);
 
-                console.log('after updateKeybindsInKeybinding - keybinds', keybinds);
-                return { ...kb, keybinds };
-            }
-            return kb;
-        });
-
-        return this.updateKeybinding(id, updatedKeybindings.find(kb => kb.keybindingId === id));
+        // Only send the keybinds field to avoid triggering other field clearing logic
+        return this.updateKeybinding(id, { keybinds });
     }
 
     updateKeybinding(id: string, updatedKeybinding: Partial<Keybinding>): Observable<Keybinding> {
+        console.log('updateKeybinding - sending to backend:', { id, updatedKeybinding });
         return this.http.put<Keybinding>(`${environment.apiUrl}/keybindings/${id}`, updatedKeybinding)
             .pipe(
-                tap((updatedKeybinding: Keybinding) => {
+                tap((response: Keybinding) => {
+                    console.log('updateKeybinding - backend response:', response);
                     const currentKeybindings = this.keybindingsSource.getValue();
                     const updatedKeybindings = currentKeybindings.map(kb =>
-                        kb.keybindingId === id ? updatedKeybinding : kb
+                        kb.keybindingId === id ? response : kb
                     );
+                    console.log('updateKeybinding - updating local state:', updatedKeybindings);
                     this.keybindingsSource.next(updatedKeybindings);
                     localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
+                    console.log('updateKeybinding - localStorage updated');
                 })
             );
     }

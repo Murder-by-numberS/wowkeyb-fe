@@ -242,6 +242,8 @@ export class KeyboardComponent implements OnInit, AfterViewInit {
     }
 
     openKeybindDialog(key: any): void {
+        console.log('Keyboard - openKeybindDialog - key:', key);
+        console.log('Keyboard - openKeybindDialog - key.keybinds:', key.keybinds);
         if (key.keybinds?.length > 0) {
             const dialogWidth = this.calculateDialogWidth(key.keybinds.length);
             const dialogRef = this.dialog.open(KeybindDialogComponent, {
@@ -253,25 +255,56 @@ export class KeyboardComponent implements OnInit, AfterViewInit {
                 if (result) {
                     console.log('Keyboard - Dialog result:', result);
                     key.keybinds = result;
-                    // Update the selectedKeybinding's keybinds
-                    this.selectedKeybinding.keybinds = this.selectedKeybinding.keybinds
-                        .filter(k => k.key !== key.label);
-                    // Add the remaining keybinds back
-                    result.forEach(keybind => {
-                        this.selectedKeybinding.keybinds.push(keybind);
+
+                    // Calculate the changes
+                    console.log('Keyboard - key.label:', key.label);
+                    console.log('Keyboard - selectedKeybinding.keybinds:', this.selectedKeybinding.keybinds);
+                    console.log('Keyboard - keybinds with key details:', this.selectedKeybinding.keybinds.map(k => ({ key: k.key, spellName: k.spell.name })));
+
+                    const oldKeybinds = this.selectedKeybinding.keybinds.filter(k => k.key.toLowerCase() === key.label.toLowerCase());
+                    const newKeybinds = result;
+
+                    console.log('Keyboard - oldKeybinds:', oldKeybinds);
+                    console.log('Keyboard - newKeybinds:', newKeybinds);
+
+                    // Find removed keybinds (in oldKeybinds but not in newKeybinds)
+                    const removedKeybinds = oldKeybinds.filter(old =>
+                        !newKeybinds.some(newKb =>
+                            String(newKb.spell.spellId) === String(old.spell.spellId)
+                        )
+                    );
+
+                    // Find added keybinds (in newKeybinds but not in oldKeybinds)
+                    const addedKeybinds = newKeybinds.filter(newKb =>
+                        !oldKeybinds.some(old =>
+                            String(old.spell.spellId) === String(newKb.spell.spellId)
+                        )
+                    );
+
+                    console.log('Keyboard - Changes calculated (diff approach):', {
+                        addedKeybinds: addedKeybinds.length,
+                        removedKeybinds: removedKeybinds.length,
+                        addedDetails: addedKeybinds.map(a => ({ key: a.key, spellId: a.spell.spellId, name: a.spell.name })),
+                        removedDetails: removedKeybinds.map(r => ({ key: r.key, spellId: r.spell.spellId, name: r.spell.name }))
                     });
-                    //update the keybinding in the keybindingService
-                    this.keybindingService.updateKeybinding(this.selectedKeybinding.keybindingId, this.selectedKeybinding)
-                        .subscribe({
-                            next: (updatedKeybinding) => {
-                                console.log('after keybind-dialog - this.selectedKeybinding', this.selectedKeybinding);
-                                this.updateKeyboardBindings();
-                                this.refreshKeybindings.emit();
-                            },
-                            error: (error) => {
-                                console.error('Error updating keybinding:', error);
-                            }
-                        });
+
+                    // Use the proper update method that only sends keybinds
+                    console.log('Keyboard - calling updateKeybindsInKeybinding with:', { addedKeybinds, removedKeybinds });
+                    this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybindingId, {
+                        addedKeybinds,
+                        removedKeybinds
+                    }).subscribe({
+                        next: (updatedKeybinding) => {
+                            console.log('Keyboard - updateKeybindsInKeybinding success:', updatedKeybinding);
+                            console.log('Keyboard - updatedKeybinding.keybinds:', updatedKeybinding.keybinds);
+                            // Update the selected keybinding with the server response
+                            this.selectedKeybinding = updatedKeybinding;
+                            this.updateKeyboardBindings();
+                        },
+                        error: (error) => {
+                            console.error('Keyboard - Error updating keybinding:', error);
+                        }
+                    });
                 }
             });
         }

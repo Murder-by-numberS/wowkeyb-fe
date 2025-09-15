@@ -37,7 +37,7 @@ export class AbilityDialogComponent {
         if (this.isKeybindingActive) {
             // Add the new keybinding if it exists
             if (this.newKeybinding) {
-                if (this.keybindingService.hasKeybindKey(this.data.keybinding.keybinding_id, this.newKeybinding)) {
+                if (this.keybindingService.hasKeybindKey(this.data.keybinding.keybindingId, this.newKeybinding)) {
                     this.errorMessage = `The key "${this.newKeybinding}" is already in use`;
                     setTimeout(() => {
                         this.errorMessage = null;
@@ -122,7 +122,7 @@ interface AbilityDialogData {
         keybindings?: string[];
     },
     keybinding: {
-        keybinding_id: string;
+        keybindingId: string;
         keybinds: {
             key: string;
             spell: string;

@@ -454,10 +454,18 @@ export class KeybindsComponent implements OnInit {
 
         this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybindingId, update)
             .subscribe({
-                next: () => {
-                    this.selectedKeybinding = this.keybindingService.getKeybindingById(this.selectedKeybinding.keybindingId);
-                    // Refresh the view-keyboard component
-                    this.refreshChildKeybindings();
+                next: (updatedKeybinding) => {
+                    // Update the selected keybinding with the latest data from server
+                    this.selectedKeybinding = updatedKeybinding;
+                    this.selectedKeybindingName = updatedKeybinding.name;
+
+                    // Update the drawer selection
+                    if (this.keybindsDrawerComponent) {
+                        this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
+                    }
+
+                    // Trigger the change events to update the abilities component
+                    this.onSelectionClassChanged(updatedKeybinding.class);
                 },
                 error: (error) => {
                     console.error('Error updating keybinding:', error);

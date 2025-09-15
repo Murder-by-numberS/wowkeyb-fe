@@ -40,8 +40,9 @@ export class KeybindDialogComponent {
     }
 
     onConfirm(): void {
-        this.keybinds = this.data.key.keybinds.filter(bind => !this.markedForRemoval.has(bind));
-        this.dialogRef.close(this.keybinds);
+        // Filter out the marked keybinds from the working copy
+        const filteredKeybinds = this.keybinds.filter(bind => !this.markedForRemoval.has(bind));
+        this.dialogRef.close(filteredKeybinds);
     }
 }
 
