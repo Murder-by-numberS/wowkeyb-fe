@@ -80,8 +80,6 @@ export class ClassicLayoutComponent implements OnInit, OnDestroy {
         this._navigationService.navigation$
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe((navigation: Navigation) => {
-                console.log('ClassicLayout - Received navigation data:', navigation);
-                console.log('ClassicLayout - Default navigation items:', navigation.default);
                 this.navigation = navigation;
             });
 
