@@ -46,12 +46,17 @@ export class NavigationService {
     get(): Observable<Navigation> {
         // Get the auth token from localStorage
         const token = localStorage.getItem('accessToken');
+        console.log('NavigationService - Token from localStorage:', token ? 'Present' : 'Not present');
+        console.log('NavigationService - Token value:', token ? `${token.substring(0, 20)}...` : 'null');
 
         // Create headers with auth token if it exists
         const headers = new HttpHeaders().set(
             'Authorization',
             token ? `Bearer ${token}` : ''
         );
+
+        console.log('NavigationService - Making request to:', `${this.apiUrl}/navigation`);
+        console.log('NavigationService - Headers:', headers);
 
         // Make the request with optional auth header
         return this._httpClient.get<Navigation>(`${this.apiUrl}/navigation`, {
@@ -61,9 +66,25 @@ export class NavigationService {
         }).pipe(
             map((response: HttpResponse<Navigation>) => response.body),
             tap((navigation) => {
+                console.log('NavigationService - Received navigation data:', navigation);
+                // Create a new object reference to trigger change detection
+                const newNavigation = {
+                    ...navigation,
+                    default: [...(navigation.default || [])],
+                    horizontal: [...(navigation.horizontal || [])],
+                    compact: [...(navigation.compact || [])],
+                    futuristic: [...(navigation.futuristic || [])]
+                };
                 // Always emit the navigation data, even if auth failed
-                this._navigation.next(navigation);
+                this._navigation.next(newNavigation);
             })
         );
+    }
+
+    /**
+     * Refresh navigation data (useful after login/logout)
+     */
+    refresh(): Observable<Navigation> {
+        return this.get();
     }
 }

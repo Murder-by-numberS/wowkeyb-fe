@@ -11,8 +11,8 @@ import {
     FuseVerticalNavigationComponent,
 } from '@fuse/components/navigation';
 import { FuseMediaWatcherService } from '@fuse/services/media-watcher';
-import { NavigationService } from 'app/core/navigation/navigation.service';
 import { Navigation } from 'app/core/navigation/navigation.types';
+import { NavigationService } from 'app/core/navigation/navigation.service.new';
 import { LanguagesComponent } from 'app/layout/common/languages/languages.component';
 import { MessagesComponent } from 'app/layout/common/messages/messages.component';
 import { NotificationsComponent } from 'app/layout/common/notifications/notifications.component';
@@ -64,9 +64,9 @@ export class ModernLayoutComponent implements OnInit, OnDestroy {
         private _activatedRoute: ActivatedRoute,
         private _router: Router,
         private _authService: AuthService,
-        private _navigationService: NavigationService,
         private _fuseMediaWatcherService: FuseMediaWatcherService,
-        private _fuseNavigationService: FuseNavigationService
+        private _fuseNavigationService: FuseNavigationService,
+        private _navigationService: NavigationService
     ) { }
 
     // -----------------------------------------------------------------------------------------------------
@@ -88,16 +88,10 @@ export class ModernLayoutComponent implements OnInit, OnDestroy {
      * On init
      */
     ngOnInit(): void {
-
-        this._navigationService.get()
-            .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe((navigation) => {
-            })
-
-        // Subscribe to navigation data
+        // Subscribe to navigation updates from NavigationService
         this._navigationService.navigation$
             .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe((navigation: Navigation) => {
+            .subscribe((navigation) => {
                 this.navigation = navigation;
             });
 
@@ -113,8 +107,9 @@ export class ModernLayoutComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe((authenticated) => {
                 this.isAuthenticated = authenticated;
-            })
-
+                // Update navigation when auth state changes
+                this._navigationService.updateForAuthState(authenticated);
+            });
     }
 
     /**

@@ -36,14 +36,28 @@ export const authInterceptor = (
     // for the protected API routes which our response interceptor will
     // catch and delete the access token from the local storage while logging
     // the user out from the app.
+
+    const token = authService.accessToken;
+
+    // Helper function to check if token is a valid JWT format
+    const isValidJWT = (token: string): boolean => {
+        if (!token || token.trim() === '' || token === 'null' || token === 'undefined') {
+            return false;
+        }
+        // Check if it has 3 parts separated by dots (basic JWT structure)
+        const parts = token.split('.');
+        return parts.length === 3;
+    };
+
     if (
-        authService.accessToken &&
-        !AuthUtils.isTokenExpired(authService.accessToken)
+        token &&
+        isValidJWT(token) &&
+        !AuthUtils.isTokenExpired(token)
     ) {
         newReq = req.clone({
             headers: req.headers.set(
                 'Authorization',
-                'Bearer ' + authService.accessToken
+                'Bearer ' + token
             ),
         });
     }
@@ -55,13 +69,11 @@ export const authInterceptor = (
             if (error instanceof HttpErrorResponse && error.status === 401) {
                 // Sign out
 
-                console.log('signing user out');
 
                 authService.signOut().subscribe(() => {
 
                     backendService.stopPing();
 
-                    console.log('Signing out and routing to home');
                     router.navigate(['home']);
                 });
 

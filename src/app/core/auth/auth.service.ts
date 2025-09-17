@@ -16,6 +16,12 @@ export class AuthService {
     private _keybindingService = inject(KeybindingService);
     private apiUrl: string;
 
+    constructor() {
+        // Initialize the backend URL
+        this.setBackendURL();
+    }
+
+
     // -----------------------------------------------------------------------------------------------------
     // @ Accessors
     // -----------------------------------------------------------------------------------------------------
@@ -84,7 +90,6 @@ export class AuthService {
         return this._httpClient.post(`${this.apiUrl}/auth/login`, credentials).pipe(
             switchMap((response: any) => {
 
-                console.log('AuthService - response', response);
 
                 // Store the access token in the local storage
                 this.accessToken = response.token;
@@ -98,6 +103,8 @@ export class AuthService {
 
                 //set response.user.keybindings to local storage
                 localStorage.setItem('keybindings', JSON.stringify(response.keybindings));
+
+                // Navigation will be loaded fresh when user navigates to protected routes
 
                 // Return a new observable with the response
                 return of(response);
@@ -144,6 +151,8 @@ export class AuthService {
                         localStorage.setItem('keybindings', JSON.stringify(response.keybindings));
                     }
 
+                    // Navigation will be loaded fresh when user navigates to protected routes
+
                     // Return true
                     return of(true);
                 })
@@ -161,11 +170,15 @@ export class AuthService {
         // localStorage.removeItem('currentUser');
         // localStorage.removeItem('keybindings');
 
+        // Clear the access token from memory - set to empty string instead of null
+        this.accessToken = '';
+
         // Set the authenticated flag to false
         this._authenticated = false;
 
         // Clear keybindings
         this._keybindingService.clearKeybindings();
+
 
         // Return the observable
         return of(true);
@@ -214,8 +227,8 @@ export class AuthService {
             return of(true);
         }
 
-        // Check the access token availability
-        if (!this.accessToken) {
+        // Check the access token availability - handle both null/undefined and empty string
+        if (!this.accessToken || this.accessToken.trim() === '') {
             return of(false);
         }
 
@@ -246,16 +259,9 @@ export class AuthService {
     }
 
     initializeBackendURL(): Observable<any> {
-        console.log('initializing backend');
         if (environment.production === true) {
-            console.log(
-                'getting backend URL',
-                `${window.location.origin}/backend`
-            );
             return this._httpClient.get(`${window.location.origin}/backend`);
         } else {
-            console.log('production env', environment.production);
-
             return of(true);
         }
     }

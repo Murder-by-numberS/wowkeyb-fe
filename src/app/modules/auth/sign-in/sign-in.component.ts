@@ -130,6 +130,7 @@ export class AuthSignInComponent implements OnInit {
                         localStorage.setItem('keybindings', JSON.stringify(keybindings));
                     });
 
+
                 // Set the redirect url.
                 // The '/signed-in-redirect' is a dummy url to catch the request and redirect the user
                 // to the correct page after a successful sign in. This way, that url can be set via
