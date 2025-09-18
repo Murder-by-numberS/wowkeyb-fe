@@ -1,5 +1,5 @@
 //Angular
-import { Component, ViewEncapsulation, OnInit, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass, CommonModule } from '@angular/common';
@@ -106,7 +106,8 @@ export class KeybindsComponent implements OnInit {
         private dialog: MatDialog,
         private route: ActivatedRoute,
         private router: Router,
-        private snackBar: MatSnackBar) {
+        private snackBar: MatSnackBar,
+        private cdr: ChangeDetectorRef) {
 
         this.keybindingSelected = false;
     }
@@ -137,6 +138,9 @@ export class KeybindsComponent implements OnInit {
                 if (!authenticated && url === '/keybinds') {
                     this.isHomeRoute = true;
                 }
+
+                // Load keybindings based on authentication status
+                this.getKeybindings(authenticated);
             });
 
         // Subscribe to user service to get current user ID
@@ -251,7 +255,27 @@ export class KeybindsComponent implements OnInit {
     }
 
     getKeybindings(authenticated: boolean = false) {
-        //check local storage for keybindings
+        if (authenticated) {
+            // If authenticated, fetch fresh data from backend
+            this.keybindingService.getKeybindings().subscribe({
+                next: (keybindings) => {
+                    if (this.keybindsDrawerComponent) {
+                        this.keybindsDrawerComponent.loadKeybindings();
+                    }
+                },
+                error: (error) => {
+                    console.error('Failed to fetch keybindings from backend:', error);
+                    // Fallback to localStorage if backend fails
+                    this.loadFromLocalStorage();
+                }
+            });
+        } else {
+            // If not authenticated, load from localStorage
+            this.loadFromLocalStorage();
+        }
+    }
+
+    private loadFromLocalStorage() {
         const keybindings = localStorage.getItem('keybindings');
         if (keybindings) {
             this.keybindingService.updateKeybindings(JSON.parse(keybindings));
@@ -262,7 +286,6 @@ export class KeybindsComponent implements OnInit {
     }
 
     onKeybindingSelected(keybinding: any) {
-        console.log('onKeybindingSelected', keybinding)
         if (keybinding) {
             // Get the latest version of the keybinding from the service's current keybindings
             this.keybindingService.currentKeybindings
@@ -305,6 +328,14 @@ export class KeybindsComponent implements OnInit {
 
                         // Trigger the change events to update the abilities component
                         this.onSelectionClassChanged(updatedKeybinding.class);
+
+                        // Force change detection to ensure UI updates
+                        this.cdr.detectChanges();
+
+                        // Additional trigger for keyboard component
+                        setTimeout(() => {
+                            this.cdr.detectChanges();
+                        }, 0);
                     }
                 });
         }
@@ -320,6 +351,8 @@ export class KeybindsComponent implements OnInit {
                 this.abilitiesComponent.abilities = [];
                 this.abilitiesComponent.fetchAbilities();
             }
+            // Force change detection to ensure UI updates
+            this.cdr.detectChanges();
         }
     }
 

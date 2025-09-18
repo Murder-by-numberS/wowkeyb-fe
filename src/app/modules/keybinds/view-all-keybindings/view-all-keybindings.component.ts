@@ -66,6 +66,7 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
     @Output() selectKeybinding = new EventEmitter<Keybinding>();
 
     @ViewChild('expandedKeyboard') expandedKeyboardComponent?: ExpandedKeyboardComponent;
+    @ViewChild(KeyboardComponent) keyboardComponent?: KeyboardComponent;
 
     canDuplicate: boolean = false;
     isExpanded: boolean = false;
@@ -92,13 +93,15 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
         }
         if (changes['selectedKeybinding']) {
             this.checkIfOutdated();
+            // Refresh the keyboard when selectedKeybinding changes
+            setTimeout(() => {
+                this.refreshKeyboard();
+            }, 100);
         }
     }
 
     private updateCanDuplicate(): void {
-        console.log('Current count:', this.currentKeybindingCount, 'Max:', this.maxKeybindings);
         this.canDuplicate = this.currentKeybindingCount < this.maxKeybindings;
-        console.log('Can duplicate:', this.canDuplicate);
     }
 
     checkIfOutdated() {
@@ -207,6 +210,12 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
 
     onRefreshChildKeybindings(): void {
         this.refreshChildKeybindings.emit();
+    }
+
+    private refreshKeyboard(): void {
+        if (this.keyboardComponent) {
+            this.keyboardComponent.refreshKeyboard();
+        }
     }
 
     onUpdateKeybinding(keybinding: Keybinding): void {

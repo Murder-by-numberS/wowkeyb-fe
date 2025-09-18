@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, OnInit, viewChild, Input, signal, SimpleChanges, EventEmitter, Output, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, viewChild, Input, signal, SimpleChanges, EventEmitter, Output, ViewChild, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { PanZoomDirective, PanZoomModel } from 'app/shared/directives/pan-zoom.directive';
@@ -35,13 +35,36 @@ interface Key {
         PanZoomDirective
     ],
 })
-export class KeyboardComponent implements OnInit, AfterViewInit {
+export class KeyboardComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('panZoom', { read: PanZoomDirective }) panZoom!: PanZoomDirective;
     @Input() scalePerZoomLevel: number = 2.0;
     @Input() mouseWheelFactor: number = 0.005; // Configurable zoom sensitivity
 
+    private _selectedKeybinding: Keybinding;
+
     @Input()
-    selectedKeybinding: Keybinding;
+    set selectedKeybinding(value: Keybinding) {
+        this._selectedKeybinding = value;
+        // Use setTimeout to ensure the component is ready
+        setTimeout(() => {
+            this.updateKeyboardBindings();
+        }, 0);
+    }
+
+    get selectedKeybinding(): Keybinding {
+        return this._selectedKeybinding;
+    }
+
+    private _keybindingSelected: boolean = false;
+
+    @Input()
+    set keybindingSelected(value: boolean) {
+        this._keybindingSelected = value;
+    }
+
+    get keybindingSelected(): boolean {
+        return this._keybindingSelected;
+    }
 
     @Output() refreshKeybindings = new EventEmitter<void>();
 
@@ -110,12 +133,17 @@ export class KeyboardComponent implements OnInit, AfterViewInit {
      */
     constructor(
         private dialog: MatDialog,
-        private keybindingService: KeybindingService
+        private keybindingService: KeybindingService,
+        private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
         this.initializeKeyMap();
         this.detectInputDevice();
+        // Ensure keyboard is updated if selectedKeybinding is already set
+        if (this.selectedKeybinding) {
+            this.updateKeyboardBindings();
+        }
     }
 
     private initializeKeyMap(): void {
@@ -132,6 +160,10 @@ export class KeyboardComponent implements OnInit, AfterViewInit {
             console.log('PanZoom directive initialized');
         } else {
             console.warn('PanZoom directive not initialized');
+        }
+        // Ensure keyboard is updated after view is initialized
+        if (this.selectedKeybinding) {
+            this.updateKeyboardBindings();
         }
     }
 
@@ -193,9 +225,11 @@ export class KeyboardComponent implements OnInit, AfterViewInit {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes['selectedKeybinding']) {
-            console.log('Keyboard - inputProp changed:', changes['selectedKeybinding'].currentValue);
-            this.updateKeyboardBindings();
+        if (changes['selectedKeybinding'] || changes['keybindingSelected']) {
+            // Use setTimeout to ensure the component is ready
+            setTimeout(() => {
+                this.updateKeyboardBindings();
+            }, 0);
         }
     }
 
@@ -208,12 +242,12 @@ export class KeyboardComponent implements OnInit, AfterViewInit {
             });
         });
 
-        //console log the selectedKeybinding
-        console.log('Keyboard - updateKeyboardBindings - this.selectedKeybinding', this.selectedKeybinding);
-
-        if (this.selectedKeybinding?.keybinds) {
+        // Only process keybinds if a keybinding is selected and has keybinds
+        if (this.keybindingSelected && this.selectedKeybinding?.keybinds && Array.isArray(this.selectedKeybinding.keybinds)) {
             this.selectedKeybinding.keybinds.forEach(keybind => {
-                this.addKeybinding(keybind);
+                if (keybind && keybind.key && keybind.spell) {
+                    this.addKeybinding(keybind);
+                }
             });
         }
     }
@@ -238,7 +272,6 @@ export class KeyboardComponent implements OnInit, AfterViewInit {
                 }
             });
         });
-        console.log('addKeybinding - this.keyboardLayout', this.keyboardLayout);
     }
 
     openKeybindDialog(key: any): void {
@@ -356,6 +389,18 @@ export class KeyboardComponent implements OnInit, AfterViewInit {
      */
     public getZoomSensitivity(): number {
         return this.mouseWheelFactor;
+    }
+
+    /**
+     * Public method to manually refresh the keyboard bindings
+     * This can be called from parent components if needed
+     */
+    public refreshKeyboard(): void {
+        this.updateKeyboardBindings();
+    }
+
+    ngOnDestroy(): void {
+        // Clean up any subscriptions or resources if needed
     }
 
 }

@@ -80,7 +80,7 @@
                         </button>
                     </div>
                     <div class="px-2 flex items-center gap-2">
-                        @if (selectedKeybinding.is_public) {
+                        @if (selectedKeybinding.isPublic) {
                         <button mat-stroked-button color="primary" matTooltip="Make Private" (click)="onTogglePublic()"
                             [disabled]="!isAuthenticated"
                             [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Private'">
@@ -137,7 +137,8 @@
                 (keybindingUpdated)="onUpdateKeybinding($event)" />
         </div>
         <div class="w-full relative" style="height: 500px;">
-            <keyboard (refreshKeybindings)="onRefreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding">
+            <keyboard (refreshKeybindings)="onRefreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding"
+                [keybindingSelected]="keybindingSelected">
             </keyboard>
         </div>
         } @else {
