@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from 'environments/environment';
 
-import { formatString } from '../util/util';
+import { formatString, formatClassName } from '../util/util';
 
 import { Ability } from '../types/ability';
 
@@ -28,7 +28,7 @@ export class AbilitiesService {
     // //gets all proposals
     getAbilities(wowClass: string, spec: string, heroTalent: string, gameVersion: string): Observable<any> {
         //lowercase class spec and heroTalent
-        const urlString = `${environment.apiUrl}/abilities/${formatString(wowClass.toLowerCase())}/${formatString(spec.toLowerCase())}/${formatString(heroTalent.toLowerCase())}/${gameVersion}`;
+        const urlString = `${environment.apiUrl}/abilities/${formatClassName(wowClass)}/${formatString(spec.toLowerCase())}/${formatString(heroTalent.toLowerCase())}/${gameVersion}`;
         return this.http.get(urlString);
     }
 

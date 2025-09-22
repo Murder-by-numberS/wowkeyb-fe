@@ -80,26 +80,17 @@ export class KeybindsDrawerComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.loadKeybindings();
+        // Force refresh keybindings from server on component initialization
+        this.forceRefreshKeybindings();
         this.filteredKeybindings = this.keybindings;
-
-        const savedKeybindings = localStorage.getItem('keybindings');
-        if (savedKeybindings) {
-            try {
-                const parsedKeybindings = JSON.parse(savedKeybindings);
-                this.keybindings = parsedKeybindings;
-                // Update the KeybindingService with the saved keybindings
-                this.keybindingService.updateKeybindings(parsedKeybindings);
-                this.applyFilter();
-            } catch (error) {
-                console.error('Failed to parse keybindings from localStorage:', error);
-            }
-        }
 
         // Subscribe to the keybinding service to update when keybindings change
         this.keybindingService.currentKeybindings.subscribe(keybindings => {
+            console.log('KeybindsDrawerComponent - received keybindings update:', keybindings.length);
+            console.log('KeybindsDrawerComponent - keybinding IDs:', keybindings.map(kb => kb.keybindingId));
             this.keybindings = keybindings;
             this.applyFilter();
+            console.log('KeybindsDrawerComponent - applied filter, filtered keybindings:', this.filteredKeybindings.length);
         });
 
         this.selectedClasses.valueChanges.subscribe(() => {
@@ -131,6 +122,23 @@ export class KeybindsDrawerComponent implements OnInit {
         });
     }
 
+    forceRefreshKeybindings() {
+        console.log('KeybindsDrawerComponent - forceRefreshKeybindings');
+        // Force refresh from server
+        this.keybindingService.forceRefreshKeybindings().subscribe({
+            next: (keybindings) => {
+                console.log('Keybindings refreshed from server:', keybindings.length);
+                this.keybindings = keybindings;
+                this.applyFilter();
+            },
+            error: (error) => {
+                console.error('Error refreshing keybindings:', error);
+                // Fallback to current keybindings in service
+                this.loadKeybindings();
+            }
+        });
+    }
+
     selectKeybinding(keybinding: any): void {
         console.log('keybinding selected', keybinding);
         this.selectedKeybindingId = keybinding.keybindingId;
@@ -154,6 +162,16 @@ export class KeybindsDrawerComponent implements OnInit {
                 this.preventAutoSelection = false;
             }, 1000);
         }
+    }
+
+    clearSelection(): void {
+        this.selectedKeybindingId = null;
+        this.preventAutoSelection = true;
+
+        // Reset the flag after a short delay to allow normal auto-selection in the future
+        setTimeout(() => {
+            this.preventAutoSelection = false;
+        }, 1000);
     }
 
     closeAccordion() {
@@ -198,16 +216,23 @@ export class KeybindsDrawerComponent implements OnInit {
     }
 
     applyFilter() {
+        console.log('KeybindsDrawerComponent - applyFilter called');
+        console.log('KeybindsDrawerComponent - filterApplied:', this.filterApplied);
+        console.log('KeybindsDrawerComponent - selectedClasses.value:', this.selectedClasses.value);
+        console.log('KeybindsDrawerComponent - keybindings length:', this.keybindings.length);
+
         if (this.filterApplied && this.selectedClasses.value?.length > 0) {
             this.filteredKeybindings = this.keybindings.filter(keybinding =>
                 this.selectedClasses.value.some(selectedClass => selectedClass.name === keybinding.class)
             );
+            console.log('KeybindsDrawerComponent - filtered keybindings length:', this.filteredKeybindings.length);
             if (!this.filteredKeybindings.some(keybinding => keybinding.keybindingId === this.selectedKeybindingId)) {
                 this.selectedKeybindingId = null;
                 this.keybindingSelected.emit(null);
             }
         } else {
             this.filteredKeybindings = this.keybindings;
+            console.log('KeybindsDrawerComponent - no filter applied, filtered keybindings length:', this.filteredKeybindings.length);
         }
     }
 
@@ -228,22 +253,6 @@ export class KeybindsDrawerComponent implements OnInit {
         this.keybindingService.updateKeybinding(keybinding.keybindingId, { isPublic: !keybinding.isPublic })
             .subscribe({
                 next: () => {
-                    // Update local storage
-                    const savedKeybindings = localStorage.getItem('keybindings');
-                    if (savedKeybindings) {
-                        try {
-                            const parsedKeybindings = JSON.parse(savedKeybindings);
-                            const updatedKeybindings = parsedKeybindings.map((kb: Keybinding) => {
-                                if (kb.keybindingId === keybinding.keybindingId) {
-                                    return { ...kb, isPublic: !keybinding.isPublic };
-                                }
-                                return kb;
-                            });
-                            localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
-                        } catch (error) {
-                            console.error('Failed to update keybindings in localStorage:', error);
-                        }
-                    }
 
                     this.loadKeybindings(); // Reload to update the UI
                     this.snackBar.open(

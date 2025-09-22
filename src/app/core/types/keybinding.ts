@@ -11,6 +11,7 @@ export interface Keybinding {
     createdAt: string;
     keybinds: Keybind[];
     views?: number;
+    deleted_at?: string; // For soft-deleted keybindings
     version?: {
         _id: string;
         game_version: string;
@@ -21,6 +22,11 @@ export interface Keybinding {
     versionDetails?: {
         versionId: string;
         gameVersion: string;
+    };
+    randomClassDetails?: {
+        class: string;
+        spec: string;
+        heroTalent: string;
     };
 }
 

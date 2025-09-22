@@ -139,8 +139,27 @@ export class KeybindsComponent implements OnInit {
                     this.isHomeRoute = true;
                 }
 
-                // Load keybindings based on authentication status
-                this.getKeybindings(authenticated);
+                // Force refresh keybindings on page load to ensure we have the latest data
+                if (authenticated) {
+                    // For authenticated users, force refresh from server
+                    this.keybindingService.forceRefreshKeybindings().subscribe({
+                        next: (keybindings) => {
+                            console.log('Keybindings refreshed on page load:', keybindings.length);
+
+                            if (this.keybindsDrawerComponent) {
+                                this.keybindsDrawerComponent.loadKeybindings();
+                            }
+                        },
+                        error: (error) => {
+                            console.error('Error refreshing keybindings on page load:', error);
+                            // Fallback to regular getKeybindings if force refresh fails
+                            this.getKeybindings(authenticated);
+                        }
+                    });
+                } else {
+                    // For non-authenticated users, show empty state
+                    this.keybindingService.clearKeybindings();
+                }
             });
 
         // Subscribe to user service to get current user ID
@@ -265,25 +284,16 @@ export class KeybindsComponent implements OnInit {
                 },
                 error: (error) => {
                     console.error('Failed to fetch keybindings from backend:', error);
-                    // Fallback to localStorage if backend fails
-                    this.loadFromLocalStorage();
+                    // Show empty state if backend fails
+                    this.keybindingService.clearKeybindings();
                 }
             });
         } else {
-            // If not authenticated, load from localStorage
-            this.loadFromLocalStorage();
+            // If not authenticated, show empty state
+            this.keybindingService.clearKeybindings();
         }
     }
 
-    private loadFromLocalStorage() {
-        const keybindings = localStorage.getItem('keybindings');
-        if (keybindings) {
-            this.keybindingService.updateKeybindings(JSON.parse(keybindings));
-            if (this.keybindsDrawerComponent) {
-                this.keybindsDrawerComponent.loadKeybindings();
-            }
-        }
-    }
 
     onKeybindingSelected(keybinding: any) {
         if (keybinding) {
@@ -304,22 +314,19 @@ export class KeybindsComponent implements OnInit {
                         this.selectedKeybindingSpec = updatedKeybinding.spec;
                         this.selectedKeybindingHeroTalent = updatedKeybinding.heroTalent;
 
-                        // Update local storage to ensure consistency
-                        const savedKeybindings = localStorage.getItem('keybindings');
-                        if (savedKeybindings) {
-                            try {
-                                const parsedKeybindings = JSON.parse(savedKeybindings);
-                                const updatedKeybindings = parsedKeybindings.map((kb: Keybinding) => {
-                                    if (kb.keybindingId === updatedKeybinding.keybindingId) {
-                                        return { ...kb, isPublic: updatedKeybinding.isPublic };
-                                    }
-                                    return kb;
-                                });
-                                localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
-                            } catch (error) {
-                                console.error('Failed to update keybindings in localStorage:', error);
-                            }
+                        // If this is a new keybinding with random class details, use them to fetch abilities
+                        if (updatedKeybinding.randomClassDetails) {
+                            console.log('New keybinding with random class details:', updatedKeybinding.randomClassDetails);
+
+                            // The abilities component will pick up the randomClassDetails from the selectedKeybinding
+                            // and use them in ngOnChanges to populate the abilities
+                            console.log('Selected keybinding with randomClassDetails:', this.selectedKeybinding);
+
+                            // Force change detection by creating a new object reference
+                            // This ensures ngOnChanges is triggered in the abilities component
+                            this.selectedKeybinding = { ...this.selectedKeybinding };
                         }
+
 
                         // Update the drawer's selection
                         if (this.keybindsDrawerComponent) {
@@ -361,6 +368,44 @@ export class KeybindsComponent implements OnInit {
         // You can also perform other actions here
     }
 
+    selectNextKeybindingAfterDeletion(deletedIndex: number, originalLength: number) {
+        console.log('selectNextKeybindingAfterDeletion called:', {
+            deletedIndex,
+            originalLength,
+            currentKeybindingsLength: this.keybindingService.currentKeybindingsValue.length
+        });
+
+        // Get the updated keybindings list (after deletion)
+        const updatedKeybindings = this.keybindingService.currentKeybindingsValue;
+
+        if (updatedKeybindings.length === 0) {
+            console.log('No keybindings left after deletion');
+            return;
+        }
+
+        // Determine which keybinding to select next
+        let nextIndex: number;
+
+        if (deletedIndex === 0) {
+            // If we deleted the first item, select the new first item
+            nextIndex = 0;
+        } else if (deletedIndex >= updatedKeybindings.length) {
+            // If we deleted the last item, select the new last item
+            nextIndex = updatedKeybindings.length - 1;
+        } else {
+            // Select the item at the same index (which is now the "next" item)
+            nextIndex = deletedIndex;
+        }
+
+        console.log('Selecting keybinding at index:', nextIndex);
+        const nextKeybinding = updatedKeybindings[nextIndex];
+
+        if (nextKeybinding) {
+            console.log('Auto-selecting next keybinding:', nextKeybinding.name);
+            this.onKeybindingSelected(nextKeybinding);
+        }
+    }
+
     deleteKeybinding(keybinding: Keybinding | null) {
         if (!keybinding) {
             console.error('No keybinding provided for deletion');
@@ -374,18 +419,41 @@ export class KeybindsComponent implements OnInit {
         dialogRef.afterClosed().subscribe(result => {
             if (result) {
                 console.log('deleting keybinding', keybinding);
+                // Get current keybindings to determine which one to select next
+                const currentKeybindings = this.keybindingService.currentKeybindingsValue;
+                const deletedIndex = currentKeybindings.findIndex(kb => kb.keybindingId === keybinding.keybindingId);
+
                 this.keybindingService.removeKeybinding(keybinding.keybindingId).subscribe({
-                    next: () => {
-                        // Clear the selected keybinding
+                    next: (response) => {
+                        console.log('Delete response:', response);
+
+                        // Clear the selected keybinding immediately
                         this.selectedKeybinding = null;
                         this.keybindingSelected = false;
                         this.selectedKeybindingName = '';
                         this.nameForm.get('name')?.setValue('');
 
-                        // Refresh the keybindings list
-                        this.refreshChildKeybindings();
+                        // Clear the drawer selection as well
+                        if (this.keybindsDrawerComponent) {
+                            this.keybindsDrawerComponent.clearSelection();
+                        }
 
-                        this.snackBar.open('Keybinding deleted successfully', 'Close', { duration: 3000 });
+                        // The keybinding service already updates local state in removeKeybinding()
+                        // The UI should update automatically via the BehaviorSubject subscription
+                        // No need to call loadKeybindings() as the subscription will handle the update
+                        console.log('Delete completed - UI should update automatically via BehaviorSubject subscription');
+
+                        // Select the next keybinding after deletion
+                        setTimeout(() => {
+                            this.selectNextKeybindingAfterDeletion(deletedIndex, currentKeybindings.length);
+                        }, 100); // Small delay to ensure the UI has updated
+
+                        // Show appropriate message based on response
+                        if (response?.alreadyDeleted) {
+                            this.snackBar.open('Keybinding was already deleted', 'Close', { duration: 3000 });
+                        } else {
+                            this.snackBar.open('Keybinding deleted successfully', 'Close', { duration: 3000 });
+                        }
                     },
                     error: (error) => {
                         console.error('Error deleting keybinding:', error);
@@ -445,39 +513,32 @@ export class KeybindsComponent implements OnInit {
 
                 });
             } else {
-                //check local storage for keybindings
-                const keybindings = localStorage.getItem('keybindings');
-                if (keybindings) {
-                    const parsedKeybindings = JSON.parse(keybindings);
-                    this.keybindingService.updateKeybindings(parsedKeybindings);
+                // Not authenticated - show empty state
+                this.keybindingService.clearKeybindings();
+            }
+        });
+    }
 
-                    // Maintain the current selection if we had a selected keybinding
-                    if (currentSelectedId) {
-                        const updatedKeybinding = parsedKeybindings.find(kb => kb.keybindingId === currentSelectedId);
-                        if (updatedKeybinding) {
-                            // Update the selected keybinding with the latest data
-                            this.selectedKeybinding = updatedKeybinding;
-                            this.selectedKeybindingName = updatedKeybinding.name;
+    refreshChildKeybindingsAfterDeletion() {
+        console.log('refreshChildKeybindingsAfterDeletion - clearing selection and refreshing');
 
-                            // Set the drawer selection BEFORE loading keybindings to prevent auto-selection
-                            if (this.keybindsDrawerComponent) {
-                                this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
-                            }
-                        }
-                    }
+        // Clear state first to ensure no stale data
+        this.keybindingService.clearKeybindings();
+
+        //check if loggedin
+        this._authService.check().subscribe((authenticated) => {
+            if (authenticated) {
+                //refetch the keybindings from server (don't try to maintain selection)
+                this.keybindingService.getKeybindings().subscribe((keybindings) => {
+                    console.log('refreshChildKeybindingsAfterDeletion - keybindings', keybindings);
 
                     if (this.keybindsDrawerComponent) {
                         this.keybindsDrawerComponent.loadKeybindings();
                     }
-
-                    if (this.abilitiesComponent) {
-                        this.abilitiesComponent.abilities = [];
-                        // Only fetch abilities if both spec and hero talent are selected
-                        if (this.selectedKeybinding?.spec && this.selectedKeybinding?.heroTalent) {
-                            this.abilitiesComponent.fetchAbilities();
-                        }
-                    }
-                }
+                });
+            } else {
+                // Not authenticated - show empty state
+                this.keybindingService.clearKeybindings();
             }
         });
     }
@@ -563,22 +624,6 @@ export class KeybindsComponent implements OnInit {
             isPublic: newPublicStatus
         }).subscribe({
             next: (updatedKeybinding) => {
-                // Update local storage
-                const savedKeybindings = localStorage.getItem('keybindings');
-                if (savedKeybindings) {
-                    try {
-                        const parsedKeybindings = JSON.parse(savedKeybindings);
-                        const updatedKeybindings = parsedKeybindings.map((kb: Keybinding) => {
-                            if (kb.keybindingId === this.selectedKeybinding?.keybindingId) {
-                                return { ...kb, isPublic: newPublicStatus };
-                            }
-                            return kb;
-                        });
-                        localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
-                    } catch (error) {
-                        console.error('Failed to update keybindings in localStorage:', error);
-                    }
-                }
 
                 // Update the selected keybinding
                 this.selectedKeybinding = updatedKeybinding;

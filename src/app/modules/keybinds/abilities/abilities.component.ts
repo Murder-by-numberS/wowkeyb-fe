@@ -56,6 +56,8 @@ export class AbilitiesComponent implements OnInit {
     selectedKeybindingHeroTalent: string;
 
     abilities: Ability[];
+    private isFetchingAbilities: boolean = false;
+    private currentFetchKeybindingId: string | null = null;
 
     classes = classes;
     specs = [];
@@ -85,38 +87,224 @@ export class AbilitiesComponent implements OnInit {
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes['selectedKeybinding']) {
+            console.log('abilities - ngOnChanges triggered');
+            console.log('abilities - previous value:', changes['selectedKeybinding'].previousValue?.keybindingId);
+            console.log('abilities - current value:', changes['selectedKeybinding'].currentValue?.keybindingId);
             console.log('abilities - inputProp changed:', changes['selectedKeybinding'].currentValue);
-            if (this.selectedKeybinding) {
-                this.selectedKeybindingClass = this.selectedKeybinding.class;
-                this.selectedKeybindingSpec = this.selectedKeybinding.spec;
-                this.selectedKeybindingHeroTalent = this.selectedKeybinding.heroTalent === 'San Layn'
-                    ? 'San\'layn'
-                    : this.selectedKeybinding.heroTalent === 'Fel Scarred'
-                        ? 'Fel-Scarred'
-                        : this.selectedKeybinding.heroTalent === 'Elunes Chosen'
-                            ? 'Elune\'s Chosen'
-                            : this.selectedKeybinding.heroTalent;
+            console.log('abilities - randomClassDetails:', changes['selectedKeybinding'].currentValue?.randomClassDetails);
 
-                // Clear abilities first to prevent showing previous keybinding's abilities
+            if (this.selectedKeybinding) {
+                // Clear abilities first to prevent showing stale data
                 this.abilities = [];
+                this.currentFetchKeybindingId = null; // Clear previous fetch ID
+                console.log('Cleared abilities for new keybinding');
+
+                // Use random class details if available, otherwise use the keybinding's class details
+                if (this.selectedKeybinding.randomClassDetails) {
+                    console.log('Using random class details for abilities:', this.selectedKeybinding.randomClassDetails);
+
+                    // Convert lowercase backend values to proper format for fullClasses
+                    const classMapping = {
+                        'mage': 'Mage',
+                        'hunter': 'Hunter',
+                        'warrior': 'Warrior',
+                        'paladin': 'Paladin',
+                        'priest': 'Priest',
+                        'rogue': 'Rogue',
+                        'shaman': 'Shaman',
+                        'warlock': 'Warlock',
+                        'monk': 'Monk',
+                        'druid': 'Druid',
+                        'deathknight': 'Death Knight',
+                        'demonhunter': 'Demon Hunter',
+                        'evoker': 'Evoker'
+                    };
+
+                    const specMapping = {
+                        'fire': 'Fire',
+                        'frost': 'Frost',
+                        'arcane': 'Arcane',
+                        'beastmastery': 'Beast Mastery',
+                        'marksmanship': 'Marksmanship',
+                        'survival': 'Survival',
+                        'arms': 'Arms',
+                        'fury': 'Fury',
+                        'protection': 'Protection',
+                        'holy': 'Holy',
+                        'retribution': 'Retribution',
+                        'discipline': 'Discipline',
+                        'shadow': 'Shadow',
+                        'assassination': 'Assassination',
+                        'outlaw': 'Outlaw',
+                        'subtlety': 'Subtlety',
+                        'elemental': 'Elemental',
+                        'enhancement': 'Enhancement',
+                        'restoration': 'Restoration',
+                        'affliction': 'Affliction',
+                        'demonology': 'Demonology',
+                        'destruction': 'Destruction',
+                        'brewmaster': 'Brewmaster',
+                        'windwalker': 'Windwalker',
+                        'mistweaver': 'Mistweaver',
+                        'balance': 'Balance',
+                        'feral': 'Feral',
+                        'guardian': 'Guardian',
+                        'havoc': 'Havoc',
+                        'vengeance': 'Vengeance',
+                        'blood': 'Blood',
+                        'unholy': 'Unholy',
+                        'devastation': 'Devastation',
+                        'preservation': 'Preservation',
+                        'augmentation': 'Augmentation'
+                    };
+
+                    const heroTalentMapping = {
+                        'frostfire': 'Frostfire',
+                        'spellweaver': 'Spellweaver',
+                        'sunfury': 'Sunfury',
+                        'beastmaster': 'Beast Master',
+                        'darkranger': 'Dark Ranger',
+                        'packleader': 'Pack Leader',
+                        'champion': 'Champion',
+                        'battlelord': 'Battlelord',
+                        'mountainthane': 'Mountain Thane',
+                        'lightbringer': 'Lightbringer',
+                        'templar': 'Templar',
+                        'justicar': 'Justicar',
+                        'archon': 'Archon',
+                        'oracle': 'Oracle',
+                        'mindbender': 'Mindbender',
+                        'assassin': 'Assassin',
+                        'outlaw': 'Outlaw',
+                        'shadowblade': 'Shadowblade',
+                        'stormbringer': 'Stormbringer',
+                        'earthwarden': 'Earthwarden',
+                        'tidecaller': 'Tidecaller',
+                        'soulharvester': 'Soul Harvester',
+                        'hellcaller': 'Hellcaller',
+                        'destruction': 'Destruction',
+                        'storm': 'Storm',
+                        'iron': 'Iron',
+                        'wind': 'Wind',
+                        'keeperofthegrove': 'Keeper of the Grove',
+                        'eluneschosen': 'Elune\'s Chosen',
+                        'druidoftheclaw': 'Druid of the Claw',
+                        'wildstalker': 'Wildstalker',
+                        'aldrachireaver': 'Aldrachi Reaver',
+                        'felscarred': 'Fel-Scarred',
+                        'deathbringer': 'Deathbringer',
+                        'rideroftheapocalypse': 'Rider of the Apocalypse',
+                        'sanlayn': 'San\'layn',
+                        'flame': 'Flame',
+                        'scalecommander': 'Scale Commander',
+                        'weaver': 'Weaver',
+                        'slayer': 'Slayer',
+                        'colossus': 'Colossus',
+                        'spellslinger': 'Spellslinger',
+                        'sentinel': 'Sentinel',
+                        'masterofharmony': 'Master of Harmony',
+                        'shadopan': 'Shado-Pan',
+                        'conduitofthecelestials': 'Conduit of the Celestials',
+                        'heraldofthesun': 'Herald of the Sun',
+                        'lightsmith': 'Lightsmith',
+                        'voidweaver': 'Voidweaver',
+                        'deathstalker': 'Deathstalker',
+                        'fatebound': 'Fatebound',
+                        'trickster': 'Trickster',
+                        'farseer': 'Farseer',
+                        'totemic': 'Totemic',
+                        'diabolist': 'Diabolist',
+                        'flameshaper': 'Flameshaper',
+                        'chronowarden': 'Chronowarden'
+                    };
+
+                    this.selectedKeybindingClass = classMapping[this.selectedKeybinding.randomClassDetails.class] || this.selectedKeybinding.randomClassDetails.class;
+                    this.selectedKeybindingSpec = specMapping[this.selectedKeybinding.randomClassDetails.spec] || this.selectedKeybinding.randomClassDetails.spec;
+                    this.selectedKeybindingHeroTalent = heroTalentMapping[this.selectedKeybinding.randomClassDetails.heroTalent] || this.selectedKeybinding.randomClassDetails.heroTalent;
+
+                    console.log('Converted values:', {
+                        class: this.selectedKeybindingClass,
+                        spec: this.selectedKeybindingSpec,
+                        heroTalent: this.selectedKeybindingHeroTalent
+                    });
+
+                    console.log('Hero talent mapping debug:', {
+                        originalHeroTalent: this.selectedKeybinding.randomClassDetails.heroTalent,
+                        mappedHeroTalent: heroTalentMapping[this.selectedKeybinding.randomClassDetails.heroTalent],
+                        finalHeroTalent: this.selectedKeybindingHeroTalent
+                    });
+
+                    // Check if the converted values exist in fullClasses
+                    console.log('Checking fullClasses availability:', {
+                        classExists: !!fullClasses[this.selectedKeybindingClass],
+                        specExists: !!fullClasses[this.selectedKeybindingClass]?.specs[this.selectedKeybindingSpec],
+                        heroTalentExists: !!fullClasses[this.selectedKeybindingClass]?.specs[this.selectedKeybindingSpec]?.includes(this.selectedKeybindingHeroTalent)
+                    });
+
+                    // Debug fullClasses structure
+                    if (fullClasses[this.selectedKeybindingClass]) {
+                        console.log('fullClasses structure for class:', {
+                            class: this.selectedKeybindingClass,
+                            specs: fullClasses[this.selectedKeybindingClass].specs,
+                            allSpecs: Object.keys(fullClasses[this.selectedKeybindingClass].specs)
+                        });
+                    }
+                } else {
+                    this.selectedKeybindingClass = this.selectedKeybinding.class;
+                    this.selectedKeybindingSpec = this.selectedKeybinding.spec;
+                    this.selectedKeybindingHeroTalent = this.selectedKeybinding.heroTalent === 'San Layn'
+                        ? 'San\'layn'
+                        : this.selectedKeybinding.heroTalent === 'Fel Scarred'
+                            ? 'Fel-Scarred'
+                            : this.selectedKeybinding.heroTalent === 'Elunes Chosen'
+                                ? 'Elune\'s Chosen'
+                                : this.selectedKeybinding.heroTalent;
+                }
+
+                // Abilities already cleared above
 
                 if (this.selectedKeybindingClass) {
                     this.specs = Object.keys(fullClasses[this.selectedKeybindingClass].specs);
+                    console.log('Populated specs:', this.specs);
 
                     // Only set hero talents if spec is selected
                     if (this.selectedKeybindingSpec) {
+                        console.log('Setting hero talents for:', {
+                            class: this.selectedKeybindingClass,
+                            spec: this.selectedKeybindingSpec
+                        });
+                        console.log('Available specs for class:', Object.keys(fullClasses[this.selectedKeybindingClass].specs));
+                        console.log('Specs object:', fullClasses[this.selectedKeybindingClass].specs);
+
                         this.heroTalents = fullClasses[this.selectedKeybindingClass].specs[this.selectedKeybindingSpec];
+                        console.log('Populated hero talents:', this.heroTalents);
+                        console.log('Hero talents array length:', this.heroTalents?.length);
                     } else {
                         this.heroTalents = [];
+                        console.log('No spec selected, cleared hero talents');
                     }
 
                     // Only fetch abilities if both spec and hero talent are selected
                     if (this.selectedKeybindingSpec && this.selectedKeybindingHeroTalent) {
+                        console.log('Both spec and hero talent selected, fetching abilities...');
+                        console.log('Final values for abilities fetch:', {
+                            class: this.selectedKeybindingClass,
+                            spec: this.selectedKeybindingSpec,
+                            heroTalent: this.selectedKeybindingHeroTalent
+                        });
                         this.fetchAbilities();
+                    } else {
+                        console.log('Not fetching abilities - missing spec or hero talent:', {
+                            hasSpec: !!this.selectedKeybindingSpec,
+                            hasHeroTalent: !!this.selectedKeybindingHeroTalent,
+                            spec: this.selectedKeybindingSpec,
+                            heroTalent: this.selectedKeybindingHeroTalent
+                        });
                     }
                 } else {
                     this.specs = [];
                     this.heroTalents = [];
+                    console.log('No class selected, cleared specs and hero talents');
                 }
             } else {
                 // Reset all values when no keybinding is selected
@@ -303,49 +491,95 @@ export class AbilitiesComponent implements OnInit {
         console.log('fetching abilities for', {
             class: this.selectedKeybindingClass,
             spec: this.selectedKeybindingSpec,
-            heroTalent: this.selectedKeybindingHeroTalent
+            heroTalent: this.selectedKeybindingHeroTalent,
+            selectedKeybinding: this.selectedKeybinding
         });
 
-        if (this.selectedKeybindingClass && this.selectedKeybindingSpec && this.selectedKeybindingHeroTalent) {
-            const formattedClass = this.selectedKeybindingClass?.replace(/\s+/g, '');
-            const formattedSpec = this.selectedKeybindingSpec?.replace(/\s+/g, '-');
-            let formattedHeroTalent = this.selectedKeybindingHeroTalent?.toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
+        // Only prevent if we're fetching for the exact same parameters
+        if (this.isFetchingAbilities) {
+            console.log('Abilities fetch already in progress, but continuing with new request...');
+        }
 
-            if (formattedHeroTalent === 'sanlayn') {
-                formattedHeroTalent = 'san-layn';
-            }
+        if (this.selectedKeybindingClass && this.selectedKeybindingSpec && this.selectedKeybindingHeroTalent) {
+            console.log('All required fields present, proceeding with fetch...');
+
+            // Set the current fetch keybinding ID to prevent race conditions
+            this.currentFetchKeybindingId = this.selectedKeybinding?.keybindingId || null;
+            console.log('Set currentFetchKeybindingId to:', this.currentFetchKeybindingId);
+
+            console.log('Values being sent to abilities service:', {
+                class: this.selectedKeybindingClass,
+                spec: this.selectedKeybindingSpec,
+                heroTalent: this.selectedKeybindingHeroTalent
+            });
 
             // Get game version from selected keybinding, fallback to latest version
             const gameVersion = this.selectedKeybinding?.version?.game_version;
 
             if (gameVersion) {
                 // Use keybinding's game version
-                this.fetchAbilitiesWithVersion(formattedClass, formattedSpec, formattedHeroTalent, gameVersion);
+                console.log('Using keybinding game version:', gameVersion);
+                this.fetchAbilitiesWithVersion(this.selectedKeybindingClass, this.selectedKeybindingSpec, this.selectedKeybindingHeroTalent, gameVersion);
             } else {
                 // Fallback to latest version
+                console.log('Using latest version...');
                 this.versionCompare.getLatestVersion().subscribe(latestVersion => {
-                    this.fetchAbilitiesWithVersion(formattedClass, formattedSpec, formattedHeroTalent, latestVersion);
+                    console.log('Latest version:', latestVersion);
+                    this.fetchAbilitiesWithVersion(this.selectedKeybindingClass, this.selectedKeybindingSpec, this.selectedKeybindingHeroTalent, latestVersion);
                 }, error => {
                     console.error('Error getting latest version:', error);
                 });
             }
+        } else {
+            console.log('Missing required fields for abilities fetch:', {
+                hasClass: !!this.selectedKeybindingClass,
+                hasSpec: !!this.selectedKeybindingSpec,
+                hasHeroTalent: !!this.selectedKeybindingHeroTalent
+            });
         }
     }
 
-    private fetchAbilitiesWithVersion(formattedClass: string, formattedSpec: string, formattedHeroTalent: string, gameVersion: string) {
+    private fetchAbilitiesWithVersion(className: string, specName: string, heroTalentName: string, gameVersion: string) {
+        console.log('fetchAbilitiesWithVersion called with:', {
+            className,
+            specName,
+            heroTalentName,
+            gameVersion
+        });
+
+        this.isFetchingAbilities = true;
+
         this.abilitiesService.getAbilities(
-            formattedClass,
-            formattedSpec,
-            formattedHeroTalent,
+            className,
+            specName,
+            heroTalentName,
             gameVersion
         ).subscribe((data) => {
+            console.log('Abilities fetched from backend:', data.length, 'abilities');
+
+            // Check if this fetch is still relevant (prevent race conditions)
+            const currentKeybindingId = this.selectedKeybinding?.keybindingId;
+            if (this.currentFetchKeybindingId !== currentKeybindingId) {
+                console.log('Abilities fetch result ignored - keybinding changed during fetch:', {
+                    fetchKeybindingId: this.currentFetchKeybindingId,
+                    currentKeybindingId: currentKeybindingId
+                });
+                this.isFetchingAbilities = false;
+                return;
+            }
+
+            console.log('Abilities fetch result applied for keybinding:', currentKeybindingId);
+
             //loop through abilities and add the keybindings to the abilities from the selectedKeybinding
             data.forEach(ability => {
                 ability.keybindings = this.selectedKeybinding.keybinds.filter(keybind => keybind.spell.spellId == ability.spellId).map(keybind => keybind.key);
             });
             this.abilities = data;
+            console.log('Abilities set in component:', this.abilities.length);
+            this.isFetchingAbilities = false;
         }, (err) => {
             console.log('getAbilities - err', err);
+            this.isFetchingAbilities = false;
         });
     }
 

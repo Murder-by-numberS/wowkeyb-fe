@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { tap, map } from 'rxjs/operators';
+import { tap, map, catchError } from 'rxjs/operators';
 
 import { environment } from 'environments/environment';
 
@@ -47,14 +47,39 @@ export class KeybindingService {
         this.keybindingsSource.next([...currentKeybindings, keybinding]);
     }
 
-    removeKeybinding(id: string): Observable<void> {
-        return this.http.delete<void>(`${environment.apiUrl}/keybindings/${id}`).pipe(
-            tap(() => {
-                // Update local state after successful deletion
+    removeKeybinding(id: string): Observable<any> {
+        console.log('removeKeybinding called with id:', id);
+
+        return this.http.delete<any>(`${environment.apiUrl}/keybindings/${id}`).pipe(
+            tap((response) => {
+                console.log('Delete response received:', response);
+                console.log('Response type:', typeof response);
+                console.log('Response keys:', Object.keys(response || {}));
+
+                // Update local state after successful deletion (including already deleted)
+                const currentKeybindings = this.keybindingsSource.getValue();
+                console.log('Current keybindings before removal:', currentKeybindings.length);
+                console.log('Current keybinding IDs:', currentKeybindings.map(kb => kb.keybindingId));
+                console.log('Removing keybinding:', id);
+
+                const updatedKeybindings = currentKeybindings.filter(kb => kb.keybindingId !== id);
+                console.log('Filtered keybindings:', updatedKeybindings.length);
+                console.log('Updated keybinding IDs:', updatedKeybindings.map(kb => kb.keybindingId));
+
+                this.keybindingsSource.next(updatedKeybindings);
+                console.log('BehaviorSubject updated with new keybindings');
+
+                console.log('Keybinding removed from local state:', id);
+                console.log('Remaining keybindings:', updatedKeybindings.length);
+            }),
+            catchError((error) => {
+                console.error('Error in removeKeybinding:', error);
+                // Even if there's an error, try to remove from local state
                 const currentKeybindings = this.keybindingsSource.getValue();
                 const updatedKeybindings = currentKeybindings.filter(kb => kb.keybindingId !== id);
                 this.keybindingsSource.next(updatedKeybindings);
-                localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
+                console.log('Removed keybinding from local state despite error');
+                throw error;
             })
         );
     }
@@ -111,8 +136,6 @@ export class KeybindingService {
                     );
                     console.log('updateKeybinding - updating local state:', updatedKeybindings);
                     this.keybindingsSource.next(updatedKeybindings);
-                    localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
-                    console.log('updateKeybinding - localStorage updated');
                 })
             );
     }
@@ -142,7 +165,6 @@ export class KeybindingService {
                 const currentKeybindings = this.keybindingsSource.getValue();
                 this.keybindingsSource.next([...currentKeybindings, newKeybinding]);
                 console.log('this.keybindingsSource', this.keybindingsSource.getValue());
-                localStorage.setItem('keybindings', JSON.stringify([...currentKeybindings, newKeybinding]));
             })
         );
     }
@@ -151,10 +173,20 @@ export class KeybindingService {
         console.log('getting keybindings');
         return this.http.get<Keybinding[]>(`${environment.apiUrl}/keybindings`).pipe(
             tap((keybindings: Keybinding[]) => {
-                console.log('getKeybindings - keybindings', keybindings);
-                this.keybindingsSource.next(keybindings);
+                console.log('getKeybindings - raw keybindings from server:', keybindings.length);
+                console.log('getKeybindings - keybinding IDs from server:', keybindings.map(kb => kb.keybindingId));
+
+                // Filter out any soft-deleted keybindings that might slip through
+                // This is a safety net in case the backend middleware isn't working properly
+                const filteredKeybindings = keybindings.filter(kb => !kb.deleted_at);
+
+                if (filteredKeybindings.length !== keybindings.length) {
+                    console.warn(`Filtered out ${keybindings.length - filteredKeybindings.length} soft-deleted keybindings on frontend`);
+                }
+
+                console.log('getKeybindings - filtered keybindings:', filteredKeybindings.length);
+                this.keybindingsSource.next(filteredKeybindings);
                 console.log('getKeybindings - this.keybindingsSource', this.keybindingsSource.getValue());
-                localStorage.setItem('keybindings', JSON.stringify(keybindings));
             })
         );
     }
@@ -166,7 +198,20 @@ export class KeybindingService {
 
     clearKeybindings() {
         this.keybindingsSource.next([]);
-        localStorage.removeItem('keybindings');
+    }
+
+    forceRefreshKeybindings(): Observable<Keybinding[]> {
+        console.log('Force refreshing keybindings from server');
+        // Clear state first
+        this.clearKeybindings();
+        console.log('Cleared keybindings from state');
+
+        // Fetch fresh data from server
+        return this.getKeybindings().pipe(
+            tap((keybindings: Keybinding[]) => {
+                console.log('Force refresh completed - keybindings updated:', keybindings.length);
+            })
+        );
     }
 
     getKeybinding(id: string): Observable<Keybinding> {
@@ -183,7 +228,6 @@ export class KeybindingService {
                 // Update the local state with the new keybinding
                 const currentKeybindings = this.keybindingsSource.getValue();
                 this.keybindingsSource.next([...currentKeybindings, newKeybinding]);
-                localStorage.setItem('keybindings', JSON.stringify([...currentKeybindings, newKeybinding]));
             })
         );
     }
@@ -197,7 +241,6 @@ export class KeybindingService {
                     kb.keybindingId === keybindingId ? migratedKeybinding : kb
                 );
                 this.keybindingsSource.next(updatedKeybindings);
-                localStorage.setItem('keybindings', JSON.stringify(updatedKeybindings));
             })
         );
     }

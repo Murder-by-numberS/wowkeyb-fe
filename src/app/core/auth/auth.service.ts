@@ -101,8 +101,6 @@ export class AuthService {
                 // // Store the user on the user service
                 this._userService.user = response.user;
 
-                //set response.user.keybindings to local storage
-                localStorage.setItem('keybindings', JSON.stringify(response.keybindings));
 
                 // Navigation will be loaded fresh when user navigates to protected routes
 
@@ -146,10 +144,6 @@ export class AuthService {
                     // Store the user on the user service
                     this._userService.user = response.user;
 
-                    // Set keybindings
-                    if (response.keybindings) {
-                        localStorage.setItem('keybindings', JSON.stringify(response.keybindings));
-                    }
 
                     // Navigation will be loaded fresh when user navigates to protected routes
 
@@ -168,7 +162,6 @@ export class AuthService {
         // OR if you want to be more specific:
         // localStorage.removeItem('accessToken');
         // localStorage.removeItem('currentUser');
-        // localStorage.removeItem('keybindings');
 
         // Clear the access token from memory - set to empty string instead of null
         this.accessToken = '';

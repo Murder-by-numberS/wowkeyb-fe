@@ -126,8 +126,8 @@ export class AuthSignInComponent implements OnInit {
                 this._keybindingService.getKeybindings()
                     .pipe(takeUntil(this._unsubscribeAll))
                     .subscribe((keybindings) => {
-                        //store keybindings in local storage
-                        localStorage.setItem('keybindings', JSON.stringify(keybindings));
+                        // Keybindings are now automatically stored in the service state
+                        console.log('Keybindings loaded after sign-in:', keybindings.length);
                     });
 
 
