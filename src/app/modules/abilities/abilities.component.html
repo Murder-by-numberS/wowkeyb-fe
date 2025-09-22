@@ -3,7 +3,10 @@
     <div class="mb-6">
         <h1 class="text-4xl font-bold mb-2">Abilities Database</h1>
         <p class="text-xl text-gray-600">
-            Browse and explore all World of Warcraft abilities, spells, and talents
+            Browse and explore World of Warcraft abilities by class, specialization, and hero talent
+        </p>
+        <p class="text-sm text-gray-500 mt-2">
+            Select a class, spec, and hero talent to see all abilities available to that combination
         </p>
     </div>
 
@@ -101,14 +104,28 @@
                 Page {{ currentPage }} of {{ maxPage() }} |
                 Showing {{ getStartIndex() + 1 }} - {{ getEndIndex() }} of {{ filteredAbilities.length }}
             </p>
+            @if (selectedClass && selectedSpec && selectedHeroTalent) {
+            <p class="text-sm text-blue-600">
+                Showing all abilities for {{ selectedClass }} {{ selectedSpec }} {{ selectedHeroTalent }}
+            </p>
+            } @else if (selectedClass && selectedSpec) {
+            <p class="text-sm text-blue-600">
+                Showing all abilities for {{ selectedClass }} {{ selectedSpec }}
+            </p>
+            } @else if (selectedClass) {
+            <p class="text-sm text-blue-600">
+                Showing all abilities for {{ selectedClass }}
+            </p>
+            }
         </div>
         } @else if (selectedGameVersion && (selectedClass || selectedSpec || selectedHeroTalent)) {
-        <p class="text-gray-600">No abilities available for the selected filters in version {{ selectedGameVersion }}
+        <p class="text-gray-600">No abilities available for the selected combination in version {{ selectedGameVersion
+            }}
         </p>
         } @else if (selectedGameVersion) {
         <p class="text-gray-600">No abilities available for version {{ selectedGameVersion }}</p>
         } @else {
-        <p class="text-gray-600">Select filters to view abilities</p>
+        <p class="text-gray-600">Select a class to view abilities</p>
         }
     </div>
 
@@ -147,11 +164,9 @@
                 <ng-container matColumnDef="spec">
                     <th mat-header-cell *matHeaderCellDef>Spec</th>
                     <td mat-cell *matCellDef="let ability">
-                        <div *ngIf="ability.spec && ability.spec !== 'Core'" class="font-medium text-green-600">
+                        <!-- Spec Ability -->
+                        <div *ngIf="ability.abilityType === 'spec'" class="font-medium text-green-600">
                             {{formatSpecName(ability.spec)}}
-                        </div>
-                        <div *ngIf="ability.spec === 'Hero Talent'" class="font-medium text-orange-600">
-                            {{ability.spec}}
                         </div>
                     </td>
                 </ng-container>
@@ -160,8 +175,8 @@
                 <ng-container matColumnDef="heroTalent">
                     <th mat-header-cell *matHeaderCellDef>Hero Talent</th>
                     <td mat-cell *matCellDef="let ability">
-                        <div *ngIf="ability.heroTalent && ability.heroTalent !== 'Core'"
-                            class="font-medium text-purple-600">
+                        <!-- Hero Talent Ability -->
+                        <div *ngIf="ability.abilityType === 'hero_talent'" class="font-medium text-orange-600">
                             {{formatHeroTalentName(ability.heroTalent)}}
                         </div>
                     </td>
@@ -206,11 +221,11 @@
             <h3 class="text-xl font-medium text-gray-600 mb-2">No Abilities Found</h3>
             <p class="text-gray-500">
                 @if (selectedGameVersion && (selectedClass || selectedSpec || selectedHeroTalent)) {
-                No abilities are available for the selected filters in version {{ selectedGameVersion }}.
+                No abilities are available for the selected combination in version {{ selectedGameVersion }}.
                 } @else if (selectedGameVersion) {
                 No abilities are available for version {{ selectedGameVersion }}.
                 } @else {
-                Please select filters to view abilities.
+                Please select a class to view abilities.
                 }
             </p>
         </mat-card-content>

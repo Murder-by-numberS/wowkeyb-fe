@@ -110,15 +110,15 @@ export class AbilitiesComponent implements OnInit {
     /**
      * Load available game versions
      */
-    loadGameVersions() {
+    loadGameVersions(setDefault: boolean = true) {
         // Fetch game versions from the backend
         this.versionCompare.getAllVersions().subscribe({
             next: (versions) => {
                 console.log('Available game versions:', versions);
                 this.gameVersions = versions;
 
-                // Set the latest version as default
-                if (this.gameVersions.length > 0) {
+                // Set the latest version as default only if requested
+                if (setDefault && this.gameVersions.length > 0) {
                     this.selectedGameVersion = this.gameVersions[0];
                 }
             },
@@ -132,7 +132,9 @@ export class AbilitiesComponent implements OnInit {
                     '11.0.2',
                     '11.0.0'
                 ];
-                this.selectedGameVersion = this.gameVersions[0];
+                if (setDefault) {
+                    this.selectedGameVersion = this.gameVersions[0];
+                }
             }
         });
     }
@@ -141,8 +143,8 @@ export class AbilitiesComponent implements OnInit {
      * Load filters from URL parameters
      */
     loadFiltersFromUrl(params: any) {
-        // Load game versions first
-        this.loadGameVersions();
+        // Load game versions first without setting default
+        this.loadGameVersions(false);
 
         // Set filters from URL parameters
         if (params['class']) {
@@ -167,6 +169,9 @@ export class AbilitiesComponent implements OnInit {
 
         if (params['gameVersion']) {
             this.selectedGameVersion = params['gameVersion'];
+        } else {
+            // If no gameVersion in URL, set to latest
+            this.loadGameVersions(true);
         }
 
         // Fetch abilities with the loaded filters
@@ -293,10 +298,10 @@ export class AbilitiesComponent implements OnInit {
     }
 
     /**
- * Fetch abilities based on current filters
+ * Fetch abilities based on current filters using inclusion logic
  */
     fetchAbilities() {
-        console.log('fetchAbilities called with:', {
+        console.log('fetchAbilities called with inclusion filters:', {
             class: this.selectedClass,
             spec: this.selectedSpec,
             heroTalent: this.selectedHeroTalent,
@@ -304,7 +309,7 @@ export class AbilitiesComponent implements OnInit {
             page: this.currentPage
         });
 
-        // Build filters object
+        // Build filters object for inclusion-based filtering
         const filters: any = {};
 
         if (this.selectedGameVersion) {
@@ -324,13 +329,9 @@ export class AbilitiesComponent implements OnInit {
         filters.page = this.currentPage;
         filters.limit = this.abilitiesPerPage;
 
-        console.log('Filters object:', filters);
-
-        // Call the abilities endpoint with filters and pagination
+        // Call the abilities endpoint with inclusion filters and pagination
         this.abilitiesService.getAbilitiesWithFilters(filters).subscribe({
             next: (data) => {
-                console.log('Abilities loaded with filters:', data);
-
                 // Handle response format - could be array or object with data and total
                 let abilities = data;
                 let total = 0;
@@ -345,17 +346,16 @@ export class AbilitiesComponent implements OnInit {
                     total = data.length;
                 }
 
-                // Remove duplicates based on spellId and sort alphabetically
-                const uniqueAbilities = this.removeDuplicateAbilities(abilities);
-                console.log('Total unique abilities:', uniqueAbilities.length);
+                // Process abilities for display (no need to remove duplicates as backend handles inclusion)
+                const processedAbilities = this.processAbilitiesForDisplay(abilities);
 
-                this.abilities = uniqueAbilities;
-                this.filteredAbilities = uniqueAbilities;
+                this.abilities = processedAbilities;
+                this.filteredAbilities = processedAbilities;
                 this.totalAbilities = total;
                 this.updateTableData();
             },
             error: (err) => {
-                console.error('Error loading abilities with filters:', err);
+                console.error('Error loading abilities with inclusion filters:', err);
                 this.abilities = [];
                 this.filteredAbilities = [];
                 this.totalAbilities = 0;
@@ -397,12 +397,12 @@ export class AbilitiesComponent implements OnInit {
                     total = data.length;
                 }
 
-                // Remove duplicates based on spellId and sort alphabetically
-                const uniqueAbilities = this.removeDuplicateAbilities(abilities);
-                console.log('Total unique abilities:', uniqueAbilities.length);
+                // Process abilities for display
+                const processedAbilities = this.processAbilitiesForDisplay(abilities);
+                console.log('Total processed abilities:', processedAbilities.length);
 
-                this.abilities = uniqueAbilities;
-                this.filteredAbilities = uniqueAbilities;
+                this.abilities = processedAbilities;
+                this.filteredAbilities = processedAbilities;
                 this.totalAbilities = total;
                 this.updateTableData();
             },
@@ -417,133 +417,33 @@ export class AbilitiesComponent implements OnInit {
     }
 
     /**
-     * Remove duplicate abilities based on spellId and sort alphabetically
+     * Process abilities for display with inclusion-based filtering
      */
-    private removeDuplicateAbilities(abilities: Ability[]): Ability[] {
-        console.log('removeDuplicateAbilities called with:', abilities.length, 'abilities');
-        console.log('Sample ability:', abilities[0]);
-
-        const uniqueAbilities = new Map<string, Ability>();
-
-        abilities.forEach(ability => {
-            // Ensure spellId exists, fallback to name if not
-            const spellId = ability.spellId || ability.name;
-
-            // Create a unique key based on spellId, class, spec, and heroTalent
-            const uniqueKey = `${spellId}-${ability.class}-${ability.spec || 'null'}-${ability.heroTalent || 'null'}`;
-
-            if (!uniqueAbilities.has(uniqueKey)) {
-                uniqueAbilities.set(uniqueKey, ability);
+    private processAbilitiesForDisplay(abilities: Ability[]): Ability[] {
+        // Process abilities for display - mark core abilities and format names
+        const processedAbilities = abilities.map(ability => {
+            const processed = { ...ability };
+            
+            // Mark core abilities based on ability type
+            processed.isCore = ability.abilityType === 'class';
+            
+            // Format spec and hero talent names for display
+            if (processed.spec) {
+                processed.spec = this.formatSpecName(processed.spec);
             }
+            if (processed.heroTalent) {
+                processed.heroTalent = this.formatHeroTalentName(processed.heroTalent);
+            }
+            
+            return processed;
         });
 
-        console.log('Unique abilities map size:', uniqueAbilities.size);
-
-        // Convert to array, mark core abilities, and sort alphabetically by name
-        const uniqueAbilitiesArray = Array.from(uniqueAbilities.values());
-        uniqueAbilitiesArray.forEach(ability => {
-            ability.isCore = this.isCoreAbility(ability);
-            // If it's a core ability, set spec and hero talent to "Core"
-            if (ability.isCore) {
-                ability.spec = 'Core';
-                ability.heroTalent = 'Core';
-            } else if (ability.heroTalent && ability.heroTalent !== 'Core') {
-                // Check if this ability appears in multiple specs for the same class
-                // If it does, it's likely a hero talent ability
-                const sameClassAbilities = uniqueAbilitiesArray.filter(a =>
-                    a.class === ability.class &&
-                    a.name === ability.name &&
-                    (a.spellId === ability.spellId || a.name === ability.name)
-                );
-
-                if (sameClassAbilities.length > 1) {
-                    // This ability appears in multiple specs, so it's a hero talent ability
-                    ability.spec = 'Hero Talent';
-                }
-                // If it only appears in one spec, keep the original spec
-            }
-        });
-
-        console.log('Final processed abilities:', uniqueAbilitiesArray.length);
-        console.log('Sample processed ability:', uniqueAbilitiesArray[0]);
-
-        return uniqueAbilitiesArray.sort((a, b) =>
+        // Sort alphabetically by name
+        return processedAbilities.sort((a, b) =>
             a.name.localeCompare(b.name)
         );
     }
 
-    /**
-     * Determine if an ability is a core class ability
-     */
-    private isCoreAbility(ability: Ability): boolean {
-        // Common core ability names across classes
-        const coreAbilityNames = [
-            // General abilities
-            'Attack',
-            'Auto Attack',
-            'Heroic Strike',
-            'Shoot',
-            'Wand',
-
-            // Class-specific core abilities
-            'Death Strike', // Death Knight
-            'Death Coil',
-            'Death Grip',
-            'Plague Strike',
-            'Icy Touch',
-            'Anti-Magic Shell',
-
-            'Demon\'s Bite', // Demon Hunter
-            'Throw Glaive',
-            'Fel Rush',
-            'Vengeful Retreat',
-
-            'Wrath', // Druid
-            'Moonfire',
-            'Regrowth',
-            'Rejuvenation',
-            'Barkskin',
-
-            'Fireball', // Mage
-            'Frostbolt',
-            'Arcane Missiles',
-            'Polymorph',
-            'Blink',
-
-            'Smite', // Priest
-            'Power Word: Shield',
-            'Renew',
-            'Dispel Magic',
-            'Fade',
-
-            'Sinister Strike', // Rogue
-            'Stealth',
-            'Pick Pocket',
-
-            'Lightning Bolt', // Shaman
-            'Healing Wave',
-            'Purge',
-            'Water Walking',
-            'Ghost Wolf',
-
-
-            'Life Tap',
-            'Drain Life',
-            'Fear',
-            'Summon Imp',
-
-            'Charge', // Warrior
-            'Battle Shout',
-            'Rend',
-            'Shield Block',
-            'Taunt'
-        ];
-
-        // Use exact match instead of partial match to prevent false positives
-        return coreAbilityNames.some(coreName =>
-            ability.name.toLowerCase() === coreName.toLowerCase()
-        );
-    }
 
     /**
      * Fetch abilities with specific version
@@ -768,45 +668,6 @@ export class AbilitiesComponent implements OnInit {
             .join(' ');
     }
 
-    /**
-    * Filter abilities based on current selections
-    */
-    filterAbilities() {
-        console.log('filterAbilities called with:', {
-            class: this.selectedClass,
-            spec: this.selectedSpec,
-            heroTalent: this.selectedHeroTalent
-        });
-
-        let filtered = [...this.abilities];
-
-        // Filter by class if selected
-        if (this.selectedClass) {
-            filtered = filtered.filter(ability => ability.class === this.selectedClass);
-        }
-
-        // Filter by spec if selected
-        if (this.selectedSpec) {
-            filtered = filtered.filter(ability =>
-                ability.spec === this.selectedSpec ||
-                ability.spec === 'Core' ||
-                (this.selectedSpec === 'Hero Talent' && ability.spec === 'Hero Talent')
-            );
-        }
-
-        // Filter by hero talent if selected
-        if (this.selectedHeroTalent) {
-            filtered = filtered.filter(ability =>
-                ability.heroTalent === this.selectedHeroTalent ||
-                ability.heroTalent === 'Core'
-            );
-        }
-
-        console.log('Filtered abilities:', filtered.length);
-        this.filteredAbilities = filtered;
-        this.currentPage = 1; // Reset to first page (1-based indexing)
-        this.updateTableData();
-    }
 
     /**
  * Clear class filter only
