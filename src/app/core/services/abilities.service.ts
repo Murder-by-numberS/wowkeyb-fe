@@ -32,12 +32,18 @@ export class AbilitiesService {
         return this.http.get(urlString);
     }
 
-    // Gets abilities with optional filters and pagination
+    // Gets abilities with optional filters and pagination (updated with column filters)
     getAbilitiesWithFilters(filters: {
         gameVersion?: string;
         class?: string;
         spec?: string;
         heroTalent?: string;
+        columnName?: string;
+        columnClass?: string;
+        columnSpec?: string;
+        columnHeroTalent?: string;
+        columnDescription?: string;
+        filterMode?: 'inclusion' | 'exact';
         page?: number;
         limit?: number;
     }): Observable<any> {
@@ -45,7 +51,8 @@ export class AbilitiesService {
             apiUrl: environment.apiUrl,
             envName: environment.envName,
             debugFlag: environment.debugFlag,
-            production: environment.production
+            production: environment.production,
+            filters: filters
         });
         let urlString = `${environment.apiUrl}/abilities`;
         const params = new URLSearchParams();
@@ -62,6 +69,26 @@ export class AbilitiesService {
         }
         if (filters.heroTalent) {
             params.append('heroTalent', filters.heroTalent);
+        }
+
+        // Add column filter parameters
+        if (filters.columnName) {
+            params.append('columnName', filters.columnName);
+        }
+        if (filters.columnClass) {
+            params.append('columnClass', filters.columnClass);
+        }
+        if (filters.columnSpec) {
+            params.append('columnSpec', filters.columnSpec);
+        }
+        if (filters.columnHeroTalent) {
+            params.append('columnHeroTalent', filters.columnHeroTalent);
+        }
+        if (filters.columnDescription) {
+            params.append('columnDescription', filters.columnDescription);
+        }
+        if (filters.filterMode) {
+            params.append('filterMode', filters.filterMode);
         }
 
         // Add pagination parameters

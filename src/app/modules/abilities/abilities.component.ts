@@ -1,7 +1,10 @@
-import { Component, ViewEncapsulation, OnInit, ViewChild } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSelect } from '@angular/material/select';
+import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 //Material
 import { MatButtonModule } from '@angular/material/button';
@@ -36,6 +39,7 @@ import { Ability } from 'app/core/types/ability';
     standalone: true,
     imports: [
         CommonModule,
+        FormsModule,
         MatButtonModule,
         MatIconModule,
         MatMenuModule,
@@ -52,13 +56,32 @@ import { Ability } from 'app/core/types/ability';
         MatChipsModule
     ],
 })
-export class AbilitiesComponent implements OnInit {
+export class AbilitiesComponent implements OnInit, OnDestroy {
 
     // Filter properties
     selectedClass: string;
     selectedSpec: string;
     selectedHeroTalent: string;
     selectedGameVersion: string;
+
+    // Column filter properties
+    activeColumnFilters: string[] = [];
+    columnFilters = {
+        name: '',
+        class: '',
+        spec: '',
+        heroTalent: '',
+        description: ''
+    };
+
+    // Debounce subjects for text inputs
+    private nameFilterSubject = new Subject<string>();
+    private descriptionFilterSubject = new Subject<string>();
+
+    // Available options for column filters
+    availableClasses: string[] = [];
+    availableSpecs: string[] = [];
+    availableHeroTalents: string[] = [];
 
     // Data properties
     abilities: Ability[] = [];
@@ -95,6 +118,9 @@ export class AbilitiesComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
+        // Set up debounce subscriptions for text inputs
+        this.setupDebounceSubscriptions();
+
         // Check for URL parameters first
         this.route.queryParams.subscribe(params => {
             if (params['class'] || params['spec'] || params['heroTalent'] || params['gameVersion']) {
@@ -104,6 +130,35 @@ export class AbilitiesComponent implements OnInit {
                 // Load all abilities initially
                 this.loadAllAbilities();
             }
+        });
+    }
+
+    ngOnDestroy(): void {
+        // Complete the debounce subjects to prevent memory leaks
+        this.nameFilterSubject.complete();
+        this.descriptionFilterSubject.complete();
+    }
+
+    /**
+     * Set up debounce subscriptions for text inputs
+     */
+    private setupDebounceSubscriptions() {
+        // Debounce name filter with 300ms delay
+        this.nameFilterSubject.pipe(
+            debounceTime(300),
+            distinctUntilChanged()
+        ).subscribe(value => {
+            this.columnFilters.name = value;
+            this.applyColumnFilters();
+        });
+
+        // Debounce description filter with 300ms delay
+        this.descriptionFilterSubject.pipe(
+            debounceTime(300),
+            distinctUntilChanged()
+        ).subscribe(value => {
+            this.columnFilters.description = value;
+            this.applyColumnFilters();
         });
     }
 
@@ -325,6 +380,9 @@ export class AbilitiesComponent implements OnInit {
             filters.heroTalent = this.getBackendHeroTalentName(this.selectedHeroTalent);
         }
 
+        // Set filter mode to inclusion for main filters
+        filters.filterMode = 'inclusion';
+
         // Add pagination parameters
         filters.page = this.currentPage;
         filters.limit = this.abilitiesPerPage;
@@ -377,6 +435,7 @@ export class AbilitiesComponent implements OnInit {
         // Call the abilities endpoint with only game version filter and pagination
         this.abilitiesService.getAbilitiesWithFilters({
             gameVersion,
+            filterMode: 'inclusion',
             page: this.currentPage,
             limit: this.abilitiesPerPage
         }).subscribe({
@@ -423,10 +482,10 @@ export class AbilitiesComponent implements OnInit {
         // Process abilities for display - mark core abilities and format names
         const processedAbilities = abilities.map(ability => {
             const processed = { ...ability };
-            
+
             // Mark core abilities based on ability type
             processed.isCore = ability.abilityType === 'class';
-            
+
             // Format spec and hero talent names for display
             if (processed.spec) {
                 processed.spec = this.formatSpecName(processed.spec);
@@ -434,7 +493,7 @@ export class AbilitiesComponent implements OnInit {
             if (processed.heroTalent) {
                 processed.heroTalent = this.formatHeroTalentName(processed.heroTalent);
             }
-            
+
             return processed;
         });
 
@@ -442,6 +501,425 @@ export class AbilitiesComponent implements OnInit {
         return processedAbilities.sort((a, b) =>
             a.name.localeCompare(b.name)
         );
+    }
+
+    /**
+     * Apply column filters to the current data
+     */
+    applyColumnFilters() {
+        // Update available options based on current column filter selections
+        this.updateColumnFilterOptions();
+
+        // If column filters are active, fetch data from backend with those filters
+        if (this.hasActiveColumnFilters()) {
+            this.fetchAbilitiesWithColumnFilters();
+        } else {
+            // If no column filters, use current data
+            this.applyColumnFiltersInternal();
+            this.dataSource = this.filteredAbilities;
+        }
+    }
+
+    /**
+     * Fetch abilities from backend with column filters applied
+     */
+    private fetchAbilitiesWithColumnFilters() {
+        console.log('Fetching abilities with column filters:', this.columnFilters);
+
+        // Build filters object for backend call
+        const filters: any = {};
+
+        // Add existing main filters
+        if (this.selectedGameVersion) {
+            filters.gameVersion = this.selectedGameVersion;
+        }
+        if (this.selectedClass) {
+            filters.class = this.getBackendClassName(this.selectedClass);
+        }
+        if (this.selectedSpec && this.selectedSpec !== 'Core' && this.selectedSpec !== 'Hero Talent') {
+            filters.spec = this.getBackendSpecName(this.selectedSpec);
+        }
+        if (this.selectedHeroTalent && this.selectedHeroTalent !== 'Core') {
+            filters.heroTalent = this.getBackendHeroTalentName(this.selectedHeroTalent);
+        }
+
+        // Add column filters (separate from main filters)
+        if (this.columnFilters.name) {
+            filters.columnName = this.columnFilters.name;
+        }
+        if (this.columnFilters.class) {
+            filters.columnClass = this.getBackendClassName(this.columnFilters.class);
+        }
+        if (this.columnFilters.spec) {
+            filters.columnSpec = this.getBackendSpecName(this.columnFilters.spec);
+        }
+        if (this.columnFilters.heroTalent) {
+            filters.columnHeroTalent = this.getBackendHeroTalentName(this.columnFilters.heroTalent);
+        }
+        if (this.columnFilters.description) {
+            filters.columnDescription = this.columnFilters.description;
+        }
+
+        // Set filter mode to exact matching for column filters
+        filters.filterMode = 'exact';
+
+        // Add pagination parameters
+        filters.page = this.currentPage;
+        filters.limit = this.abilitiesPerPage;
+
+        // Call the abilities endpoint with column filters
+        this.abilitiesService.getAbilitiesWithFilters(filters).subscribe({
+            next: (data) => {
+                // Handle response format
+                let abilities = data;
+                let total = 0;
+
+                if (data && typeof data === 'object' && !Array.isArray(data)) {
+                    abilities = data.abilities || data.data || [];
+                    total = data.pagination?.totalCount || data.total || data.count || 0;
+                } else if (Array.isArray(data)) {
+                    abilities = data;
+                    total = data.length;
+                }
+
+                // Process abilities for display
+                const processedAbilities = this.processAbilitiesForDisplay(abilities);
+
+                this.abilities = processedAbilities;
+                this.filteredAbilities = processedAbilities;
+                this.totalAbilities = total;
+                this.dataSource = this.filteredAbilities;
+            },
+            error: (err) => {
+                console.error('Error loading abilities with column filters:', err);
+                this.abilities = [];
+                this.filteredAbilities = [];
+                this.totalAbilities = 0;
+                this.dataSource = this.filteredAbilities;
+            }
+        });
+    }
+
+    /**
+     * Internal method to apply column filters without updating table data
+     */
+    private applyColumnFiltersInternal() {
+        if (!this.abilities || this.abilities.length === 0) {
+            this.filteredAbilities = [];
+            return;
+        }
+
+
+        this.filteredAbilities = this.abilities.filter(ability => {
+            // Name filter
+            if (this.columnFilters.name &&
+                !ability.name.toLowerCase().includes(this.columnFilters.name.toLowerCase())) {
+                return false;
+            }
+
+            // Class filter
+            if (this.columnFilters.class &&
+                this.formatClassName(ability.class) !== this.columnFilters.class) {
+                return false;
+            }
+
+            // Spec filter
+            if (this.columnFilters.spec) {
+                if (ability.abilityType !== 'spec' ||
+                    ability.spec !== this.columnFilters.spec) {
+                    return false;
+                }
+            }
+
+            // Hero Talent filter
+            if (this.columnFilters.heroTalent) {
+                if (ability.abilityType !== 'hero_talent' ||
+                    ability.heroTalent !== this.columnFilters.heroTalent) {
+                    return false;
+                }
+            }
+
+            // Description filter
+            if (this.columnFilters.description &&
+                !ability.description.toLowerCase().includes(this.columnFilters.description.toLowerCase())) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Clear a specific column filter
+     */
+    clearColumnFilter(column: string) {
+        if (column in this.columnFilters) {
+            this.columnFilters[column] = '';
+
+            // Update available options after clearing a filter
+            this.updateColumnFilterOptions();
+
+            // If no column filters are active, reset to original data
+            if (!this.hasActiveColumnFilters()) {
+                this.fetchAbilities();
+            } else {
+                this.applyColumnFilters();
+            }
+        }
+    }
+
+    /**
+     * Clear all column filters
+     */
+    clearAllColumnFilters() {
+        this.columnFilters = {
+            name: '',
+            class: '',
+            spec: '',
+            heroTalent: '',
+            description: ''
+        };
+
+        // Clear all active column filters
+        this.activeColumnFilters = [];
+
+        // Update available options after clearing all filters
+        this.updateColumnFilterOptions();
+
+        // Reset to original data by fetching without column filters
+        this.fetchAbilities();
+    }
+
+    /**
+     * Handle column filter value change
+     */
+    onColumnFilterChange(column: string, value: string) {
+        this.columnFilters[column] = value;
+
+        // Update available options based on the new selection
+        this.updateColumnFilterOptions();
+
+        // Apply the filters
+        this.applyColumnFilters();
+    }
+
+    /**
+     * Handle debounced name filter input
+     */
+    onNameFilterInput(value: string) {
+        this.nameFilterSubject.next(value);
+    }
+
+    /**
+     * Handle debounced description filter input
+     */
+    onDescriptionFilterInput(value: string) {
+        this.descriptionFilterSubject.next(value);
+    }
+
+    /**
+     * Toggle a specific column filter
+     */
+    toggleColumnFilter(column: string) {
+        if (this.activeColumnFilters.includes(column)) {
+            // If clicking an active column, hide the filter and clear it
+            this.activeColumnFilters = this.activeColumnFilters.filter(c => c !== column);
+            this.columnFilters[column] = '';
+            // Reset to original data if no other column filters are active
+            if (!this.hasActiveColumnFilters()) {
+                this.fetchAbilities();
+            } else {
+                // Update options and apply remaining filters
+                this.updateColumnFilterOptions();
+                this.applyColumnFilters();
+            }
+        } else {
+            // Show the filter for the clicked column
+            this.activeColumnFilters.push(column);
+        }
+    }
+
+    /**
+     * Check if any column filters are active
+     */
+    hasActiveColumnFilters(): boolean {
+        return Object.values(this.columnFilters).some(value => value && value.trim() !== '');
+    }
+
+    /**
+     * Check if a specific column filter is active
+     */
+    isColumnFilterActive(column: string): boolean {
+        return this.activeColumnFilters.includes(column);
+    }
+
+    /**
+     * Check if any main filters are active
+     */
+    hasActiveMainFilters(): boolean {
+        return !!(this.selectedClass ||
+            (this.selectedSpec && this.selectedSpec !== 'Core' && this.selectedSpec !== 'Hero Talent') ||
+            (this.selectedHeroTalent && this.selectedHeroTalent !== 'Core'));
+    }
+
+    /**
+     * Update available options for column filters based on current data and selected filters
+     */
+    private updateColumnFilterOptions() {
+        // Start with all available options
+        const allClasses = Object.keys(fullClasses).map(className => this.formatClassName(className)).sort();
+
+        const allSpecs: string[] = [];
+        Object.values(fullClasses).forEach(classData => {
+            Object.keys(classData.specs).forEach(spec => {
+                allSpecs.push(this.formatSpecName(spec));
+            });
+        });
+        const uniqueSpecs = [...new Set(allSpecs)].sort();
+
+        const allHeroTalents: string[] = [];
+        Object.values(fullClasses).forEach(classData => {
+            Object.values(classData.specs).forEach(specHeroTalents => {
+                if (Array.isArray(specHeroTalents)) {
+                    allHeroTalents.push(...specHeroTalents);
+                }
+            });
+        });
+        const uniqueHeroTalents = [...new Set(allHeroTalents)].sort();
+
+        // Apply dynamic filtering based on selected column filters
+        let filteredClasses = allClasses;
+        let filteredSpecs = uniqueSpecs;
+        let filteredHeroTalents = uniqueHeroTalents;
+
+        // If a class is selected, filter specs and hero talents to only those available for that class
+        if (this.columnFilters.class) {
+            // Use the formatted class name directly (not the backend format)
+            const selectedClass = this.columnFilters.class;
+            const classData = fullClasses[selectedClass];
+
+            if (classData) {
+                // Filter specs to only those available for the selected class
+                filteredSpecs = Object.keys(classData.specs).map(spec => this.formatSpecName(spec)).sort();
+
+                // Filter hero talents to only those available for the selected class
+                const classHeroTalents: string[] = [];
+                Object.values(classData.specs).forEach(specHeroTalents => {
+                    if (Array.isArray(specHeroTalents)) {
+                        classHeroTalents.push(...specHeroTalents);
+                    }
+                });
+                filteredHeroTalents = [...new Set(classHeroTalents)].sort();
+            }
+        }
+
+        // If a spec is selected, filter classes and hero talents based on that spec
+        if (this.columnFilters.spec) {
+            // Use the formatted spec name directly (not the backend format)
+            const selectedSpec = this.columnFilters.spec;
+
+            // Find all classes that have this spec
+            const classesWithSpec: string[] = [];
+            const heroTalentsForSpec: string[] = [];
+
+            Object.entries(fullClasses).forEach(([className, classData]) => {
+                if (classData.specs[selectedSpec]) {
+                    classesWithSpec.push(this.formatClassName(className));
+                    // Add hero talents for this spec
+                    if (Array.isArray(classData.specs[selectedSpec])) {
+                        heroTalentsForSpec.push(...classData.specs[selectedSpec]);
+                    }
+                }
+            });
+
+            // If no class is selected, filter classes to only those with this spec
+            if (!this.columnFilters.class) {
+                filteredClasses = [...new Set(classesWithSpec)].sort();
+            }
+
+            // If a class is also selected, check if it has this spec
+            if (this.columnFilters.class) {
+                // Use the formatted class name directly (not the backend format)
+                const selectedClass = this.columnFilters.class;
+                const classData = fullClasses[selectedClass];
+
+                if (classData && classData.specs[selectedSpec]) {
+                    // Class has this spec, filter hero talents to only those for this spec
+                    filteredHeroTalents = classData.specs[selectedSpec].sort();
+                    // Keep the class filter active
+                    filteredClasses = [this.columnFilters.class];
+                } else {
+                    // Class doesn't have this spec, clear the class filter
+                    this.columnFilters.class = '';
+                    filteredClasses = [...new Set(classesWithSpec)].sort();
+                    filteredHeroTalents = [...new Set(heroTalentsForSpec)].sort();
+                }
+            } else {
+                // If no class selected, show all hero talents for this spec across all classes
+                filteredHeroTalents = [...new Set(heroTalentsForSpec)].sort();
+            }
+        }
+
+        // If a hero talent is selected, filter classes and specs to only those that have this hero talent
+        if (this.columnFilters.heroTalent) {
+            const selectedHeroTalent = this.getBackendHeroTalentName(this.columnFilters.heroTalent);
+
+            const classesWithHeroTalent: string[] = [];
+            const specsWithHeroTalent: string[] = [];
+
+            Object.entries(fullClasses).forEach(([className, classData]) => {
+                Object.entries(classData.specs).forEach(([specName, heroTalents]) => {
+                    if (Array.isArray(heroTalents) && heroTalents.includes(selectedHeroTalent)) {
+                        classesWithHeroTalent.push(this.formatClassName(className));
+                        specsWithHeroTalent.push(this.formatSpecName(specName));
+                    }
+                });
+            });
+
+            // Check if current class/spec combination has this hero talent
+            let currentCombinationValid = false;
+            if (this.columnFilters.class && this.columnFilters.spec) {
+                // Use the formatted class and spec names directly (not the backend format)
+                const selectedClass = this.columnFilters.class;
+                const selectedSpec = this.columnFilters.spec;
+                const classData = fullClasses[selectedClass];
+
+                if (classData && classData.specs[selectedSpec] &&
+                    Array.isArray(classData.specs[selectedSpec]) &&
+                    classData.specs[selectedSpec].includes(selectedHeroTalent)) {
+                    currentCombinationValid = true;
+                }
+            }
+
+            // If current combination is invalid, clear the conflicting filters
+            if (!currentCombinationValid) {
+                if (this.columnFilters.class && !classesWithHeroTalent.includes(this.columnFilters.class)) {
+                    this.columnFilters.class = '';
+                }
+                if (this.columnFilters.spec && !specsWithHeroTalent.includes(this.columnFilters.spec)) {
+                    this.columnFilters.spec = '';
+                }
+            }
+
+            // Only override filtered classes/specs if no other filters are active
+            if (!this.columnFilters.class && !this.columnFilters.spec) {
+                filteredClasses = [...new Set(classesWithHeroTalent)].sort();
+                filteredSpecs = [...new Set(specsWithHeroTalent)].sort();
+            } else {
+                // If class or spec is already filtered, intersect with hero talent results
+                if (this.columnFilters.class) {
+                    filteredClasses = filteredClasses.filter(cls => classesWithHeroTalent.includes(cls));
+                }
+                if (this.columnFilters.spec) {
+                    filteredSpecs = filteredSpecs.filter(spec => specsWithHeroTalent.includes(spec));
+                }
+            }
+        }
+
+        // Update the available options
+        this.availableClasses = filteredClasses;
+        this.availableSpecs = filteredSpecs;
+        this.availableHeroTalents = filteredHeroTalents;
     }
 
 
@@ -486,6 +964,14 @@ export class AbilitiesComponent implements OnInit {
      * Update table data source
      */
     updateTableData() {
+        // Update available options for column filters based on current abilities
+        this.updateColumnFilterOptions();
+
+        // If no column filters are active, use current data
+        if (!this.hasActiveColumnFilters()) {
+            this.applyColumnFiltersInternal();
+        }
+
         // With server-side pagination, the dataSource is the same as filteredAbilities
         // The server returns only the current page's data
         this.dataSource = this.filteredAbilities;
@@ -506,7 +992,11 @@ export class AbilitiesComponent implements OnInit {
     goToPreviousPage() {
         if (this.currentPage > 1) {
             this.currentPage--;
-            this.fetchAbilities(); // Fetch new data from server
+            if (this.hasActiveColumnFilters()) {
+                this.fetchAbilitiesWithColumnFilters();
+            } else {
+                this.fetchAbilities(); // Fetch new data from server
+            }
         }
     }
 
@@ -516,7 +1006,11 @@ export class AbilitiesComponent implements OnInit {
     goToNextPage() {
         if (this.currentPage < this.maxPage()) {
             this.currentPage++;
-            this.fetchAbilities(); // Fetch new data from server
+            if (this.hasActiveColumnFilters()) {
+                this.fetchAbilitiesWithColumnFilters();
+            } else {
+                this.fetchAbilities(); // Fetch new data from server
+            }
         }
     }
 
