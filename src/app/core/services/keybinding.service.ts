@@ -105,11 +105,19 @@ export class KeybindingService {
         if (update.removedKeybinds?.length) {
             console.log('removing keybinds - before:', keybinds.length);
             console.log('update.removedKeybinds', update.removedKeybinds);
-            keybinds = keybinds.filter(existing =>
-                !update.removedKeybinds.some(remove =>
-                    String(remove.spell.spellId) === String(existing.spell.spellId)
-                )
-            );
+            keybinds = keybinds.filter(existing => {
+                const existingSpellId = existing.spell?.spellId;
+                const shouldRemove = update.removedKeybinds.some(remove => {
+                    const removeSpellId = remove.spell?.spellId;
+                    return String(removeSpellId) === String(existingSpellId);
+                });
+                console.log('Checking keybind for removal:', {
+                    existingSpellId,
+                    existingSpellName: existing.spell?.name,
+                    shouldRemove
+                });
+                return !shouldRemove;
+            });
             console.log('removing keybinds - after:', keybinds.length);
         }
         if (update.addedKeybinds?.length) {
@@ -126,10 +134,24 @@ export class KeybindingService {
 
     updateKeybinding(id: string, updatedKeybinding: Partial<Keybinding>): Observable<Keybinding> {
         console.log('updateKeybinding - sending to backend:', { id, updatedKeybinding });
+        console.log('updateKeybinding - keybinds being sent:', updatedKeybinding.keybinds?.length);
+        console.log('updateKeybinding - keybinds details:', updatedKeybinding.keybinds?.map(kb => ({
+            key: kb.key,
+            spellName: kb.spell?.name,
+            spellId: kb.spell?.spellId
+        })));
+
         return this.http.put<Keybinding>(`${environment.apiUrl}/keybindings/${id}`, updatedKeybinding)
             .pipe(
                 tap((response: Keybinding) => {
                     console.log('updateKeybinding - backend response:', response);
+                    console.log('updateKeybinding - response keybinds:', response.keybinds?.length);
+                    console.log('updateKeybinding - response keybinds details:', response.keybinds?.map(kb => ({
+                        key: kb.key,
+                        spellName: kb.spell?.name,
+                        spellId: kb.spell?.spellId
+                    })));
+
                     const currentKeybindings = this.keybindingsSource.getValue();
                     const updatedKeybindings = currentKeybindings.map(kb =>
                         kb.keybindingId === id ? response : kb

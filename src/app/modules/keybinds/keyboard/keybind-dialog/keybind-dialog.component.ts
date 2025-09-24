@@ -27,12 +27,20 @@ export class KeybindDialogComponent {
         console.log('keybinds', this.keybinds);
     }
 
+    get hasChanges(): boolean {
+        return this.markedForRemoval.size > 0;
+    }
+
     toggleRemoval(bind: Keybind) {
         if (this.markedForRemoval.has(bind)) {
             this.markedForRemoval.delete(bind);
+            console.log('KeybindDialog - Removed from markedForRemoval:', bind.spell?.name);
         } else {
             this.markedForRemoval.add(bind);
+            console.log('KeybindDialog - Added to markedForRemoval:', bind.spell?.name);
         }
+        console.log('KeybindDialog - markedForRemoval size:', this.markedForRemoval.size);
+        console.log('KeybindDialog - markedForRemoval contents:', Array.from(this.markedForRemoval).map(b => b.spell?.name));
     }
 
     onCancel(): void {
@@ -40,8 +48,36 @@ export class KeybindDialogComponent {
     }
 
     onConfirm(): void {
+        console.log('KeybindDialog - onConfirm called');
+        console.log('KeybindDialog - original keybinds:', this.keybinds.length);
+        console.log('KeybindDialog - original keybinds details:', this.keybinds.map(b => ({
+            name: b.spell?.name,
+            spellId: b.spell?.spellId
+        })));
+        console.log('KeybindDialog - markedForRemoval size:', this.markedForRemoval.size);
+        console.log('KeybindDialog - marked for removal:', Array.from(this.markedForRemoval).map(b => ({
+            name: b.spell?.name,
+            spellId: b.spell?.spellId
+        })));
+
         // Filter out the marked keybinds from the working copy
-        const filteredKeybinds = this.keybinds.filter(bind => !this.markedForRemoval.has(bind));
+        const filteredKeybinds = this.keybinds.filter(bind => {
+            const isMarked = this.markedForRemoval.has(bind);
+            console.log('KeybindDialog - checking keybind:', {
+                name: bind.spell?.name,
+                spellId: bind.spell?.spellId,
+                isMarked,
+                willKeep: !isMarked
+            });
+            return !isMarked;
+        });
+
+        console.log('KeybindDialog - filtered keybinds:', filteredKeybinds.length);
+        console.log('KeybindDialog - filtered keybinds details:', filteredKeybinds.map(b => ({
+            name: b.spell?.name,
+            spellId: b.spell?.spellId
+        })));
+
         this.dialogRef.close(filteredKeybinds);
     }
 }

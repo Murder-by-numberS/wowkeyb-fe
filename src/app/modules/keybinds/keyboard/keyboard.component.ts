@@ -277,6 +277,16 @@ export class KeyboardComponent implements OnInit, AfterViewInit, OnDestroy {
     openKeybindDialog(key: any): void {
         console.log('Keyboard - openKeybindDialog - key:', key);
         console.log('Keyboard - openKeybindDialog - key.keybinds:', key.keybinds);
+        console.log('Keyboard - openKeybindDialog - key.keybinds details:', key.keybinds?.map(kb => ({
+            key: kb.key,
+            spellName: kb.spell?.name,
+            spellId: kb.spell?.spellId
+        })));
+        console.log('Keyboard - openKeybindDialog - all keybinds for this key from selectedKeybinding:', this.selectedKeybinding.keybinds.filter(k => k.key.toLowerCase() === key.label.toLowerCase()).map(kb => ({
+            key: kb.key,
+            spellName: kb.spell?.name,
+            spellId: kb.spell?.spellId
+        })));
         if (key.keybinds?.length > 0) {
             const dialogWidth = this.calculateDialogWidth(key.keybinds.length);
             const dialogRef = this.dialog.open(KeybindDialogComponent, {
@@ -285,53 +295,66 @@ export class KeyboardComponent implements OnInit, AfterViewInit, OnDestroy {
             });
 
             dialogRef.afterClosed().subscribe(result => {
-                if (result) {
-                    console.log('Keyboard - Dialog result:', result);
-                    key.keybinds = result;
+                console.log('Keyboard - Dialog closed with result:', result);
+                console.log('Keyboard - Result type:', typeof result);
+                console.log('Keyboard - Result is array:', Array.isArray(result));
+                if (result !== false) { // Allow empty arrays
+                    console.log('Keyboard - Dialog result (not false):', result);
+                    console.log('Keyboard - Result length:', result.length);
 
-                    // Calculate the changes
-                    console.log('Keyboard - key.label:', key.label);
-                    console.log('Keyboard - selectedKeybinding.keybinds:', this.selectedKeybinding.keybinds);
-                    console.log('Keyboard - keybinds with key details:', this.selectedKeybinding.keybinds.map(k => ({ key: k.key, spellName: k.spell.name })));
+                    // Get all keybinds for this keybinding
+                    const allKeybinds = [...this.selectedKeybinding.keybinds];
 
-                    const oldKeybinds = this.selectedKeybinding.keybinds.filter(k => k.key.toLowerCase() === key.label.toLowerCase());
-                    const newKeybinds = result;
+                    // Helper function to check if a keybind belongs to the current key (handles modifiers)
+                    const isKeybindForCurrentKey = (keybind) => {
+                        const keybindKey = keybind.key.toLowerCase();
+                        const currentKeyLabel = key.label.toLowerCase();
 
-                    console.log('Keyboard - oldKeybinds:', oldKeybinds);
-                    console.log('Keyboard - newKeybinds:', newKeybinds);
+                        // Direct match
+                        if (keybindKey === currentKeyLabel) {
+                            return true;
+                        }
 
-                    // Find removed keybinds (in oldKeybinds but not in newKeybinds)
-                    const removedKeybinds = oldKeybinds.filter(old =>
-                        !newKeybinds.some(newKb =>
-                            String(newKb.spell.spellId) === String(old.spell.spellId)
-                        )
-                    );
+                        // Check for modifier combinations (e.g., "shift+t" matches "t")
+                        const modifiers = ['shift+', 'ctrl+', 'alt+', 'cmd+', 'meta+'];
+                        for (const modifier of modifiers) {
+                            if (keybindKey === modifier + currentKeyLabel) {
+                                return true;
+                            }
+                        }
 
-                    // Find added keybinds (in newKeybinds but not in oldKeybinds)
-                    const addedKeybinds = newKeybinds.filter(newKb =>
-                        !oldKeybinds.some(old =>
-                            String(old.spell.spellId) === String(newKb.spell.spellId)
-                        )
-                    );
+                        return false;
+                    };
 
-                    console.log('Keyboard - Changes calculated (diff approach):', {
-                        addedKeybinds: addedKeybinds.length,
-                        removedKeybinds: removedKeybinds.length,
-                        addedDetails: addedKeybinds.map(a => ({ key: a.key, spellId: a.spell.spellId, name: a.spell.name })),
-                        removedDetails: removedKeybinds.map(r => ({ key: r.key, spellId: r.spell.spellId, name: r.spell.name }))
+                    // Remove all keybinds for this key (including modifier combinations)
+                    const keybindsForOtherKeys = allKeybinds.filter(k => !isKeybindForCurrentKey(k));
+
+                    // Add the new keybinds for this key
+                    const updatedKeybinds = [...keybindsForOtherKeys, ...result];
+
+                    console.log('Keyboard - Updating keybinding with new keybinds:', {
+                        originalCount: allKeybinds.length,
+                        otherKeysCount: keybindsForOtherKeys.length,
+                        newKeybindsCount: result.length,
+                        finalCount: updatedKeybinds.length
                     });
 
-                    // Use the proper update method that only sends keybinds
-                    console.log('Keyboard - calling updateKeybindsInKeybinding with:', { addedKeybinds, removedKeybinds });
-                    this.keybindingService.updateKeybindsInKeybinding(this.selectedKeybinding.keybindingId, {
-                        addedKeybinds,
-                        removedKeybinds
+                    const originalKeybindsForKey = allKeybinds.filter(k => isKeybindForCurrentKey(k));
+                    console.log('Keyboard - Original keybinds for key', key.label, ':', originalKeybindsForKey.map(k => ({ key: k.key, spellName: k.spell?.name })));
+                    console.log('Keyboard - New keybinds for key', key.label, ':', result.map(k => ({ key: k.key, spellName: k.spell?.name })));
+                    console.log('Keyboard - Final updated keybinds:', updatedKeybinds.map(k => ({ key: k.key, spellName: k.spell?.name })));
+
+                    // Update the keybinding directly with the new keybinds array
+                    this.keybindingService.updateKeybinding(this.selectedKeybinding.keybindingId, {
+                        keybinds: updatedKeybinds
                     }).subscribe({
                         next: (updatedKeybinding) => {
-                            console.log('Keyboard - updateKeybindsInKeybinding success:', updatedKeybinding);
+                            console.log('Keyboard - updateKeybinding success:', updatedKeybinding);
                             console.log('Keyboard - updatedKeybinding.keybinds:', updatedKeybinding.keybinds);
                             // Update the selected keybinding with the server response
                             this.selectedKeybinding = updatedKeybinding;
+                            // Update the local key with the filtered result
+                            key.keybinds = result;
                             this.updateKeyboardBindings();
                         },
                         error: (error) => {
