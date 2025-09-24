@@ -543,6 +543,35 @@ export class KeybindsComponent implements OnInit {
         });
     }
 
+    refreshAbilitiesForMigratedKeybinding(migratedKeybinding: Keybinding) {
+        console.log('refreshAbilitiesForMigratedKeybinding called with:', migratedKeybinding.keybindingId);
+
+        if (this.abilitiesComponent) {
+            // Clear current abilities
+            this.abilitiesComponent.abilities = [];
+
+            // If the migrated keybinding has spec and hero talent, fetch abilities
+            if (migratedKeybinding.spec && migratedKeybinding.heroTalent) {
+                console.log('refreshAbilitiesForMigratedKeybinding - fetching abilities for:', {
+                    class: migratedKeybinding.class,
+                    spec: migratedKeybinding.spec,
+                    heroTalent: migratedKeybinding.heroTalent,
+                    version: migratedKeybinding.version?.game_version
+                });
+
+                // Temporarily update the abilities component's selectedKeybinding to the migrated one
+                const originalSelectedKeybinding = this.abilitiesComponent.selectedKeybinding;
+                this.abilitiesComponent.selectedKeybinding = migratedKeybinding;
+
+                // Fetch abilities with the migrated keybinding data
+                this.abilitiesComponent.fetchAbilities();
+
+                // Restore the original selectedKeybinding
+                this.abilitiesComponent.selectedKeybinding = originalSelectedKeybinding;
+            }
+        }
+    }
+
     updateKeybinding(update) {
         console.log('updated keybinding?', update);
 

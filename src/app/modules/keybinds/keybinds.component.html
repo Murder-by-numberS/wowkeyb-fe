@@ -17,7 +17,8 @@
                 (editName)="editName()" (saveName)="saveName()" (cancelName)="cancelName()"
                 (togglePublic)="togglePublic()" (refreshChildKeybindings)="refreshChildKeybindings()"
                 (updateKeybinding)="updateKeybinding($event)" (toggleDrawer)="opened = !opened"
-                (selectKeybinding)="onKeybindingSelected($event)">
+                (selectKeybinding)="onKeybindingSelected($event)"
+                (refreshAbilities)="refreshAbilitiesForMigratedKeybinding($event)">
             </view-all-keybindings>
             }
         </mat-drawer-content>

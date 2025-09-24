@@ -206,10 +206,22 @@ export class KeybindingService {
         this.clearKeybindings();
         console.log('Cleared keybindings from state');
 
-        // Fetch fresh data from server
-        return this.getKeybindings().pipe(
+        // Fetch fresh data from server with cache-busting
+        const timestamp = Date.now();
+        console.log('Fetching keybindings with cache-busting timestamp:', timestamp);
+        return this.http.get<Keybinding[]>(`${environment.apiUrl}/keybindings?t=${timestamp}`).pipe(
             tap((keybindings: Keybinding[]) => {
                 console.log('Force refresh completed - keybindings updated:', keybindings.length);
+                console.log('Force refresh - keybinding versions:', keybindings.map(kb => ({
+                    id: kb.keybindingId,
+                    name: kb.name,
+                    version: kb.version?.game_version
+                })));
+
+                // Filter out any soft-deleted keybindings that might slip through
+                const filteredKeybindings = keybindings.filter(kb => !kb.deleted_at);
+
+                this.keybindingsSource.next(filteredKeybindings);
             })
         );
     }
@@ -232,17 +244,55 @@ export class KeybindingService {
         );
     }
 
-    migrateToLatest(keybindingId: string): Observable<Keybinding> {
-        return this.http.post<Keybinding>(`${environment.apiUrl}/keybindings/${keybindingId}/migrate-to-latest`, {}).pipe(
-            tap((migratedKeybinding: Keybinding) => {
-                // Update the local state with the migrated keybinding
-                const currentKeybindings = this.keybindingsSource.getValue();
-                const updatedKeybindings = currentKeybindings.map(kb =>
-                    kb.keybindingId === keybindingId ? migratedKeybinding : kb
-                );
-                this.keybindingsSource.next(updatedKeybindings);
+    migrateToLatest(keybindingId: string): Observable<any> {
+        return this.http.post<any>(`${environment.apiUrl}/keybindings/${keybindingId}/migrate-to-latest`, {}).pipe(
+            tap((response: any) => {
+                console.log('KeybindingService - migrateToLatest - received response:', response);
+                console.log('KeybindingService - migration completed, keybinding will be updated separately');
             })
         );
+    }
+
+    updateKeybindingInList(updatedKeybinding: Keybinding): void {
+        console.log('KeybindingService - updateKeybindingInList called with:', updatedKeybinding.keybindingId);
+        console.log('KeybindingService - updated keybinding name:', updatedKeybinding.name);
+        console.log('KeybindingService - updated keybinding version:', updatedKeybinding.version?.game_version);
+
+        const currentKeybindings = this.keybindingsSource.getValue();
+
+        // Find the specific keybinding to update
+        const keybindingIndex = currentKeybindings.findIndex(kb => kb.keybindingId === updatedKeybinding.keybindingId);
+
+        if (keybindingIndex === -1) {
+            console.error('KeybindingService - keybinding not found in list:', updatedKeybinding.keybindingId);
+            return;
+        }
+
+        console.log('KeybindingService - found keybinding at index:', keybindingIndex);
+        console.log('KeybindingService - keybinding before update:', {
+            id: currentKeybindings[keybindingIndex].keybindingId,
+            name: currentKeybindings[keybindingIndex].name,
+            version: currentKeybindings[keybindingIndex].version?.game_version
+        });
+
+        // Update only the specific keybinding properties in place
+        const keybindingToUpdate = currentKeybindings[keybindingIndex];
+        keybindingToUpdate.name = updatedKeybinding.name;
+        keybindingToUpdate.class = updatedKeybinding.class;
+        keybindingToUpdate.spec = updatedKeybinding.spec;
+        keybindingToUpdate.heroTalent = updatedKeybinding.heroTalent;
+        keybindingToUpdate.version = updatedKeybinding.version;
+        keybindingToUpdate.keybinds = updatedKeybinding.keybinds;
+        keybindingToUpdate.isPublic = updatedKeybinding.isPublic;
+
+        console.log('KeybindingService - keybinding after update:', {
+            id: keybindingToUpdate.keybindingId,
+            name: keybindingToUpdate.name,
+            version: keybindingToUpdate.version?.game_version
+        });
+
+        // No need to emit - the object reference is the same, just the properties changed
+        console.log('KeybindingService - updated keybinding in place, no list emission needed');
     }
 
 }

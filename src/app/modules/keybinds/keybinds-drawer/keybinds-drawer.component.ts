@@ -87,10 +87,19 @@ export class KeybindsDrawerComponent implements OnInit {
         // Subscribe to the keybinding service to update when keybindings change
         this.keybindingService.currentKeybindings.subscribe(keybindings => {
             console.log('KeybindsDrawerComponent - received keybindings update:', keybindings.length);
-            console.log('KeybindsDrawerComponent - keybinding IDs:', keybindings.map(kb => kb.keybindingId));
+            console.log('KeybindsDrawerComponent - keybinding details:', keybindings.map(kb => ({
+                id: kb.keybindingId,
+                name: kb.name,
+                version: kb.version?.game_version
+            })));
             this.keybindings = keybindings;
             this.applyFilter();
             console.log('KeybindsDrawerComponent - applied filter, filtered keybindings:', this.filteredKeybindings.length);
+            console.log('KeybindsDrawerComponent - filtered keybinding details:', this.filteredKeybindings.map(kb => ({
+                id: kb.keybindingId,
+                name: kb.name,
+                version: kb.version?.game_version
+            })));
         });
 
         this.selectedClasses.valueChanges.subscribe(() => {
@@ -101,6 +110,8 @@ export class KeybindsDrawerComponent implements OnInit {
     loadKeybindings() {
         console.log('KeybindsDrawerComponent - loadKeybindings');
         this.keybindingService.currentKeybindings.subscribe(keybindings => {
+            console.log('KeybindsDrawerComponent - received keybindings:', keybindings.length);
+            console.log('KeybindsDrawerComponent - keybindings data:', keybindings);
             this.keybindings = keybindings;
             this.applyFilter();
 
@@ -141,19 +152,30 @@ export class KeybindsDrawerComponent implements OnInit {
 
     selectKeybinding(keybinding: any): void {
         console.log('keybinding selected', keybinding);
+        console.log('keybinding details:', {
+            id: keybinding.keybindingId,
+            name: keybinding.name,
+            class: keybinding.class,
+            spec: keybinding.spec,
+            heroTalent: keybinding.heroTalent
+        });
         this.selectedKeybindingId = keybinding.keybindingId;
         this.keybindingSelected.emit(keybinding);
     }
 
     // Add a method to set the selected keybinding from outside
     setSelectedKeybinding(keybinding: Keybinding): void {
+        console.log('KeybindsDrawerComponent - setSelectedKeybinding called with:', keybinding);
         if (keybinding) {
             // Prevent auto-selection while we're setting the keybinding
             this.preventAutoSelection = true;
 
             this.selectedKeybindingId = keybinding.keybindingId;
+            console.log('KeybindsDrawerComponent - set selectedKeybindingId to:', this.selectedKeybindingId);
+
             // Ensure the keybinding is in the filtered list
             if (!this.filteredKeybindings.some(kb => kb.keybindingId === keybinding.keybindingId)) {
+                console.log('KeybindsDrawerComponent - adding keybinding to filtered list');
                 this.filteredKeybindings = [...this.filteredKeybindings, keybinding];
             }
 

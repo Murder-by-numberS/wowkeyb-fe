@@ -64,6 +64,7 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
     @Output() toggleDrawer = new EventEmitter<void>();
     @Output() keybindingUpdated = new EventEmitter<Keybinding>();
     @Output() selectKeybinding = new EventEmitter<Keybinding>();
+    @Output() refreshAbilities = new EventEmitter<Keybinding>();
 
     @ViewChild('expandedKeyboard') expandedKeyboardComponent?: ExpandedKeyboardComponent;
     @ViewChild(KeyboardComponent) keyboardComponent?: KeyboardComponent;
@@ -145,17 +146,57 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
         });
     }
 
+    private refreshAbilitiesForMigratedKeybinding(migratedKeybinding: Keybinding) {
+        console.log('refreshAbilitiesForMigratedKeybinding called with:', migratedKeybinding.keybindingId);
+
+        // Emit an event to refresh abilities with the migrated keybinding data
+        this.refreshAbilities.emit(migratedKeybinding);
+    }
+
     private performMigration() {
         if (!this.selectedKeybinding?.keybindingId) {
             return;
         }
 
         this.keybindingService.migrateToLatest(this.selectedKeybinding.keybindingId).subscribe({
-            next: (migratedKeybinding) => {
+            next: (response) => {
+                console.log('Migration response received:', response);
+                console.log('Response type:', typeof response);
+                console.log('Response keys:', Object.keys(response || {}));
+
+                // Check if the response has the expected structure
+                const migratedKeybinding = (response as any)?.keybinding || response;
+                console.log('Extracted migratedKeybinding:', migratedKeybinding);
+
+                if (!migratedKeybinding) {
+                    console.error('No keybinding found in migration response:', response);
+                    this.snackBar.open('Error: No keybinding data received from migration', 'Close', { duration: 3000 });
+                    return;
+                }
+
+                console.log('Migration successful, received keybinding:', migratedKeybinding);
+                console.log('Keybinding details:', {
+                    id: migratedKeybinding.keybindingId,
+                    name: migratedKeybinding.name,
+                    class: migratedKeybinding.class,
+                    spec: migratedKeybinding.spec,
+                    heroTalent: migratedKeybinding.heroTalent,
+                    version: migratedKeybinding.version,
+                    game_version: migratedKeybinding.version?.game_version,
+                    keybindsCount: migratedKeybinding.keybinds?.length
+                });
+                console.log('Full migrated keybinding object:', JSON.stringify(migratedKeybinding, null, 2));
+
                 this.snackBar.open('Keybinding migrated to latest version successfully', 'Close', { duration: 3000 });
 
                 // Update the selected keybinding with the migrated version
                 this.selectedKeybinding = migratedKeybinding;
+                console.log('Updated selectedKeybinding after migration:', {
+                    id: this.selectedKeybinding.keybindingId,
+                    name: this.selectedKeybinding.name,
+                    version: this.selectedKeybinding.version,
+                    game_version: this.selectedKeybinding.version?.game_version
+                });
 
                 // Update the selected keybinding name
                 this.selectedKeybindingName = migratedKeybinding.name;
@@ -163,14 +204,11 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
                 // Re-check if the keybinding is outdated (should now be false)
                 this.checkIfOutdated();
 
-                // Emit events to update parent components
-                this.updateKeybinding.emit(migratedKeybinding);
-                this.selectKeybinding.emit(migratedKeybinding);
+                // Update the keybinding in the service's list without changing selection
+                this.keybindingService.updateKeybindingInList(migratedKeybinding);
 
-                // Refresh the keybindings list with a delay to ensure proper selection
-                setTimeout(() => {
-                    this.refreshChildKeybindings.emit();
-                }, 100);
+                // Refresh abilities component directly with the migrated keybinding data
+                this.refreshAbilitiesForMigratedKeybinding(migratedKeybinding);
             },
             error: (error) => {
                 console.error('Error migrating keybinding:', error);

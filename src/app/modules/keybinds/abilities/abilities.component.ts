@@ -91,6 +91,14 @@ export class AbilitiesComponent implements OnInit {
             console.log('abilities - previous value:', changes['selectedKeybinding'].previousValue?.keybindingId);
             console.log('abilities - current value:', changes['selectedKeybinding'].currentValue?.keybindingId);
             console.log('abilities - inputProp changed:', changes['selectedKeybinding'].currentValue);
+            console.log('abilities - current keybinding details:', {
+                id: changes['selectedKeybinding'].currentValue?.keybindingId,
+                name: changes['selectedKeybinding'].currentValue?.name,
+                class: changes['selectedKeybinding'].currentValue?.class,
+                spec: changes['selectedKeybinding'].currentValue?.spec,
+                heroTalent: changes['selectedKeybinding'].currentValue?.heroTalent,
+                version: changes['selectedKeybinding'].currentValue?.version?.game_version
+            });
             console.log('abilities - randomClassDetails:', changes['selectedKeybinding'].currentValue?.randomClassDetails);
 
             if (this.selectedKeybinding) {
@@ -99,8 +107,25 @@ export class AbilitiesComponent implements OnInit {
                 this.currentFetchKeybindingId = null; // Clear previous fetch ID
                 console.log('Cleared abilities for new keybinding');
 
-                // Use random class details if available, otherwise use the keybinding's class details
-                if (this.selectedKeybinding.randomClassDetails) {
+                // Use keybinding's current class details if available, otherwise use random class details
+                if (this.selectedKeybinding.class && this.selectedKeybinding.spec && this.selectedKeybinding.heroTalent) {
+                    console.log('Using keybinding class details for abilities:', {
+                        class: this.selectedKeybinding.class,
+                        spec: this.selectedKeybinding.spec,
+                        heroTalent: this.selectedKeybinding.heroTalent
+                    });
+                    console.log('Abilities component - selectedKeybinding ID:', this.selectedKeybinding.keybindingId);
+
+                    this.selectedKeybindingClass = this.selectedKeybinding.class;
+                    this.selectedKeybindingSpec = this.selectedKeybinding.spec;
+                    this.selectedKeybindingHeroTalent = this.selectedKeybinding.heroTalent === 'San Layn'
+                        ? 'San\'layn'
+                        : this.selectedKeybinding.heroTalent === 'Fel Scarred'
+                            ? 'Fel-Scarred'
+                            : this.selectedKeybinding.heroTalent === 'Elunes Chosen'
+                                ? 'Elune\'s Chosen'
+                                : this.selectedKeybinding.heroTalent;
+                } else if (this.selectedKeybinding.randomClassDetails) {
                     console.log('Using random class details for abilities:', this.selectedKeybinding.randomClassDetails);
 
                     // Convert lowercase backend values to proper format for fullClasses
@@ -250,15 +275,10 @@ export class AbilitiesComponent implements OnInit {
                         });
                     }
                 } else {
-                    this.selectedKeybindingClass = this.selectedKeybinding.class;
-                    this.selectedKeybindingSpec = this.selectedKeybinding.spec;
-                    this.selectedKeybindingHeroTalent = this.selectedKeybinding.heroTalent === 'San Layn'
-                        ? 'San\'layn'
-                        : this.selectedKeybinding.heroTalent === 'Fel Scarred'
-                            ? 'Fel-Scarred'
-                            : this.selectedKeybinding.heroTalent === 'Elunes Chosen'
-                                ? 'Elune\'s Chosen'
-                                : this.selectedKeybinding.heroTalent;
+                    console.log('No class details available for abilities');
+                    this.selectedKeybindingClass = undefined;
+                    this.selectedKeybindingSpec = undefined;
+                    this.selectedKeybindingHeroTalent = undefined;
                 }
 
                 // Abilities already cleared above
@@ -494,6 +514,7 @@ export class AbilitiesComponent implements OnInit {
             heroTalent: this.selectedKeybindingHeroTalent,
             selectedKeybinding: this.selectedKeybinding
         });
+        console.log('fetchAbilities - selectedKeybinding ID:', this.selectedKeybinding?.keybindingId);
 
         // Only prevent if we're fetching for the exact same parameters
         if (this.isFetchingAbilities) {
