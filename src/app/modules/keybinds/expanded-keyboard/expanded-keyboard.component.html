@@ -1,39 +1,66 @@
 <div class="flex flex-col w-full h-full">
     <!-- Toolbar -->
     <div class="sticky top-0 z-20 bg-white flex-shrink-0">
-        <div class="flex flex-row p-2 bg-gray-300" #toolbarElem>
-            <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="reset()">
-                <mat-icon>restart_alt</mat-icon>
-                <span class="ml-2">Reset</span>
-            </button>
-            <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="zoomIn()">
-                <mat-icon>zoom_in</mat-icon>
-                <span class="ml-2">Zoom In</span>
-            </button>
-            <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="zoomOut()">
-                <mat-icon>zoom_out</mat-icon>
-                <span class="ml-2">Zoom Out</span>
-            </button>
-            <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panUp()">
-                <mat-icon>arrow_upward</mat-icon>
-                <span class="ml-2">Up</span>
-            </button>
-            <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panDown()">
-                <mat-icon>arrow_downward</mat-icon>
-                <span class="ml-2">Down</span>
-            </button>
-            <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panLeft()">
-                <mat-icon>arrow_back</mat-icon>
-                <span class="ml-2">Left</span>
-            </button>
-            <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panRight()">
-                <mat-icon>arrow_forward</mat-icon>
-                <span class="ml-2">Right</span>
-            </button>
+        <div class="flex flex-row p-2 bg-gray-300 items-center justify-between" #toolbarElem>
+            <div class="flex flex-row">
+                <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="reset()">
+                    <mat-icon>restart_alt</mat-icon>
+                    <span class="ml-2">Reset</span>
+                </button>
+                <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="zoomIn()">
+                    <mat-icon>zoom_in</mat-icon>
+                    <span class="ml-2">Zoom In</span>
+                </button>
+                <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="zoomOut()">
+                    <mat-icon>zoom_out</mat-icon>
+                    <span class="ml-2">Zoom Out</span>
+                </button>
+                <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panUp()">
+                    <mat-icon>arrow_upward</mat-icon>
+                    <span class="ml-2">Up</span>
+                </button>
+                <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panDown()">
+                    <mat-icon>arrow_downward</mat-icon>
+                    <span class="ml-2">Down</span>
+                </button>
+                <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panLeft()">
+                    <mat-icon>arrow_back</mat-icon>
+                    <span class="ml-2">Left</span>
+                </button>
+                <button class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'" (click)="panRight()">
+                    <mat-icon>arrow_forward</mat-icon>
+                    <span class="ml-2">Right</span>
+                </button>
+            </div>
+
+            <!-- Mobile Controls -->
+            <div class="sm:hidden flex flex-wrap gap-1 justify-start">
+                <button mat-icon-button (click)="reset()" matTooltip="Reset View">
+                    <mat-icon>refresh</mat-icon>
+                </button>
+                <button mat-icon-button (click)="zoomIn()" matTooltip="Zoom In">
+                    <mat-icon>zoom_in</mat-icon>
+                </button>
+                <button mat-icon-button (click)="zoomOut()" matTooltip="Zoom Out">
+                    <mat-icon>zoom_out</mat-icon>
+                </button>
+                <button mat-icon-button (click)="panUp()" matTooltip="Pan Up">
+                    <mat-icon>keyboard_arrow_up</mat-icon>
+                </button>
+                <button mat-icon-button (click)="panDown()" matTooltip="Pan Down">
+                    <mat-icon>keyboard_arrow_down</mat-icon>
+                </button>
+                <button mat-icon-button (click)="panLeft()" matTooltip="Pan Left">
+                    <mat-icon>keyboard_arrow_left</mat-icon>
+                </button>
+                <button mat-icon-button (click)="panRight()" matTooltip="Pan Right">
+                    <mat-icon>keyboard_arrow_right</mat-icon>
+                </button>
+            </div>
         </div>
     </div>
     <!-- Keyboard area -->
-    <div class="flex-1 overflow-hidden min-h-0">
+    <div class="flex-1 overflow-hidden min-h-[400px]">
         <div class="w-full h-full bg-gray-800" #panZoom appPanZoom [zoomLevels]="10"
             [scalePerZoomLevel]="scalePerZoomLevel" [zoomStepDuration]="0.15" [freeMouseWheelFactor]="mouseWheelFactor"
             [zoomToFitZoomLevelFactor]="0.9" [neutralZoomLevel]="-6" [minZoomLevel]="-8" [zoomEnabled]="zoomEnabled">

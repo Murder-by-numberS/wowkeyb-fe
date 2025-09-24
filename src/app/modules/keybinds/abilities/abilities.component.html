@@ -1,81 +1,84 @@
-<div class="pl-2 pt-2 flex flex-row">
-    <div class="flex-col px-2">
+<div class="pl-2 pt-2 flex flex-row gap-2 lg:gap-4">
+    <div class="flex flex-row gap-2 lg:gap-4">
+        <div class="px-2 flex-col">
+            @if (selectedKeybinding && selectedKeybindingClass) {
+            <mat-form-field appearance="fill" class="w-48">
+                <mat-label>Class: </mat-label>
+                <mat-select [(value)]="selectedKeybindingClass" [disabled]="!keybindingSelected"
+                    (selectionChange)="onClassChange($event)">
+                    @for (class of classes; track class.name) {
+                    <mat-option [value]="class.name">{{class.name}}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+            }
+            @if (!selectedKeybinding || !selectedKeybindingClass) {
+            <mat-form-field appearance="fill" class="w-48">
+                <mat-label>Class: </mat-label>
+                <mat-select placeholder="Select a keybinding first" [disabled]="true">
+                    <mat-option value="" disabled>Select a keybinding first</mat-option>
+                </mat-select>
+            </mat-form-field>
+            }
+        </div>
         @if (selectedKeybinding && selectedKeybindingClass) {
-        <mat-form-field appearance="fill" class="w-48">
-            <mat-label>Class: </mat-label>
-            <mat-select [(value)]="selectedKeybindingClass" [disabled]="!keybindingSelected"
-                (selectionChange)="onClassChange($event)">
-                @for (class of classes; track class.name) {
-                <mat-option [value]="class.name">{{class.name}}</mat-option>
-                }
-            </mat-select>
-        </mat-form-field>
+        <div class="px-2 flex-col">
+            <mat-form-field appearance="fill" class="w-48">
+                <mat-label>Spec: </mat-label>
+                <mat-select [(value)]="selectedKeybindingSpec" [disabled]="!keybindingSelected"
+                    (selectionChange)="onSpecChange($event)">
+                    @for (spec of specs; track $index + spec) {
+                    <mat-option [value]="spec">{{spec}}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
         }
-        @if (!selectedKeybinding || !selectedKeybindingClass) {
-        <mat-form-field appearance="fill" class="w-48">
-            <mat-label>Class: </mat-label>
-            <mat-select placeholder="Select a keybinding first" [disabled]="true">
-                <mat-option value="" disabled>Select a keybinding first</mat-option>
-            </mat-select>
-        </mat-form-field>
+        @if (selectedKeybinding && selectedKeybindingClass && selectedKeybindingSpec) {
+        <div class="px-2 flex-col">
+            <mat-form-field appearance="fill" class="w-48">
+                <mat-label>Hero Talent: </mat-label>
+                <mat-select [(value)]="selectedKeybindingHeroTalent" [disabled]="!keybindingSelected"
+                    (selectionChange)="onHeroTalentChange($event)">
+                    @for (heroTalent of heroTalents; track $index + heroTalent) {
+                    <mat-option [value]="heroTalent">{{heroTalent}}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
         }
     </div>
-    @if (selectedKeybinding && selectedKeybindingClass) {
-    <div class="flex-col px-2">
-        <mat-form-field appearance="fill" class="w-48">
-            <mat-label>Spec: </mat-label>
-            <mat-select [(value)]="selectedKeybindingSpec" [disabled]="!keybindingSelected"
-                (selectionChange)="onSpecChange($event)">
-                @for (spec of specs; track $index + spec) {
-                <mat-option [value]="spec">{{spec}}</mat-option>
-                }
-            </mat-select>
-        </mat-form-field>
-    </div>
-    }
-    @if (selectedKeybinding && selectedKeybindingClass && selectedKeybindingSpec) {
-    <div class="flex-col px-2">
-        <mat-form-field appearance="fill" class="w-48">
-            <mat-label>Hero Talent: </mat-label>
-            <mat-select [(value)]="selectedKeybindingHeroTalent" [disabled]="!keybindingSelected"
-                (selectionChange)="onHeroTalentChange($event)">
-                @for (heroTalent of heroTalents; track $index + heroTalent) {
-                <mat-option [value]="heroTalent">{{heroTalent}}</mat-option>
-                }
-            </mat-select>
-        </mat-form-field>
-    </div>
-    }
 </div>
-<div class="pl-4 pb-2 flex flex-row w-full max-h-6 min-h-6 items-center">
+<div class="pl-4 pb-2 flex flex-row w-full items-center gap-2">
     @if (abilities?.length > 0) {
-    <p class="">Abilities</p>
-    <p class="ml-2">
+    <p class="text-sm lg:text-base font-medium">Abilities</p>
+    <p class="text-xs lg:text-sm text-gray-600">
         Page {{ currentPage + 1 }} of {{ maxPage() + 1 }} |
         Showing {{ getStartIndex() + 1 }} - {{ getEndIndex() }} of {{ abilities.length }}
     </p>
     } @else if (selectedKeybinding) {
-    <p class="">No abilities available for selected class/spec/hero talent</p>
+    <p class="text-sm lg:text-base text-gray-600">No abilities available for selected class/spec/hero talent</p>
     } @else {
-    <p class="">Select a keybinding to view abilities</p>
+    <p class="text-sm lg:text-base text-gray-600">Select a keybinding to view abilities</p>
     }
 </div>
 
 <div class="w-full pl-4 flex">
-    <div class="flex items-center">
+    <div class="flex items-center overflow-x-auto gap-2">
         @if (abilities?.length > 0) {
-        <mat-icon class="text-gray-500 cursor-pointer ml-2" (click)="goToPreviousPage()"
+        <mat-icon class="text-gray-500 cursor-pointer flex-shrink-0" (click)="goToPreviousPage()"
             [class.opacity-50]="currentPage === 0">arrow_back</mat-icon>
         @for (ability of getAbilitiesForCurrentPage(); track $index) {
-        <div class="flex flex-col w-12">
+        <div class="flex flex-col w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
             <div class="flex items-center" matTooltip="{{ ability.name }}: {{ ability.description }}"
                 matTooltipPosition="above" (click)="selectKey(ability)">
-                <img [src]="ability.icon" alt="{{ ability.name }} icon" class="w-12 h-12 object-contain"
+                <img [src]="ability.icon" alt="{{ ability.name }} icon"
+                    class="w-10 h-10 sm:w-12 sm:h-12 object-contain cursor-pointer hover:scale-110 transition-transform"
                     [class.grayscale]="ability.keybindings.length > 0" />
             </div>
         </div>
         }
-        <mat-icon class="text-gray-500 cursor-pointer ml-2" (click)="goToNextPage()"
+        <mat-icon class="text-gray-500 cursor-pointer flex-shrink-0" (click)="goToNextPage()"
             [class.opacity-50]="currentPage === maxPage()">arrow_forward</mat-icon>
         }
     </div>

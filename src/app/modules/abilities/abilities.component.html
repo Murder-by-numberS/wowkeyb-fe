@@ -1,11 +1,11 @@
-<div class="flex h-full w-full flex-col p-6">
+<div class="flex h-full w-full flex-col p-4 sm:p-6">
     <!-- Header -->
-    <div class="mb-6">
-        <h1 class="text-4xl font-bold mb-2">Abilities Database</h1>
-        <p class="text-xl text-gray-600">
+    <div class="mb-4 sm:mb-6">
+        <h1 class="text-2xl sm:text-4xl font-bold mb-2">Abilities Database</h1>
+        <p class="text-base sm:text-xl text-gray-600">
             Browse and explore World of Warcraft abilities by class, specialization, and hero talent
         </p>
-        <p class="text-sm text-gray-500 mt-2">
+        <p class="text-xs sm:text-sm text-gray-500 mt-2">
             Select a class, spec, and hero talent to see all abilities available to that combination
         </p>
     </div>
@@ -16,9 +16,10 @@
             <mat-card-title>Filters</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-            <div class="flex flex-row gap-4 items-center justify-start">
+            <!-- Mobile: Stack filters vertically, Desktop: Horizontal layout -->
+            <div class="flex flex-col lg:flex-row gap-2 lg:gap-4 items-stretch lg:items-center justify-start">
                 <!-- Class Filter -->
-                <mat-form-field appearance="fill" class="w-48">
+                <mat-form-field appearance="fill" class="w-full lg:w-48">
                     <mat-label>Class</mat-label>
                     <mat-select #classSelect [(value)]="selectedClass" (selectionChange)="onClassChange($event)">
                         @for (class of classes; track $index) {
@@ -34,7 +35,7 @@
                 </mat-form-field>
 
                 <!-- Spec Filter -->
-                <mat-form-field appearance="fill" class="w-48">
+                <mat-form-field appearance="fill" class="w-full lg:w-48">
                     <mat-label>Spec</mat-label>
                     <mat-select #specSelect [(value)]="selectedSpec" [disabled]="!selectedClass"
                         (selectionChange)="onSpecChange($event)">
@@ -51,7 +52,7 @@
                 </mat-form-field>
 
                 <!-- Hero Talent Filter -->
-                <mat-form-field appearance="fill" class="w-48">
+                <mat-form-field appearance="fill" class="w-full lg:w-48">
                     <mat-label>Hero Talent</mat-label>
                     <mat-select #heroTalentSelect [(value)]="selectedHeroTalent" [disabled]="!selectedClass"
                         (selectionChange)="onHeroTalentChange($event)">
@@ -68,7 +69,7 @@
                 </mat-form-field>
 
                 <!-- Game Version Filter -->
-                <mat-form-field appearance="fill" class="w-48">
+                <mat-form-field appearance="fill" class="w-full lg:w-48">
                     <mat-label>Game Version</mat-label>
                     <mat-select #gameVersionSelect [(value)]="selectedGameVersion"
                         (selectionChange)="onGameVersionChange($event)">
@@ -85,11 +86,12 @@
                 </mat-form-field>
 
                 <!-- Clear Filters Button -->
-                <div class="flex items-center h-16 gap-2">
+                <div class="flex items-center justify-center lg:justify-start h-12 lg:h-16 gap-2">
                     @if (hasActiveMainFilters()) {
-                    <button mat-stroked-button color="warn" (click)="clearFilters()">
-                        <mat-icon class="mr-2">clear</mat-icon>
-                        Clear Filters
+                    <button mat-stroked-button color="warn" (click)="clearFilters()" class="w-full lg:w-auto text-sm">
+                        <mat-icon class="mr-1 lg:mr-2 text-sm">clear</mat-icon>
+                        <span class="hidden lg:inline">Clear Filters</span>
+                        <span class="lg:hidden">Clear</span>
                     </button>
                     }
                 </div>
@@ -98,11 +100,11 @@
     </mat-card>
 
     <!-- Results Info -->
-    <div class="mb-4 flex items-center justify-between">
+    <div class="mb-4">
         @if (filteredAbilities?.length > 0) {
-        <div class="flex items-center gap-4">
-            <p class="text-lg font-medium">Abilities</p>
-            <p class="text-gray-600">
+        <div class="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4">
+            <p class="text-base sm:text-lg font-medium">Abilities</p>
+            <p class="text-gray-600 text-xs sm:text-sm">
                 Page {{ currentPage }} of {{ maxPage() }} |
                 Showing {{ getStartIndex() + 1 }} - {{ getEndIndex() }} of {{ filteredAbilities.length }}
                 @if (hasActiveColumnFilters()) {
@@ -111,26 +113,25 @@
             </p>
             @if (selectedClass && selectedSpec && selectedHeroTalent) {
             <p class="text-sm text-blue-600">
-                Showing all abilities for {{ selectedClass }} {{ selectedSpec }} {{ selectedHeroTalent }}
+                {{ selectedClass }} {{ selectedSpec }} {{ selectedHeroTalent }}
             </p>
             } @else if (selectedClass && selectedSpec) {
             <p class="text-sm text-blue-600">
-                Showing all abilities for {{ selectedClass }} {{ selectedSpec }}
+                {{ selectedClass }} {{ selectedSpec }}
             </p>
             } @else if (selectedClass) {
             <p class="text-sm text-blue-600">
-                Showing all abilities for {{ selectedClass }}
+                {{ selectedClass }}
             </p>
             }
         </div>
         } @else if (selectedGameVersion && (selectedClass || selectedSpec || selectedHeroTalent)) {
-        <p class="text-gray-600">No abilities available for the selected combination in version {{ selectedGameVersion
-            }}
-        </p>
+        <p class="text-gray-600 text-sm sm:text-base">No abilities available for the selected combination in version {{
+            selectedGameVersion }}</p>
         } @else if (selectedGameVersion) {
-        <p class="text-gray-600">No abilities available for version {{ selectedGameVersion }}</p>
+        <p class="text-gray-600 text-sm sm:text-base">No abilities available for version {{ selectedGameVersion }}</p>
         } @else {
-        <p class="text-gray-600">Select a class to view abilities</p>
+        <p class="text-gray-600 text-sm sm:text-base">Select a class to view abilities</p>
         }
     </div>
 
@@ -140,230 +141,245 @@
         <mat-card-content>
             <!-- Clear Column Filters Button -->
             @if (hasActiveColumnFilters()) {
-            <div class="flex justify-end mb-4">
-                <button mat-stroked-button color="accent" (click)="clearAllColumnFilters()">
-                    <mat-icon class="mr-2">clear</mat-icon>
-                    Clear Column Filters
+            <div class="flex justify-center lg:justify-end mb-4">
+                <button mat-stroked-button color="accent" (click)="clearAllColumnFilters()"
+                    class="w-full lg:w-auto text-sm">
+                    <mat-icon class="mr-1 lg:mr-2 text-sm">clear</mat-icon>
+                    <span class="hidden lg:inline">Clear Column Filters</span>
+                    <span class="lg:hidden">Clear Filters</span>
                 </button>
             </div>
             }
 
-            <table mat-table [dataSource]="dataSource" class="w-full">
-                <!-- Icon Column -->
-                <ng-container matColumnDef="icon">
-                    <th mat-header-cell *matHeaderCellDef>
-                        <div class="flex flex-col gap-2">
-                            <div class="flex items-center gap-2">
-                                <span>Icon</span>
-                                <mat-icon class="text-gray-400 text-sm"
-                                    matTooltip="No filter available">block</mat-icon>
+            <!-- Mobile: Horizontal scroll for table -->
+            <div class="overflow-x-auto -mx-4 lg:mx-0">
+                <table mat-table [dataSource]="dataSource" class="w-full min-w-[800px]">
+                    <!-- Icon Column -->
+                    <ng-container matColumnDef="icon">
+                        <th mat-header-cell *matHeaderCellDef>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span>Icon</span>
+                                    <mat-icon class="text-gray-400 text-sm"
+                                        matTooltip="No filter available">block</mat-icon>
+                                </div>
                             </div>
-                        </div>
-                    </th>
-                    <td mat-cell *matCellDef="let ability">
-                        <img [src]="ability.icon" [alt]="ability.name + ' icon'" class="w-8 h-8 object-contain" />
-                    </td>
-                </ng-container>
+                        </th>
+                        <td mat-cell *matCellDef="let ability">
+                            <img [src]="ability.icon" [alt]="ability.name + ' icon'"
+                                class="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
+                        </td>
+                    </ng-container>
 
-                <!-- Name Column -->
-                <ng-container matColumnDef="name">
-                    <th mat-header-cell *matHeaderCellDef>
-                        <div class="flex flex-col gap-2">
-                            <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
-                                (click)="toggleColumnFilter('name')" matTooltip="Click to filter by name">
-                                <span>Name</span>
-                                @if (columnFilters.name) {
-                                <mat-icon class="text-orange-500 text-sm">filter_alt</mat-icon>
-                                }
-                            </div>
-                            @if (isColumnFilterActive('name')) {
-                            <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>Filter by name</mat-label>
-                                <input matInput [ngModel]="columnFilters.name"
-                                    (ngModelChange)="onNameFilterInput($event)" placeholder="Search name...">
-                                @if (columnFilters.name) {
-                                <button matSuffix mat-icon-button type="button" (click)="clearColumnFilter('name')"
-                                    matTooltip="Clear name filter">
-                                    <mat-icon>clear</mat-icon>
-                                </button>
-                                }
-                            </mat-form-field>
-                            }
-                        </div>
-                    </th>
-                    <td mat-cell *matCellDef="let ability">
-                        <div class="font-medium">
-                            {{ability.name}}
-                        </div>
-                    </td>
-                </ng-container>
-
-                <!-- Class Column -->
-                <ng-container matColumnDef="class">
-                    <th mat-header-cell *matHeaderCellDef>
-                        <div class="flex flex-col gap-2">
-                            <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
-                                (click)="toggleColumnFilter('class')" matTooltip="Click to filter by class">
-                                <span>Class</span>
-                                @if (columnFilters.class) {
-                                <mat-icon class="text-orange-500 text-sm">filter_alt</mat-icon>
-                                }
-                            </div>
-                            @if (isColumnFilterActive('class')) {
-                            <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>Filter by class</mat-label>
-                                <mat-select [value]="columnFilters.class"
-                                    (selectionChange)="onColumnFilterChange('class', $event.value)">
-                                    <mat-option value="">All Classes</mat-option>
-                                    @for (class of availableClasses; track $index) {
-                                    <mat-option [value]="class">{{class}}</mat-option>
+                    <!-- Name Column -->
+                    <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                    (click)="toggleColumnFilter('name')" matTooltip="Click to filter by name">
+                                    <span>Name</span>
+                                    @if (columnFilters.name) {
+                                    <mat-icon class="text-orange-500 text-sm">filter_alt</mat-icon>
                                     }
-                                </mat-select>
-                                @if (columnFilters.class) {
-                                <button matSuffix mat-icon-button type="button" (click)="clearColumnFilter('class')"
-                                    matTooltip="Clear class filter">
-                                    <mat-icon>clear</mat-icon>
-                                </button>
-                                }
-                            </mat-form-field>
-                            }
-                        </div>
-                    </th>
-                    <td mat-cell *matCellDef="let ability">
-                        <div class="font-medium text-blue-600">{{formatClassName(ability.class)}}</div>
-                    </td>
-                </ng-container>
-
-                <!-- Spec Column -->
-                <ng-container matColumnDef="spec">
-                    <th mat-header-cell *matHeaderCellDef>
-                        <div class="flex flex-col gap-2">
-                            <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
-                                (click)="toggleColumnFilter('spec')" matTooltip="Click to filter by spec">
-                                <span>Spec</span>
-                                @if (columnFilters.spec) {
-                                <mat-icon class="text-orange-500 text-sm">filter_alt</mat-icon>
-                                }
-                            </div>
-                            @if (isColumnFilterActive('spec')) {
-                            <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>Filter by spec</mat-label>
-                                <mat-select [value]="columnFilters.spec"
-                                    (selectionChange)="onColumnFilterChange('spec', $event.value)">
-                                    <mat-option value="">All Specs</mat-option>
-                                    @for (spec of availableSpecs; track $index) {
-                                    <mat-option [value]="spec">{{spec}}</mat-option>
+                                </div>
+                                @if (isColumnFilterActive('name')) {
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label class="text-xs sm:text-sm">Filter by name</mat-label>
+                                    <input matInput [ngModel]="columnFilters.name"
+                                        (ngModelChange)="onNameFilterInput($event)" placeholder="Search name..."
+                                        class="text-sm">
+                                    @if (columnFilters.name) {
+                                    <button matSuffix mat-icon-button type="button" (click)="clearColumnFilter('name')"
+                                        matTooltip="Clear name filter">
+                                        <mat-icon class="text-sm">clear</mat-icon>
+                                    </button>
                                     }
-                                </mat-select>
-                                @if (columnFilters.spec) {
-                                <button matSuffix mat-icon-button type="button" (click)="clearColumnFilter('spec')"
-                                    matTooltip="Clear spec filter">
-                                    <mat-icon>clear</mat-icon>
-                                </button>
-                                }
-                            </mat-form-field>
-                            }
-                        </div>
-                    </th>
-                    <td mat-cell *matCellDef="let ability">
-                        <!-- Spec Ability -->
-                        <div *ngIf="ability.abilityType === 'spec'" class="font-medium text-green-600">
-                            {{formatSpecName(ability.spec)}}
-                        </div>
-                    </td>
-                </ng-container>
-
-                <!-- Hero Talent Column -->
-                <ng-container matColumnDef="heroTalent">
-                    <th mat-header-cell *matHeaderCellDef>
-                        <div class="flex flex-col gap-2">
-                            <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
-                                (click)="toggleColumnFilter('heroTalent')" matTooltip="Click to filter by hero talent">
-                                <span>Hero Talent</span>
-                                @if (columnFilters.heroTalent) {
-                                <mat-icon class="text-orange-500 text-sm">filter_alt</mat-icon>
+                                </mat-form-field>
                                 }
                             </div>
-                            @if (isColumnFilterActive('heroTalent')) {
-                            <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>Filter by hero talent</mat-label>
-                                <mat-select [value]="columnFilters.heroTalent"
-                                    (selectionChange)="onColumnFilterChange('heroTalent', $event.value)">
-                                    <mat-option value="">All Hero Talents</mat-option>
-                                    @for (heroTalent of availableHeroTalents; track $index) {
-                                    <mat-option [value]="heroTalent">{{heroTalent}}</mat-option>
+                        </th>
+                        <td mat-cell *matCellDef="let ability">
+                            <div class="font-medium text-sm sm:text-base">
+                                {{ability.name}}
+                            </div>
+                        </td>
+                    </ng-container>
+
+                    <!-- Class Column -->
+                    <ng-container matColumnDef="class">
+                        <th mat-header-cell *matHeaderCellDef>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                    (click)="toggleColumnFilter('class')" matTooltip="Click to filter by class">
+                                    <span>Class</span>
+                                    @if (columnFilters.class) {
+                                    <mat-icon class="text-orange-500 text-sm">filter_alt</mat-icon>
                                     }
-                                </mat-select>
-                                @if (columnFilters.heroTalent) {
-                                <button matSuffix mat-icon-button type="button"
-                                    (click)="clearColumnFilter('heroTalent')" matTooltip="Clear hero talent filter">
-                                    <mat-icon>clear</mat-icon>
-                                </button>
-                                }
-                            </mat-form-field>
-                            }
-                        </div>
-                    </th>
-                    <td mat-cell *matCellDef="let ability">
-                        <!-- Hero Talent Ability -->
-                        <div *ngIf="ability.abilityType === 'hero_talent'" class="font-medium text-orange-600">
-                            {{formatHeroTalentName(ability.heroTalent)}}
-                        </div>
-                    </td>
-                </ng-container>
-
-                <!-- Description Column -->
-                <ng-container matColumnDef="description">
-                    <th mat-header-cell *matHeaderCellDef>
-                        <div class="flex flex-col gap-2">
-                            <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
-                                (click)="toggleColumnFilter('description')" matTooltip="Click to filter by description">
-                                <span>Description</span>
-                                @if (columnFilters.description) {
-                                <mat-icon class="text-orange-500 text-sm">filter_alt</mat-icon>
+                                </div>
+                                @if (isColumnFilterActive('class')) {
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Filter by class</mat-label>
+                                    <mat-select [value]="columnFilters.class"
+                                        (selectionChange)="onColumnFilterChange('class', $event.value)">
+                                        <mat-option value="">All Classes</mat-option>
+                                        @for (class of availableClasses; track $index) {
+                                        <mat-option [value]="class">{{class}}</mat-option>
+                                        }
+                                    </mat-select>
+                                    @if (columnFilters.class) {
+                                    <button matSuffix mat-icon-button type="button" (click)="clearColumnFilter('class')"
+                                        matTooltip="Clear class filter">
+                                        <mat-icon>clear</mat-icon>
+                                    </button>
+                                    }
+                                </mat-form-field>
                                 }
                             </div>
-                            @if (isColumnFilterActive('description')) {
-                            <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>Filter by description</mat-label>
-                                <input matInput [ngModel]="columnFilters.description"
-                                    (ngModelChange)="onDescriptionFilterInput($event)"
-                                    placeholder="Search description...">
-                                @if (columnFilters.description) {
-                                <button matSuffix mat-icon-button type="button"
-                                    (click)="clearColumnFilter('description')" matTooltip="Clear description filter">
-                                    <mat-icon>clear</mat-icon>
-                                </button>
+                        </th>
+                        <td mat-cell *matCellDef="let ability">
+                            <div class="font-medium text-blue-600">{{formatClassName(ability.class)}}</div>
+                        </td>
+                    </ng-container>
+
+                    <!-- Spec Column -->
+                    <ng-container matColumnDef="spec">
+                        <th mat-header-cell *matHeaderCellDef>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                    (click)="toggleColumnFilter('spec')" matTooltip="Click to filter by spec">
+                                    <span>Spec</span>
+                                    @if (columnFilters.spec) {
+                                    <mat-icon class="text-orange-500 text-sm">filter_alt</mat-icon>
+                                    }
+                                </div>
+                                @if (isColumnFilterActive('spec')) {
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Filter by spec</mat-label>
+                                    <mat-select [value]="columnFilters.spec"
+                                        (selectionChange)="onColumnFilterChange('spec', $event.value)">
+                                        <mat-option value="">All Specs</mat-option>
+                                        @for (spec of availableSpecs; track $index) {
+                                        <mat-option [value]="spec">{{spec}}</mat-option>
+                                        }
+                                    </mat-select>
+                                    @if (columnFilters.spec) {
+                                    <button matSuffix mat-icon-button type="button" (click)="clearColumnFilter('spec')"
+                                        matTooltip="Clear spec filter">
+                                        <mat-icon>clear</mat-icon>
+                                    </button>
+                                    }
+                                </mat-form-field>
                                 }
-                            </mat-form-field>
-                            }
-                        </div>
-                    </th>
-                    <td mat-cell *matCellDef="let ability">
-                        <div class="max-w-md truncate" [matTooltip]="ability.description">
-                            {{ability.description}}
-                        </div>
-                    </td>
-                </ng-container>
+                            </div>
+                        </th>
+                        <td mat-cell *matCellDef="let ability">
+                            <!-- Spec Ability -->
+                            <div *ngIf="ability.abilityType === 'spec'" class="font-medium text-green-600">
+                                {{formatSpecName(ability.spec)}}
+                            </div>
+                        </td>
+                    </ng-container>
+
+                    <!-- Hero Talent Column -->
+                    <ng-container matColumnDef="heroTalent">
+                        <th mat-header-cell *matHeaderCellDef>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                    (click)="toggleColumnFilter('heroTalent')"
+                                    matTooltip="Click to filter by hero talent">
+                                    <span>Hero Talent</span>
+                                    @if (columnFilters.heroTalent) {
+                                    <mat-icon class="text-orange-500 text-sm">filter_alt</mat-icon>
+                                    }
+                                </div>
+                                @if (isColumnFilterActive('heroTalent')) {
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Filter by hero talent</mat-label>
+                                    <mat-select [value]="columnFilters.heroTalent"
+                                        (selectionChange)="onColumnFilterChange('heroTalent', $event.value)">
+                                        <mat-option value="">All Hero Talents</mat-option>
+                                        @for (heroTalent of availableHeroTalents; track $index) {
+                                        <mat-option [value]="heroTalent">{{heroTalent}}</mat-option>
+                                        }
+                                    </mat-select>
+                                    @if (columnFilters.heroTalent) {
+                                    <button matSuffix mat-icon-button type="button"
+                                        (click)="clearColumnFilter('heroTalent')" matTooltip="Clear hero talent filter">
+                                        <mat-icon>clear</mat-icon>
+                                    </button>
+                                    }
+                                </mat-form-field>
+                                }
+                            </div>
+                        </th>
+                        <td mat-cell *matCellDef="let ability">
+                            <!-- Hero Talent Ability -->
+                            <div *ngIf="ability.abilityType === 'hero_talent'" class="font-medium text-orange-600">
+                                {{formatHeroTalentName(ability.heroTalent)}}
+                            </div>
+                        </td>
+                    </ng-container>
+
+                    <!-- Description Column -->
+                    <ng-container matColumnDef="description">
+                        <th mat-header-cell *matHeaderCellDef>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                    (click)="toggleColumnFilter('description')"
+                                    matTooltip="Click to filter by description">
+                                    <span>Description</span>
+                                    @if (columnFilters.description) {
+                                    <mat-icon class="text-orange-500 text-sm">filter_alt</mat-icon>
+                                    }
+                                </div>
+                                @if (isColumnFilterActive('description')) {
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Filter by description</mat-label>
+                                    <input matInput [ngModel]="columnFilters.description"
+                                        (ngModelChange)="onDescriptionFilterInput($event)"
+                                        placeholder="Search description...">
+                                    @if (columnFilters.description) {
+                                    <button matSuffix mat-icon-button type="button"
+                                        (click)="clearColumnFilter('description')"
+                                        matTooltip="Clear description filter">
+                                        <mat-icon>clear</mat-icon>
+                                    </button>
+                                    }
+                                </mat-form-field>
+                                }
+                            </div>
+                        </th>
+                        <td mat-cell *matCellDef="let ability">
+                            <div class="max-w-xs sm:max-w-md truncate text-xs sm:text-sm"
+                                [matTooltip]="ability.description">
+                                {{ability.description}}
+                            </div>
+                        </td>
+                    </ng-container>
 
 
 
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-            </table>
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </table>
+            </div>
 
             <!-- Pagination -->
-            <div class="flex items-center justify-center mt-4">
-                <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPreviousPage()">
-                    <mat-icon>arrow_back</mat-icon>
-                </button>
-                <span class="mx-4">
-                    Page {{ currentPage }} of {{ maxPage() }} |
+            <div class="flex flex-col lg:flex-row items-center justify-center gap-2 lg:gap-4 mt-4">
+                <div class="flex items-center gap-2">
+                    <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPreviousPage()">
+                        <mat-icon>arrow_back</mat-icon>
+                    </button>
+                    <span class="text-sm sm:text-base">
+                        Page {{ currentPage }} of {{ maxPage() }}
+                    </span>
+                    <button mat-icon-button [disabled]="currentPage >= maxPage()" (click)="goToNextPage()">
+                        <mat-icon>arrow_forward</mat-icon>
+                    </button>
+                </div>
+                <span class="text-xs sm:text-sm text-gray-600 text-center">
                     Showing {{ getStartIndex() + 1 }}-{{ getEndIndex() }} of {{ totalAbilities }} abilities
                 </span>
-                <button mat-icon-button [disabled]="currentPage >= maxPage()" (click)="goToNextPage()">
-                    <mat-icon>arrow_forward</mat-icon>
-                </button>
             </div>
         </mat-card-content>
     </mat-card>

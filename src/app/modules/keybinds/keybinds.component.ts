@@ -68,6 +68,7 @@ export class KeybindsComponent implements OnInit {
     @ViewChild(KeyboardComponent) keyboard: KeyboardComponent;
 
     isAuthenticated: boolean;
+    isMobile: boolean = false;
 
     nameForm: FormGroup;
 
@@ -113,6 +114,10 @@ export class KeybindsComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        // Check if device is mobile
+        this.checkMobile();
+        window.addEventListener('resize', () => this.checkMobile());
+
         this._authService.check()
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe((authenticated) => {
@@ -773,6 +778,10 @@ export class KeybindsComponent implements OnInit {
 
     navigateToKeybinding(keybinding: Keybinding): void {
         this.router.navigate(['/keybinds', keybinding.keybindingId]);
+    }
+
+    private checkMobile(): void {
+        this.isMobile = window.innerWidth < 768; // sm breakpoint
     }
 
 }
