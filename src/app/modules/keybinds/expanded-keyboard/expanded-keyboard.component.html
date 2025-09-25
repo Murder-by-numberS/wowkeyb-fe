@@ -60,10 +60,19 @@
         </div>
     </div>
     <!-- Keyboard area -->
-    <div class="flex-1 overflow-hidden min-h-[400px]">
+    <div class="flex-1 overflow-hidden min-h-[400px] relative">
+        <!-- Loading indicator outside of PanZoom to avoid zoom interference -->
+        @if (isInitializing) {
+        <div class="flex items-center justify-center w-full h-full absolute inset-0 z-20 bg-gray-800">
+            <div class="text-white text-xl font-medium">Loading keyboard...</div>
+        </div>
+        }
+
         <div class="w-full h-full bg-gray-800" #panZoom appPanZoom [zoomLevels]="10"
             [scalePerZoomLevel]="scalePerZoomLevel" [zoomStepDuration]="0.15" [freeMouseWheelFactor]="mouseWheelFactor"
             [zoomToFitZoomLevelFactor]="0.9" [neutralZoomLevel]="-6" [minZoomLevel]="-8" [zoomEnabled]="zoomEnabled">
+
+            @if (!isInitializing) {
             <div class="flex items-center justify-center w-full h-full">
                 <div class="relative p-5 bg-gray-800 rounded-lg shadow-lg min-w-[4800px]"
                     [ngStyle]="{'min-height.px': keyboardLayout.length * 250}" #keyboardContainer>
@@ -100,6 +109,7 @@
                     </div>
                 </div>
             </div>
+            }
         </div>
     </div>
 </div>

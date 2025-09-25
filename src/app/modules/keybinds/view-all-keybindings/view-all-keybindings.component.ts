@@ -264,9 +264,7 @@ export class ViewAllKeybindingsComponent implements OnInit, OnChanges {
         this.isExpanded = true;
         // Collapse the drawer when expanding
         this.toggleDrawer.emit();
-        setTimeout(() => {
-            this.expandedKeyboardComponent?.reset();
-        }, 50);
+        // Don't call reset here - let the expanded keyboard component handle its own initialization
     }
 
     onCollapse(): void {

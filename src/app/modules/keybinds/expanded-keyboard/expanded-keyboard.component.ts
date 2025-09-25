@@ -130,6 +130,7 @@ export class ExpandedKeyboardComponent implements OnChanges, AfterViewInit, OnIn
     abilityCallouts: any[] = [];
     toolbarHeight: number = 60;
     visibleAbilityCallouts: any[] = [];
+    isInitializing: boolean = true; // Track if we're still setting up the initial view
 
     // Set a more zoomed out neutral level
     private initialZoomLevel: number = -6; // Start at minimum zoom level to show entire keyboard
@@ -137,6 +138,9 @@ export class ExpandedKeyboardComponent implements OnChanges, AfterViewInit, OnIn
     constructor(private ngZone: NgZone, private cdr: ChangeDetectorRef) { }
 
     ngOnInit(): void {
+        // Start in initializing state immediately
+        this.isInitializing = true;
+        this.cdr.detectChanges();
         // Detect input device and adjust zoom sensitivity
         this.detectInputDevice();
     }
@@ -168,12 +172,6 @@ export class ExpandedKeyboardComponent implements OnChanges, AfterViewInit, OnIn
     }
 
     ngAfterViewInit(): void {
-        if (this.panZoom) {
-            // Set initial zoom level
-            (this.panZoom as any).currentZoomLevel = this.initialZoomLevel;
-            (this.panZoom as any).neutralZoomLevel = this.initialZoomLevel;
-        }
-
         // Initial setup
         setTimeout(() => {
             if (this.toolbarElem && this.toolbarElem.nativeElement) {
@@ -181,6 +179,11 @@ export class ExpandedKeyboardComponent implements OnChanges, AfterViewInit, OnIn
                 this.cdr.detectChanges();
             }
             this.updateVisibleAbilityCallouts();
+
+            // Set up initial view if we're initializing
+            if (this.isInitializing) {
+                this.reset();
+            }
         }, 50);
 
         // Recalculate lines and visible callouts after view init and on zoom/pan
@@ -270,11 +273,20 @@ export class ExpandedKeyboardComponent implements OnChanges, AfterViewInit, OnIn
 
     public reset(): void {
         if (this.panZoom) {
-            // Reset the view to the neutral state
+            // Reset to neutral zoom level first
             this.panZoom.resetView();
-            // Then zoom out twice
-            this.zoomOut();
-            this.zoomOut();
+            // Then zoom out twice to show the whole keyboard comfortably
+            setTimeout(() => {
+                this.panZoom.zoomOut('viewCenter');
+                setTimeout(() => {
+                    this.panZoom.zoomOut('viewCenter');
+                    // Show the keyboard after zoom is complete
+                    setTimeout(() => {
+                        this.isInitializing = false;
+                        this.cdr.detectChanges();
+                    }, 100); // Small delay to ensure zoom is complete
+                }, 100); // Slightly longer delay between zoom operations
+            }, 100); // Slightly longer delay for first zoom
         }
     }
 

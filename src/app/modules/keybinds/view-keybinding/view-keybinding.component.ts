@@ -125,9 +125,7 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
 
     onExpand(): void {
         this.isExpanded = true;
-        setTimeout(() => {
-            this.expandedKeyboardComponent?.reset();
-        }, 50);
+        // Don't call reset here - let the expanded keyboard component handle its own initialization
     }
 
     onCollapse(): void {
