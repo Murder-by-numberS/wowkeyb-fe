@@ -17,14 +17,16 @@
             }
             }
         </div>
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-            <button mat-stroked-button (click)="onExpand()" *ngIf="!isExpanded" class="w-full sm:w-auto">
-                <mat-icon>expand</mat-icon>
-                <span class="ml-2">Expand View</span>
+        <div class="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 w-auto">
+            <button mat-stroked-button (click)="onExpand()" *ngIf="!isExpanded" class="w-auto min-w-fit px-3 py-1"
+                [matTooltip]="'Expand View'" [matTooltipShowDelay]="500">
+                <mat-icon class="!text-lg">expand</mat-icon>
+                <span class="ml-2 text-sm sm:text-base">Expand</span>
             </button>
-            <button mat-stroked-button (click)="onCollapse()" *ngIf="isExpanded" class="w-full sm:w-auto">
-                <mat-icon>compress</mat-icon>
-                <span class="ml-2">Collapse</span>
+            <button mat-stroked-button (click)="onCollapse()" *ngIf="isExpanded" class="w-auto min-w-fit px-3 py-1"
+                [matTooltip]="'Collapse'" [matTooltipShowDelay]="500">
+                <mat-icon class="!text-lg">compress</mat-icon>
+                <span class="ml-2 text-sm sm:text-base">Collapse</span>
             </button>
         </div>
     </div>
