@@ -607,8 +607,13 @@ export class AbilitiesComponent implements OnInit {
     selectKey(ability: Ability) {
         console.log('selecting key: open a modal', ability);
 
+        const isMobile = window.innerWidth < 768;
         const dialogRef = this.dialog.open(AbilityDialogComponent, {
-            data: { ability, keybinding: this.selectedKeybinding }
+            data: { ability, keybinding: this.selectedKeybinding },
+            width: isMobile ? '95vw' : '500px',
+            maxWidth: isMobile ? '95vw' : '90vw',
+            maxHeight: isMobile ? '90vh' : '80vh',
+            panelClass: isMobile ? 'mobile-dialog' : ''
         });
 
         dialogRef.afterClosed().subscribe(result => {

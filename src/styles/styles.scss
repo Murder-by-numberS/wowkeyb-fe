@@ -2,3 +2,25 @@
 /*  @ Import/write your custom styles here.
 /*  @ Styles from this file will override 'vendors.scss' and Fuse's base styles.
 /* ----------------------------------------------------------------------------------------------------- */
+
+/* Mobile Dialog Styles */
+.mobile-dialog {
+  .mat-mdc-dialog-container {
+    margin: 8px !important;
+    max-height: calc(100vh - 16px) !important;
+  }
+
+  .mat-mdc-dialog-content {
+    padding: 16px !important;
+  }
+
+  .mat-mdc-dialog-actions {
+    padding: 16px !important;
+    gap: 8px;
+
+    button {
+      min-width: 80px;
+      padding: 8px 16px;
+    }
+  }
+}

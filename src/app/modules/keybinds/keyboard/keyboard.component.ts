@@ -210,7 +210,15 @@ export class KeyboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     private calculateDialogWidth(keybindsCount: number): string {
-        // Base width for 1-2 keybinds
+        // Check if mobile screen
+        const isMobile = window.innerWidth < 768;
+
+        if (isMobile) {
+            // Mobile: Use full width with small margins
+            return '95vw';
+        }
+
+        // Desktop: Base width for 1-2 keybinds
         const baseWidth = 300;
         // Add 50px for each additional keybind beyond 2
         const extraWidth = Math.max(0, keybindsCount - 2) * 50;
@@ -287,9 +295,13 @@ export class KeyboardComponent implements OnInit, AfterViewInit, OnDestroy {
         })));
         if (key.keybinds?.length > 0) {
             const dialogWidth = this.calculateDialogWidth(key.keybinds.length);
+            const isMobile = window.innerWidth < 768;
             const dialogRef = this.dialog.open(KeybindDialogComponent, {
                 data: { key: key },
-                width: dialogWidth
+                width: dialogWidth,
+                maxWidth: isMobile ? '95vw' : '90vw',
+                maxHeight: isMobile ? '90vh' : '80vh',
+                panelClass: isMobile ? 'mobile-dialog' : ''
             });
 
             dialogRef.afterClosed().subscribe(result => {

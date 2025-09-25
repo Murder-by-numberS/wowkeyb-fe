@@ -606,12 +606,15 @@ export class KeybindsComponent implements OnInit {
             return;
         }
 
+        const isMobile = window.innerWidth < 768;
         this.dialog.open(ShareDialogComponent, {
             data: {
                 keybindingId: this.selectedKeybinding.keybindingId
             },
-            width: '600px',
-            maxWidth: '90vw'
+            width: isMobile ? '95vw' : '500px',
+            maxWidth: isMobile ? '95vw' : '90vw',
+            maxHeight: isMobile ? '90vh' : '80vh',
+            panelClass: isMobile ? 'mobile-dialog' : ''
         });
     }
 

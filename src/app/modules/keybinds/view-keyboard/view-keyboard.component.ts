@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ViewC
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Keybinding } from 'app/core/types/keybinding';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { Keybind } from 'app/core/types/keybind';
@@ -34,6 +35,7 @@ interface KeyboardKey {
         CommonModule,
         MatButtonModule,
         MatIconModule,
+        MatTooltipModule,
         PanZoomDirective,
         DragDropModule
     ]

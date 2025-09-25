@@ -1,63 +1,64 @@
-<div class="flex flex-col w-full h-full">
-    <div class="flex items-center justify-between p-4 bg-gray-100">
-        <div class="flex items-center gap-4">
-            <h1 class="text-2xl font-bold">{{ keybinding?.name }}</h1>
+<div class="flex flex-col w-full min-h-0 sm:h-full">
+    <div
+        class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-gray-100 gap-2 sm:gap-0">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <h1 class="text-xl sm:text-2xl font-bold">{{ keybinding?.name }}</h1>
             @if (isAuthenticated) {
             @if (isOwner) {
-            <button mat-stroked-button (click)="onEditKeybinding()">
+            <button mat-stroked-button (click)="onEditKeybinding()" class="w-full sm:w-auto">
                 <mat-icon>edit</mat-icon>
                 <span class="ml-2">Edit</span>
             </button>
             } @else {
-            <button mat-stroked-button (click)="onDuplicateKeybinding()">
+            <button mat-stroked-button (click)="onDuplicateKeybinding()" class="w-full sm:w-auto">
                 <mat-icon>content_copy</mat-icon>
                 <span class="ml-2">Duplicate</span>
             </button>
             }
             }
         </div>
-        <div class="flex items-center gap-4">
-            <button mat-stroked-button (click)="onExpand()" *ngIf="!isExpanded">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+            <button mat-stroked-button (click)="onExpand()" *ngIf="!isExpanded" class="w-full sm:w-auto">
                 <mat-icon>expand</mat-icon>
                 <span class="ml-2">Expand View</span>
             </button>
-            <button mat-stroked-button (click)="onCollapse()" *ngIf="isExpanded">
+            <button mat-stroked-button (click)="onCollapse()" *ngIf="isExpanded" class="w-full sm:w-auto">
                 <mat-icon>compress</mat-icon>
                 <span class="ml-2">Collapse</span>
             </button>
         </div>
     </div>
 
-    <div class="flex flex-row p-4 bg-gray-100 border-t border-gray-200">
-        <div class="flex items-center gap-4">
+    <div class="flex flex-col sm:flex-row p-3 sm:p-4 bg-gray-100 border-t border-gray-200">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             @if (keybinding?.class) {
             <div class="flex items-center gap-2">
-                <span class="text-gray-600">Class:</span>
-                <span class="font-medium">{{ keybinding.class }}</span>
+                <span class="text-sm sm:text-base text-gray-600">Class:</span>
+                <span class="text-sm sm:text-base font-medium">{{ keybinding.class }}</span>
             </div>
             }
             @if (keybinding?.spec) {
             <div class="flex items-center gap-2">
-                <span class="text-gray-600">Spec:</span>
-                <span class="font-medium">{{ keybinding.spec }}</span>
+                <span class="text-sm sm:text-base text-gray-600">Spec:</span>
+                <span class="text-sm sm:text-base font-medium">{{ keybinding.spec }}</span>
             </div>
             }
             @if (keybinding?.heroTalent) {
             <div class="flex items-center gap-2">
-                <span class="text-gray-600">Hero Talent:</span>
-                <span class="font-medium">{{ keybinding.heroTalent }}</span>
+                <span class="text-sm sm:text-base text-gray-600">Hero Talent:</span>
+                <span class="text-sm sm:text-base font-medium">{{ keybinding.heroTalent }}</span>
             </div>
             }
             @if (keybinding?.version?.game_version) {
             <div class="flex items-center gap-2">
-                <span class="text-gray-600">Game Version:</span>
-                <span class="font-medium">{{ keybinding.version.game_version }}</span>
+                <span class="text-sm sm:text-base text-gray-600">Game Version:</span>
+                <span class="text-sm sm:text-base font-medium">{{ keybinding.version.game_version }}</span>
             </div>
             }
         </div>
     </div>
 
-    <div class="flex-1 overflow-hidden min-h-[500px] relative">
+    <div class="flex-1 overflow-hidden min-h-[300px] sm:min-h-[500px] relative">
         @if (isExpanded) {
         <app-expanded-keyboard [keybinding]="keybinding" (collapse)="onCollapse()" #expandedKeyboard
             class="absolute inset-0">
