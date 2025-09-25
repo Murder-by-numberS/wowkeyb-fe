@@ -1,7 +1,7 @@
-<div class="flex flex-col w-full h-full">
-    <div class="mx-auto flex w-full flex-wrap pb-2">
+<div class="flex flex-col w-full min-h-0 sm:h-auto">
+    <div class="mx-auto flex w-full flex-wrap pb-1">
         <div
-            class="flex flex-col sm:flex-row w-full justify-between items-start sm:items-center py-2 ml-2 sm:ml-6 gap-2 sm:gap-0">
+            class="flex flex-col sm:flex-row w-full justify-between items-start sm:items-center py-1 sm:py-2 ml-2 sm:ml-6 gap-1 sm:gap-0">
             <div class="text-xl sm:text-3xl font-semibold leading-8 tracking-tight flex items-center">
                 <button mat-icon-button (click)="toggleDrawer.emit()">
                     <mat-icon>{{ opened ? 'menu_open' : 'menu' }}</mat-icon>
@@ -49,10 +49,10 @@
                     <span class="ml-2">{{ isExpanded ? 'Collapse' : 'Expand' }}</span>
                 </button>
 
-                <div class="sm:hidden w-full">
-                    <button [matMenuTriggerFor]="actionsMenu" mat-flat-button color="primary" class="w-full">
-                        <mat-icon [svgIcon]="'heroicons_outline:ellipsis-vertical'"></mat-icon>
-                        <span class="ml-2">Actions</span>
+                <div class="sm:hidden">
+                    <button [matMenuTriggerFor]="actionsMenu" mat-flat-button color="primary" class="text-sm h-8">
+                        <mat-icon [svgIcon]="'heroicons_outline:ellipsis-vertical'" class="text-sm"></mat-icon>
+                        <span class="ml-1 text-sm">Actions</span>
                     </button>
                     <mat-menu #actionsMenu="matMenu">
                         <button mat-menu-item (click)="onCreateNewKeybinding()"
@@ -85,99 +85,98 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="flex w-full mx-2 sm:mx-4">
-            <div class="flex flex-0 min-h-10 w-full">
-                @if (selectedKeybinding) {
-                <div class="flex flex-1 items-start sm:items-center flex-col sm:flex-row flex-wrap gap-2 sm:gap-0">
-                    <div class="flex items-center flex-wrap gap-2">
-                        <p class="px-2 text-sm sm:text-base">Viewing: </p>
-                        <span class="px-2 text-sm sm:text-base font-medium">{{ selectedKeybindingName }}</span>
+    <div class="flex w-full mx-2 sm:mx-4">
+        <div class="flex flex-0 min-h-8 sm:min-h-10 w-full">
+            @if (selectedKeybinding) {
+            <div class="flex flex-1 items-start sm:items-center flex-col sm:flex-row flex-wrap gap-1 sm:gap-0">
+                <div class="flex items-center flex-wrap gap-2">
+                    <p class="px-2 text-sm sm:text-base">Viewing: </p>
+                    <span class="px-2 text-sm sm:text-base font-medium">{{ selectedKeybindingName }}</span>
+                </div>
+                @if(!editingName) {
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-0 w-full sm:w-auto">
+                    <div class="px-2">
+                        <button class="w-full sm:w-auto" mat-stroked-button (click)="onEditName()"
+                            [disabled]="!isAuthenticated">
+                            <span>Edit</span>
+                        </button>
                     </div>
-                    @if(!editingName) {
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-0 w-full sm:w-auto">
-                        <div class="px-2">
-                            <button class="w-full sm:w-auto" mat-stroked-button (click)="onEditName()"
-                                [disabled]="!isAuthenticated">
-                                <span>Edit</span>
-                            </button>
-                        </div>
-                        <div class="px-2 flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-                            @if (selectedKeybinding.isPublic) {
-                            <button mat-stroked-button color="primary" matTooltip="Make Private"
-                                (click)="onTogglePublic()" [disabled]="!isAuthenticated"
-                                [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Private'">
-                                <mat-icon>public</mat-icon>
-                                <span class="ml-2">Public</span>
-                            </button>
-                            } @else {
-                            <button mat-stroked-button matTooltip="Make Public" (click)="onTogglePublic()"
-                                [disabled]="!isAuthenticated"
-                                [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Public'">
-                                <mat-icon>public_off</mat-icon>
-                                <span class="ml-2">Private</span>
+                    <div
+                        class="px-2 flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 w-full sm:w-auto">
+                        @if (selectedKeybinding.isPublic) {
+                        <button mat-stroked-button color="primary" matTooltip="Make Private" (click)="onTogglePublic()"
+                            [disabled]="!isAuthenticated"
+                            [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Private'">
+                            <mat-icon>public</mat-icon>
+                            <span class="ml-2">Public</span>
+                        </button>
+                        } @else {
+                        <button mat-stroked-button matTooltip="Make Public" (click)="onTogglePublic()"
+                            [disabled]="!isAuthenticated"
+                            [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Public'">
+                            <mat-icon>public_off</mat-icon>
+                            <span class="ml-2">Private</span>
+                        </button>
+                        }
+                        @if (selectedKeybinding.version?.game_version) {
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                            <span class="text-sm sm:text-base">Game Version:</span>
+                            <span class="text-sm sm:text-base font-medium">{{
+                                selectedKeybinding.version.game_version }}</span>
+                            @if (isOutdated$ | async) {
+                            <button class="w-full sm:w-auto" mat-stroked-button color="warn"
+                                (click)="onMigrateVersion()">
+                                Migrate Version
                             </button>
                             }
-                            @if (selectedKeybinding.version?.game_version) {
-                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
-                                <span class="text-sm sm:text-base">Game Version:</span>
-                                <span class="text-sm sm:text-base font-medium">{{
-                                    selectedKeybinding.version.game_version }}</span>
-                                @if (isOutdated$ | async) {
-                                <button class="w-full sm:w-auto" mat-stroked-button color="warn"
-                                    (click)="onMigrateVersion()">
-                                    Migrate Version
-                                </button>
-                                }
-                            </div>
-                            }
                         </div>
+                        }
                     </div>
-                    }
-                    @if(editingName) {
-                    <div class="w-full">
-                        <form [formGroup]="nameForm" (ngSubmit)="onSaveName()"
-                            class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full">
-                            <mat-form-field class="w-full sm:w-80 px-2">
-                                <input matInput formControlName="name" placeholder="Enter a name" maxlength="32">
-                            </mat-form-field>
-                            <div class="flex flex-col sm:flex-row gap-2 px-2 w-full sm:w-auto">
-                                <button type="submit" class="w-full sm:w-auto" mat-stroked-button
-                                    [disabled]="nameForm.invalid">
-                                    <span>Save</span>
-                                </button>
-                                <button type="button" class="w-full sm:w-auto" mat-stroked-button
-                                    (click)="onCancelName()">
-                                    <span>Cancel</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    }
+                </div>
+                }
+                @if(editingName) {
+                <div class="w-full">
+                    <form [formGroup]="nameForm" (ngSubmit)="onSaveName()"
+                        class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full">
+                        <mat-form-field class="w-full sm:w-80 px-2">
+                            <input matInput formControlName="name" placeholder="Enter a name" maxlength="32">
+                        </mat-form-field>
+                        <div class="flex flex-col sm:flex-row gap-2 px-2 w-full sm:w-auto">
+                            <button type="submit" class="w-full sm:w-auto" mat-stroked-button
+                                [disabled]="nameForm.invalid">
+                                <span>Save</span>
+                            </button>
+                            <button type="button" class="w-full sm:w-auto" mat-stroked-button (click)="onCancelName()">
+                                <span>Cancel</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
                 }
             </div>
+            }
         </div>
     </div>
+</div>
 
-    <div class="flex flex-col w-full relative flex-1">
-        @if (!isExpanded) {
-        <div class="w-full bg-gray-300 min-h-[200px] sm:min-h-[250px] lg:min-h-[300px] flex-shrink-0">
-            <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
-                (selectionClassChanged)="onRefreshChildKeybindings()"
-                (keybindingUpdated)="onUpdateKeybinding($event)" />
-        </div>
-        <div class="w-full relative flex-1 min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
-            <keyboard (refreshKeybindings)="onRefreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding"
-                [keybindingSelected]="keybindingSelected">
-            </keyboard>
-        </div>
-        } @else {
-        <div class="w-full relative flex-1 min-h-[500px]">
-            <app-expanded-keyboard [keybinding]="selectedKeybinding" (collapse)="onCollapse()" #expandedKeyboard
-                class="absolute inset-0">
-            </app-expanded-keyboard>
-        </div>
-        }
+<div class="flex flex-col w-full relative flex-1">
+    @if (!isExpanded) {
+    <div class="w-full bg-gray-300 min-h-[120px] sm:min-h-[150px] lg:min-h-[100px] flex-shrink-0">
+        <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
+            (selectionClassChanged)="onRefreshChildKeybindings()" (keybindingUpdated)="onUpdateKeybinding($event)" />
     </div>
+    <div class="w-full relative flex-1 min-h-[250px] sm:min-h-[400px] lg:min-h-[500px]">
+        <keyboard (refreshKeybindings)="onRefreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding"
+            [keybindingSelected]="keybindingSelected">
+        </keyboard>
+    </div>
+    } @else {
+    <div class="w-full relative flex-1 min-h-[500px]">
+        <app-expanded-keyboard [keybinding]="selectedKeybinding" (collapse)="onCollapse()" #expandedKeyboard
+            class="absolute inset-0">
+        </app-expanded-keyboard>
+    </div>
+    }
 </div>

@@ -1,12 +1,13 @@
 <div class="flex w-full flex-auto flex-col">
 
-    <mat-drawer-container class="h-full">
+    <mat-drawer-container class="min-h-0 sm:h-full">
 
         <!-- Mobile: Over mode, Desktop: Side mode -->
-        <mat-drawer #drawer class="h-full w-64 sm:w-64" [mode]="isMobile ? 'over' : 'side'" [(opened)]="opened">
+        <mat-drawer #drawer class="min-h-0 sm:h-full w-64 sm:w-64" [mode]="isMobile ? 'over' : 'side'"
+            [(opened)]="opened">
             <keybinds-drawer (keybindingSelected)="onKeybindingSelected($event)"></keybinds-drawer>
         </mat-drawer>
-        <mat-drawer-content class="flex flex-col">
+        <mat-drawer-content class="flex flex-col min-h-0 sm:h-auto">
             @if (isHomeRoute) {
             <keybinds-home [isAuthenticated]="isAuthenticated"></keybinds-home>
             } @else if (isMyKeybindingsRoute) {

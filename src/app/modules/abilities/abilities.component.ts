@@ -21,6 +21,7 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 //Services
 import { AbilitiesService } from 'app/core/services/abilities.service';
@@ -53,7 +54,8 @@ import { Ability } from 'app/core/types/ability';
         MatSortModule,
         MatInputModule,
         MatCardModule,
-        MatChipsModule
+        MatChipsModule,
+        MatProgressSpinnerModule
     ],
 })
 export class AbilitiesComponent implements OnInit, OnDestroy {
@@ -100,6 +102,19 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     currentPage = 1; // Changed to 1-based indexing for backend compatibility
     abilitiesPerPage = 100; // Changed to 100 for server-side pagination
 
+    // Infinite scroll
+    displayedAbilities: Ability[] = [];
+    isLoadingMore = false;
+    hasMoreData = true;
+    infiniteScrollPage = 1;
+    infiniteScrollPageSize = 50; // Larger page size for infinite scroll
+
+    // Mobile filters
+    filtersExpanded = false;
+
+    // Mobile detection
+    isMobile = false;
+
     // ViewChild references for dropdowns
     @ViewChild('classSelect') classSelect: MatSelect;
     @ViewChild('specSelect') specSelect: MatSelect;
@@ -118,6 +133,12 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     ) { }
 
     ngOnInit(): void {
+        // Check if we're on mobile
+        this.checkMobile();
+
+        // Listen for window resize to update mobile detection
+        window.addEventListener('resize', () => this.checkMobile());
+
         // Set up debounce subscriptions for text inputs
         this.setupDebounceSubscriptions();
 
@@ -133,10 +154,21 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         });
     }
 
+    /**
+     * Check if we're on mobile device
+     */
+    checkMobile() {
+        this.isMobile = window.innerWidth < 1024;
+        console.log('Is mobile:', this.isMobile);
+    }
+
     ngOnDestroy(): void {
         // Complete the debounce subjects to prevent memory leaks
         this.nameFilterSubject.complete();
         this.descriptionFilterSubject.complete();
+
+        // Remove resize event listener
+        window.removeEventListener('resize', () => this.checkMobile());
     }
 
     /**
@@ -411,6 +443,12 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
                 this.filteredAbilities = processedAbilities;
                 this.totalAbilities = total;
                 this.updateTableData();
+
+                // Reset infinite scroll for mobile (only if we're on mobile)
+                console.log('fetchAbilities completed, isMobile:', this.isMobile, 'will reset infinite scroll:', this.isMobile);
+                if (this.isMobile) {
+                    this.resetInfiniteScroll();
+                }
             },
             error: (err) => {
                 console.error('Error loading abilities with inclusion filters:', err);
@@ -691,6 +729,16 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Clear all filters (main filters + column filters)
+     */
+    clearAllFilters() {
+        // Clear main filters
+        this.clearFilters();
+        // Clear column filters
+        this.clearAllColumnFilters();
+    }
+
+    /**
      * Handle column filter value change
      */
     onColumnFilterChange(column: string, value: string) {
@@ -715,6 +763,166 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
      */
     onDescriptionFilterInput(value: string) {
         this.descriptionFilterSubject.next(value);
+    }
+
+    /**
+     * Toggle filters visibility on mobile
+     */
+    toggleFilters() {
+        this.filtersExpanded = !this.filtersExpanded;
+    }
+
+    /**
+     * Handle infinite scroll - load more abilities when user scrolls to bottom
+     */
+    onScroll(event: any) {
+        const element = event.target;
+        const atBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
+
+        if (atBottom && !this.isLoadingMore && this.hasMoreData) {
+            this.loadMoreAbilities();
+        }
+    }
+
+    /**
+     * Load more abilities for infinite scroll
+     */
+    loadMoreAbilities() {
+        if (this.isLoadingMore || !this.hasMoreData) return;
+
+        this.isLoadingMore = true;
+        this.infiniteScrollPage++;
+
+        // Build filters object for inclusion-based filtering
+        const filters: any = {};
+
+        if (this.selectedGameVersion) {
+            filters.gameVersion = this.selectedGameVersion;
+        }
+        if (this.selectedClass) {
+            filters.class = this.getBackendClassName(this.selectedClass);
+        }
+        if (this.selectedSpec && this.selectedSpec !== 'Core' && this.selectedSpec !== 'Hero Talent') {
+            filters.spec = this.getBackendSpecName(this.selectedSpec);
+        }
+        if (this.selectedHeroTalent && this.selectedHeroTalent !== 'Core' && this.selectedHeroTalent !== 'Spec') {
+            filters.heroTalent = this.getBackendHeroTalentName(this.selectedHeroTalent);
+        }
+
+        // Add pagination for infinite scroll
+        filters.page = this.infiniteScrollPage;
+        filters.limit = this.infiniteScrollPageSize;
+
+        console.log('Loading more abilities with filters:', filters);
+
+        // Call the abilities endpoint with pagination
+        this.abilitiesService.getAbilitiesWithFilters(filters).subscribe({
+            next: (data) => {
+                // Handle response format
+                let newAbilities = data;
+                let total = 0;
+
+                if (data && typeof data === 'object' && !Array.isArray(data)) {
+                    newAbilities = data.abilities || data.data || [];
+                    total = data.pagination?.totalCount || data.total || data.count || 0;
+                } else if (Array.isArray(data)) {
+                    newAbilities = data;
+                    total = data.length;
+                }
+
+                // Process abilities for display
+                const processedAbilities = this.processAbilitiesForDisplay(newAbilities);
+
+                if (processedAbilities.length > 0) {
+                    this.displayedAbilities = [...this.displayedAbilities, ...processedAbilities];
+                }
+
+                // Check if we have more data to load
+                const totalLoaded = this.displayedAbilities.length;
+                this.hasMoreData = totalLoaded < total && processedAbilities.length === this.infiniteScrollPageSize;
+
+                this.isLoadingMore = false;
+                console.log('Loaded more abilities. Total displayed:', this.displayedAbilities.length, 'Has more:', this.hasMoreData);
+            },
+            error: (err) => {
+                console.error('Error loading more abilities:', err);
+                this.isLoadingMore = false;
+                this.hasMoreData = false;
+            }
+        });
+    }
+
+    /**
+     * Reset infinite scroll when filters change
+     */
+    resetInfiniteScroll() {
+        console.log('resetInfiniteScroll called, isMobile:', this.isMobile);
+        this.infiniteScrollPage = 1;
+        this.displayedAbilities = [];
+        this.hasMoreData = true;
+        this.isLoadingMore = false;
+
+        // Load initial batch
+        this.loadInitialAbilities();
+    }
+
+    /**
+     * Load initial abilities for infinite scroll
+     */
+    loadInitialAbilities() {
+        console.log('loadInitialAbilities called');
+
+        // Build filters object for inclusion-based filtering
+        const filters: any = {};
+
+        if (this.selectedGameVersion) {
+            filters.gameVersion = this.selectedGameVersion;
+        }
+        if (this.selectedClass) {
+            filters.class = this.getBackendClassName(this.selectedClass);
+        }
+        if (this.selectedSpec && this.selectedSpec !== 'Core' && this.selectedSpec !== 'Hero Talent') {
+            filters.spec = this.getBackendSpecName(this.selectedSpec);
+        }
+        if (this.selectedHeroTalent && this.selectedHeroTalent !== 'Core' && this.selectedHeroTalent !== 'Spec') {
+            filters.heroTalent = this.getBackendHeroTalentName(this.selectedHeroTalent);
+        }
+
+        // Add pagination for infinite scroll
+        filters.page = 1;
+        filters.limit = this.infiniteScrollPageSize;
+
+        console.log('Loading initial abilities with filters:', filters);
+
+        // Call the abilities endpoint with pagination
+        this.abilitiesService.getAbilitiesWithFilters(filters).subscribe({
+            next: (data) => {
+                // Handle response format
+                let abilities = data;
+                let total = 0;
+
+                if (data && typeof data === 'object' && !Array.isArray(data)) {
+                    abilities = data.abilities || data.data || [];
+                    total = data.pagination?.totalCount || data.total || data.count || 0;
+                } else if (Array.isArray(data)) {
+                    abilities = data;
+                    total = data.length;
+                }
+
+                // Process abilities for display
+                const processedAbilities = this.processAbilitiesForDisplay(abilities);
+
+                this.displayedAbilities = processedAbilities;
+                this.hasMoreData = processedAbilities.length === this.infiniteScrollPageSize && processedAbilities.length < total;
+
+                console.log('Loaded initial abilities. Count:', processedAbilities.length, 'Total available:', total, 'Has more:', this.hasMoreData);
+            },
+            error: (err) => {
+                console.error('Error loading initial abilities:', err);
+                this.displayedAbilities = [];
+                this.hasMoreData = false;
+            }
+        });
     }
 
     /**
@@ -981,7 +1189,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
      * Get abilities for current page
      */
     getAbilitiesForCurrentPage() {
-        const startIndex = this.currentPage * this.abilitiesPerPage;
+        const startIndex = (this.currentPage - 1) * this.abilitiesPerPage;
         const endIndex = startIndex + this.abilitiesPerPage;
         return this.filteredAbilities.slice(startIndex, endIndex);
     }
