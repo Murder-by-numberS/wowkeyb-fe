@@ -739,6 +739,13 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Check if any filters are active
+     */
+    hasActiveFilters(): boolean {
+        return !!(this.selectedClass || this.selectedSpec || this.selectedHeroTalent || this.selectedGameVersion);
+    }
+
+    /**
      * Handle column filter value change
      */
     onColumnFilterChange(column: string, value: string) {
