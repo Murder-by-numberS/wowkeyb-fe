@@ -29,8 +29,22 @@ export const navigationConfig: NavigationItemWithAuth[] = [
     {
         id: 'macros',
         title: 'Macros',
-        type: 'basic',
-        link: '/macros'
+        type: 'group',
+        children: [
+            {
+                id: 'macros.view-all',
+                title: 'View All',
+                type: 'basic',
+                link: '/macros/view-all'
+            },
+            {
+                id: 'macros.my-macros',
+                title: 'My Macros',
+                type: 'basic',
+                link: '/macros/my-macros',
+                requiresAuth: true // This item only shows for authenticated users
+            }
+        ]
     },
     {
         id: 'abilities',

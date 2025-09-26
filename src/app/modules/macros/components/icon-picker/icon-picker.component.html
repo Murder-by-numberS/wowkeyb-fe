@@ -1,0 +1,73 @@
+<div class="icon-picker-container">
+    <!-- Selected Icon Display -->
+    <div class="selected-icon-display" *ngIf="selectedIcon">
+        <img [src]="selectedIcon.url" [alt]="selectedIcon.name" class="selected-icon-image" />
+        <span class="selected-icon-name">{{ selectedIcon.name }}</span>
+        <button mat-icon-button (click)="clearSelection()" matTooltip="Clear selection">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+
+    <!-- Icon Picker Button -->
+    <button mat-stroked-button (click)="openIconPicker()" class="icon-picker-button">
+        <mat-icon>image</mat-icon>
+        <span>{{ selectedIcon ? 'Change Icon' : 'Select Icon' }}</span>
+    </button>
+
+    <!-- Icon Picker Dialog -->
+    <div class="icon-picker-dialog" *ngIf="showDialog" (click)="closeDialog($event)">
+        <div class="dialog-content" (click)="$event.stopPropagation()">
+            <!-- Dialog Header -->
+            <div class="dialog-header">
+                <h2>Select Macro Icon</h2>
+                <button mat-icon-button (click)="closeDialog()">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="search-filters">
+                <mat-form-field appearance="outline" class="search-field">
+                    <mat-label>Search icons</mat-label>
+                    <input matInput [(ngModel)]="searchTerm" (input)="onSearchChange($event)"
+                        placeholder="Type to search...">
+                    <mat-icon matSuffix>search</mat-icon>
+                </mat-form-field>
+
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="loading-container" *ngIf="isLoading">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>Loading icons...</p>
+            </div>
+
+            <!-- Icons Grid -->
+            <div class="icons-grid" *ngIf="!isLoading">
+                <div *ngFor="let icon of paginatedIcons; trackBy: trackByIconId" class="icon-item"
+                    [class.selected]="isIconSelected(icon)" (click)="selectIcon(icon)" [matTooltip]="icon.name">
+                    <img [src]="icon.url" [alt]="icon.name" class="icon-image" />
+                </div>
+            </div>
+
+            <!-- No Results -->
+            <div class="no-results" *ngIf="!isLoading && filteredIcons.length === 0">
+                <mat-icon>search_off</mat-icon>
+                <p>No icons found matching your search.</p>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" *ngIf="!isLoading && filteredIcons.length > 0">
+                <button mat-button (click)="previousPage()" [disabled]="currentPage === 0">
+                    <mat-icon>chevron_left</mat-icon>
+                    Previous
+                </button>
+                <span class="page-info">Page {{ currentPage + 1 }} of {{ totalPages }}</span>
+                <button mat-button (click)="nextPage()" [disabled]="currentPage >= totalPages - 1">
+                    Next
+                    <mat-icon>chevron_right</mat-icon>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

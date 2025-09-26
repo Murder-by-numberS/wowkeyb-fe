@@ -1,0 +1,402 @@
+<div class="flex w-full flex-auto flex-col">
+    @if (isAuthenticated) {
+    <mat-drawer-container class="min-h-0 sm:h-full">
+        <!-- Mobile: Over mode, Desktop: Side mode -->
+        <mat-drawer #drawer class="min-h-0 sm:h-full w-64 sm:w-64" [mode]="isMobile ? 'over' : 'side'"
+            [(opened)]="opened">
+            <macros-drawer [isAuthenticated]="isAuthenticated" [refreshMacros]="refreshMacros"
+                (macroSelected)="onMacroSelected($event)">
+            </macros-drawer>
+        </mat-drawer>
+        <mat-drawer-content class="flex flex-col min-h-0 sm:h-auto">
+            <div class="flex flex-col w-full min-h-0 sm:h-auto">
+                <!-- Header -->
+                <div class="mx-auto flex w-full flex-wrap pb-1">
+                    <div
+                        class="flex flex-col sm:flex-row w-full justify-between items-start sm:items-center py-1 sm:py-2 ml-2 sm:ml-6 gap-1 sm:gap-0">
+                        <div class="text-xl sm:text-3xl font-semibold leading-8 tracking-tight flex items-center">
+                            <button mat-icon-button (click)="toggleDrawer()">
+                                <mat-icon>{{ opened ? 'menu_open' : 'menu' }}</mat-icon>
+                            </button>
+                            <span class="hidden sm:inline">Macros</span>
+                            <span class="sm:hidden">Macros</span>
+                        </div>
+                        <div
+                            class="ml-0 sm:ml-6 pr-2 sm:pr-4 flex flex-col sm:flex-row gap-2 sm:gap-0 w-full sm:w-auto">
+                            <button class="hidden sm:inline-flex" mat-flat-button color="primary"
+                                (click)="onCreateNewMacro()">
+                                <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon>
+                                <span class="ml-2">Create New</span>
+                            </button>
+
+                            <button class="hidden sm:inline-flex sm:ml-3" mat-stroked-button [disabled]="!selectedMacro"
+                                (click)="onDeleteMacro()">
+                                <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:trash'"></mat-icon>
+                                <span class="ml-2">Delete</span>
+                            </button>
+
+                            <button class="hidden sm:inline-flex sm:ml-3" mat-stroked-button [disabled]="!selectedMacro"
+                                (click)="onDuplicateMacro()">
+                                <mat-icon class="icon-size-5"
+                                    [svgIcon]="'heroicons_solid:document-duplicate'"></mat-icon>
+                                <span class="ml-2">Duplicate</span>
+                            </button>
+
+                            <button class="hidden sm:inline-flex sm:ml-3" mat-flat-button [color]="'primary'"
+                                [disabled]="!selectedMacro" (click)="onShareMacro()">
+                                <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:arrow-up-tray'"></mat-icon>
+                                <span class="ml-2">Share</span>
+                            </button>
+
+                            <!-- Mobile Actions Menu -->
+                            <div class="sm:hidden">
+                                <button [matMenuTriggerFor]="actionsMenu" mat-flat-button color="primary"
+                                    class="text-sm h-8">
+                                    <mat-icon [svgIcon]="'heroicons_outline:ellipsis-vertical'"
+                                        class="text-sm"></mat-icon>
+                                    <span class="ml-1 text-sm">Actions</span>
+                                </button>
+                                <mat-menu #actionsMenu="matMenu">
+                                    <button mat-menu-item (click)="onCreateNewMacro()">
+                                        <mat-icon [svgIcon]="'heroicons_solid:plus'"></mat-icon>
+                                        <span>Create New</span>
+                                    </button>
+                                    <button mat-menu-item (click)="onDeleteMacro()" [disabled]="!selectedMacro">
+                                        <mat-icon [svgIcon]="'heroicons_solid:trash'"></mat-icon>
+                                        <span>Delete</span>
+                                    </button>
+                                    <button mat-menu-item (click)="onDuplicateMacro()" [disabled]="!selectedMacro">
+                                        <mat-icon [svgIcon]="'heroicons_solid:document-duplicate'"></mat-icon>
+                                        <span>Duplicate</span>
+                                    </button>
+                                    <button mat-menu-item (click)="onShareMacro()" [disabled]="!selectedMacro">
+                                        <mat-icon [svgIcon]="'heroicons_solid:arrow-up-tray'"></mat-icon>
+                                        <span>Share</span>
+                                    </button>
+                                </mat-menu>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Class Navigation -->
+                <div class="mx-2 sm:mx-4 mb-4">
+                    <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
+                        <!-- Miscellaneous Button -->
+                        <button mat-stroked-button [class.mat-flat-button]="selectedClass === 'miscellaneous'"
+                            [color]="selectedClass === 'miscellaneous' ? 'primary' : ''"
+                            (click)="selectClass('miscellaneous')" class="class-nav-button">
+                            <mat-icon>category</mat-icon>
+                            <span class="ml-2">Miscellaneous</span>
+                            <span class="ml-2 text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
+                                {{ getMacroCount('miscellaneous') }}
+                            </span>
+                        </button>
+
+                        <!-- Class Buttons -->
+                        <button *ngFor="let classInfo of classes" mat-stroked-button
+                            [class.mat-flat-button]="selectedClass === classInfo.name"
+                            [color]="selectedClass === classInfo.name ? 'primary' : ''"
+                            (click)="selectClass(classInfo.name)" class="class-nav-button">
+                            <img [src]="classInfo.icon" [alt]="classInfo.displayName" class="w-5 h-5" />
+                            <span class="ml-2">{{ classInfo.displayName }}</span>
+                            <span class="ml-2 text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
+                                {{ classInfo.macroCount }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="mx-2 sm:mx-4 mb-4">
+                    <mat-card>
+                        <mat-card-content class="p-4">
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                <mat-form-field appearance="outline" class="flex-1">
+                                    <mat-label>Search macros</mat-label>
+                                    <input matInput [(ngModel)]="searchTerm"
+                                        placeholder="Search by name, description, or tags...">
+                                    <mat-icon matSuffix>search</mat-icon>
+                                </mat-form-field>
+
+                                <mat-form-field appearance="outline" class="sm:w-48">
+                                    <mat-label>Category</mat-label>
+                                    <mat-select [(value)]="selectedCategory" (selectionChange)="onCategoryChange()">
+                                        <mat-option value="">All Categories</mat-option>
+                                        <mat-option value="combat">Combat</mat-option>
+                                        <mat-option value="utility">Utility</mat-option>
+                                        <mat-option value="social">Social</mat-option>
+                                        <mat-option value="roleplay">Roleplay</mat-option>
+                                        <mat-option value="automation">Automation</mat-option>
+                                        <mat-option value="quest">Quest</mat-option>
+                                        <mat-option value="trinket">Trinket</mat-option>
+                                        <mat-option value="other">Other</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+
+                                <mat-form-field appearance="outline" class="sm:w-48">
+                                    <mat-label>Sort by</mat-label>
+                                    <mat-select [(value)]="sortBy" (selectionChange)="onSortChange()">
+                                        <mat-option value="name">Name</mat-option>
+                                        <mat-option value="createdAt">Date Created</mat-option>
+                                        <mat-option value="usageCount">Usage Count</mat-option>
+                                        <mat-option value="rating">Rating</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </div>
+
+                <!-- Macros List -->
+                <div class="flex-1 overflow-y-auto px-2 sm:px-4">
+                    <!-- Loading State -->
+                    <div *ngIf="isLoading" class="flex justify-center items-center py-8">
+                        <mat-spinner diameter="40"></mat-spinner>
+                    </div>
+
+                    <!-- No Macros State -->
+                    <div *ngIf="!isLoading && filteredMacros.length === 0" class="text-center py-8">
+                        <mat-icon class="text-6xl text-gray-300 mb-4">auto_awesome</mat-icon>
+                        <h3 class="text-xl font-medium text-gray-600 mb-2">No Macros Found</h3>
+                        <p class="text-gray-500 mb-4">
+                            {{ searchTerm || selectedCategory ? 'Try adjusting your search or filters.' : 'Create your
+                            first macro to get started.' }}
+                        </p>
+                        <button mat-flat-button color="primary" (click)="onCreateNewMacro()">
+                            <mat-icon>add</mat-icon>
+                            <span class="ml-2">Create Macro</span>
+                        </button>
+                    </div>
+
+                    <!-- Macros Grid -->
+                    <div *ngIf="!isLoading && filteredMacros.length > 0"
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+                        <mat-card *ngFor="let macro of filteredMacros; trackBy: trackByMacroId"
+                            class="macro-card cursor-pointer transition-all duration-200 hover:shadow-lg"
+                            [class.selected]="selectedMacro?.id === macro.id" (click)="selectMacro(macro)">
+
+                            <mat-card-header class="pb-2">
+                                <div class="flex items-center gap-3 w-full">
+                                    <div
+                                        class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <img *ngIf="macro.icon" [src]="macro.icon" [alt]="macro.name"
+                                            class="w-10 h-10 rounded">
+                                        <mat-icon *ngIf="!macro.icon" class="text-gray-400">code</mat-icon>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <mat-card-title class="text-lg font-semibold truncate">{{ macro.name
+                                            }}</mat-card-title>
+                                        <mat-card-subtitle class="text-sm text-gray-600">
+                                            {{ macro.class | titlecase }}
+                                            <span *ngIf="macro.spec"> - {{ macro.spec | titlecase }}</span>
+                                        </mat-card-subtitle>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <mat-icon *ngIf="macro.isPublic" class="text-green-500 text-sm"
+                                            matTooltip="Public">public</mat-icon>
+                                        <mat-icon *ngIf="!macro.isPublic" class="text-gray-400 text-sm"
+                                            matTooltip="Private">lock</mat-icon>
+                                    </div>
+                                </div>
+                            </mat-card-header>
+
+                            <mat-card-content class="pt-0">
+                                <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ macro.description || 'No
+                                    description' }}</p>
+
+                                <div class="flex flex-wrap gap-1 mb-3">
+                                    <span *ngFor="let tag of macro.tags.slice(0, 2)"
+                                        class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                                        {{ tag }}
+                                    </span>
+                                    <span *ngIf="macro.tags.length > 2"
+                                        class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                                        +{{ macro.tags.length - 2 }}
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <div class="flex items-center gap-2">
+                                        <span class="flex items-center gap-1">
+                                            <mat-icon class="text-sm">visibility</mat-icon>
+                                            {{ macro.usageCount }}
+                                        </span>
+                                        <span *ngIf="macro.rating" class="flex items-center gap-1">
+                                            <mat-icon class="text-sm">star</mat-icon>
+                                            {{ macro.rating }}
+                                        </span>
+                                    </div>
+                                    <span>{{ macro.createdAt | date:'short' }}</span>
+                                </div>
+                            </mat-card-content>
+                        </mat-card>
+                    </div>
+                </div>
+            </div>
+        </mat-drawer-content>
+    </mat-drawer-container>
+    } @else {
+    <div class="flex flex-col min-h-0 sm:h-auto">
+        <!-- Header -->
+        <div class="mx-auto flex w-full flex-wrap pb-1">
+            <div
+                class="flex flex-col sm:flex-row w-full justify-between items-start sm:items-center py-1 sm:py-2 ml-2 sm:ml-6 gap-1 sm:gap-0">
+                <div class="text-xl sm:text-3xl font-semibold leading-8 tracking-tight flex items-center">
+                    <span class="hidden sm:inline">Macros</span>
+                    <span class="sm:hidden">Macros</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Class Navigation -->
+        <div class="mx-2 sm:mx-4 mb-4">
+            <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
+                <!-- Miscellaneous Button -->
+                <button mat-stroked-button [class.mat-flat-button]="selectedClass === 'miscellaneous'"
+                    [color]="selectedClass === 'miscellaneous' ? 'primary' : ''" (click)="selectClass('miscellaneous')"
+                    class="class-nav-button">
+                    <mat-icon>category</mat-icon>
+                    <span class="ml-2">Miscellaneous</span>
+                    <span class="ml-2 text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
+                        {{ getMacroCount('miscellaneous') }}
+                    </span>
+                </button>
+
+                <!-- Class Buttons -->
+                <button *ngFor="let classInfo of classes" mat-stroked-button
+                    [class.mat-flat-button]="selectedClass === classInfo.name"
+                    [color]="selectedClass === classInfo.name ? 'primary' : ''" (click)="selectClass(classInfo.name)"
+                    class="class-nav-button">
+                    <img [src]="classInfo.icon" [alt]="classInfo.displayName" class="w-5 h-5" />
+                    <span class="ml-2">{{ classInfo.displayName }}</span>
+                    <span class="ml-2 text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
+                        {{ classInfo.macroCount }}
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="mx-2 sm:mx-4 mb-4">
+            <mat-card>
+                <mat-card-content class="p-4">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <mat-form-field appearance="outline" class="flex-1">
+                            <mat-label>Search macros</mat-label>
+                            <input matInput [(ngModel)]="searchTerm"
+                                placeholder="Search by name, description, or tags...">
+                            <mat-icon matSuffix>search</mat-icon>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="sm:w-48">
+                            <mat-label>Category</mat-label>
+                            <mat-select [(value)]="selectedCategory" (selectionChange)="onCategoryChange()">
+                                <mat-option value="">All Categories</mat-option>
+                                <mat-option value="combat">Combat</mat-option>
+                                <mat-option value="utility">Utility</mat-option>
+                                <mat-option value="social">Social</mat-option>
+                                <mat-option value="roleplay">Roleplay</mat-option>
+                                <mat-option value="automation">Automation</mat-option>
+                                <mat-option value="quest">Quest</mat-option>
+                                <mat-option value="trinket">Trinket</mat-option>
+                                <mat-option value="other">Other</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="sm:w-48">
+                            <mat-label>Sort by</mat-label>
+                            <mat-select [(value)]="sortBy" (selectionChange)="onSortChange()">
+                                <mat-option value="name">Name</mat-option>
+                                <mat-option value="createdAt">Date Created</mat-option>
+                                <mat-option value="usageCount">Usage Count</mat-option>
+                                <mat-option value="rating">Rating</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+        </div>
+
+        <!-- Macros List -->
+        <div class="flex-1 overflow-y-auto px-2 sm:px-4">
+            <!-- Loading State -->
+            <div *ngIf="isLoading" class="flex justify-center items-center py-8">
+                <mat-spinner diameter="40"></mat-spinner>
+            </div>
+
+            <!-- No Macros State -->
+            <div *ngIf="!isLoading && filteredMacros.length === 0" class="text-center py-8">
+                <mat-icon class="text-6xl text-gray-300 mb-4">auto_awesome</mat-icon>
+                <h3 class="text-xl font-medium text-gray-600 mb-2">No Macros Found</h3>
+                <p class="text-gray-500 mb-4">
+                    {{ searchTerm || selectedCategory ? 'Try adjusting your search or filters.' : 'Log in to create and
+                    manage your macros.' }}
+                </p>
+            </div>
+
+            <!-- Macros Grid -->
+            <div *ngIf="!isLoading && filteredMacros.length > 0"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+                <mat-card *ngFor="let macro of filteredMacros; trackBy: trackByMacroId"
+                    class="macro-card cursor-pointer transition-all duration-200 hover:shadow-lg"
+                    [class.selected]="selectedMacro?.id === macro.id" (click)="selectMacro(macro)">
+
+                    <mat-card-header class="pb-2">
+                        <div class="flex items-center gap-3 w-full">
+                            <div
+                                class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <img *ngIf="macro.icon" [src]="macro.icon" [alt]="macro.name" class="w-10 h-10 rounded">
+                                <mat-icon *ngIf="!macro.icon" class="text-gray-400">code</mat-icon>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <mat-card-title class="text-lg font-semibold truncate">{{ macro.name }}</mat-card-title>
+                                <mat-card-subtitle class="text-sm text-gray-600">
+                                    {{ macro.class | titlecase }}
+                                    <span *ngIf="macro.spec"> - {{ macro.spec | titlecase }}</span>
+                                </mat-card-subtitle>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <mat-icon *ngIf="macro.isPublic" class="text-green-500 text-sm"
+                                    matTooltip="Public">public</mat-icon>
+                                <mat-icon *ngIf="!macro.isPublic" class="text-gray-400 text-sm"
+                                    matTooltip="Private">lock</mat-icon>
+                            </div>
+                        </div>
+                    </mat-card-header>
+
+                    <mat-card-content class="pt-0">
+                        <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ macro.description || 'No description' }}
+                        </p>
+
+                        <div class="flex flex-wrap gap-1 mb-3">
+                            <span *ngFor="let tag of macro.tags.slice(0, 2)"
+                                class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                                {{ tag }}
+                            </span>
+                            <span *ngIf="macro.tags.length > 2"
+                                class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                                +{{ macro.tags.length - 2 }}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs text-gray-500">
+                            <div class="flex items-center gap-2">
+                                <span class="flex items-center gap-1">
+                                    <mat-icon class="text-sm">visibility</mat-icon>
+                                    {{ macro.usageCount }}
+                                </span>
+                                <span *ngIf="macro.rating" class="flex items-center gap-1">
+                                    <mat-icon class="text-sm">star</mat-icon>
+                                    {{ macro.rating }}
+                                </span>
+                            </div>
+                            <span>{{ macro.createdAt | date:'short' }}</span>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+    </div>
+    }
+</div>

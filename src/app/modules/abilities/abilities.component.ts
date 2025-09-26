@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSelect } from '@angular/material/select';
@@ -129,7 +129,8 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         private versionCompare: VersionCompareService,
         private dialog: MatDialog,
         private router: Router,
-        private route: ActivatedRoute
+        private route: ActivatedRoute,
+        private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
@@ -385,8 +386,8 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     }
 
     /**
- * Fetch abilities based on current filters using inclusion logic
- */
+     * Fetch abilities based on current filters using inclusion logic
+     */
     fetchAbilities() {
         console.log('fetchAbilities called with inclusion filters:', {
             class: this.selectedClass,
@@ -395,6 +396,13 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
             gameVersion: this.selectedGameVersion,
             page: this.currentPage
         });
+
+        // If no main filters are active, use fetchAllAbilities instead
+        if (!this.hasActiveMainFilters()) {
+            console.log('No main filters active, calling fetchAllAbilities instead');
+            this.fetchAllAbilities();
+            return;
+        }
 
         // Build filters object for inclusion-based filtering
         const filters: any = {};
@@ -471,6 +479,13 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         console.log('Game version for all abilities:', gameVersion);
 
         // Call the abilities endpoint with only game version filter and pagination
+        console.log('🔍 AbilitiesComponent - Calling getAbilitiesWithFilters with:', {
+            gameVersion,
+            filterMode: 'inclusion',
+            page: this.currentPage,
+            limit: this.abilitiesPerPage
+        });
+
         this.abilitiesService.getAbilitiesWithFilters({
             gameVersion,
             filterMode: 'inclusion',
@@ -478,7 +493,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
             limit: this.abilitiesPerPage
         }).subscribe({
             next: (data) => {
-                console.log('All abilities loaded:', data);
+                console.log('✅ All abilities loaded successfully for page', this.currentPage, ':', data);
 
                 // Handle response format - could be array or object with data and total
                 let abilities = data;
@@ -497,14 +512,25 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
                 // Process abilities for display
                 const processedAbilities = this.processAbilitiesForDisplay(abilities);
                 console.log('Total processed abilities:', processedAbilities.length);
+                console.log('Current page:', this.currentPage);
+                console.log('Total abilities:', total);
+                console.log('Processed abilities sample:', processedAbilities.slice(0, 3));
 
                 this.abilities = processedAbilities;
                 this.filteredAbilities = processedAbilities;
                 this.totalAbilities = total;
                 this.updateTableData();
+
+                console.log('After updateTableData - dataSource length:', this.dataSource.length);
             },
             error: (err) => {
-                console.error('Error loading all abilities:', err);
+                console.error('❌ Error loading all abilities:', err);
+                console.error('❌ Error details:', {
+                    message: err.message,
+                    status: err.status,
+                    statusText: err.statusText,
+                    url: err.url
+                });
                 this.abilities = [];
                 this.filteredAbilities = [];
                 this.totalAbilities = 0;
@@ -781,8 +807,14 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
 
     /**
      * Handle infinite scroll - load more abilities when user scrolls to bottom
+     * Only works on mobile devices
      */
     onScroll(event: any) {
+        // Only handle infinite scroll on mobile
+        if (!this.isMobile) {
+            return;
+        }
+
         const element = event.target;
         const atBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
 
@@ -958,7 +990,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
      * Check if any column filters are active
      */
     hasActiveColumnFilters(): boolean {
-        return Object.values(this.columnFilters).some(value => value && value.trim() !== '');
+        return this.activeColumnFilters.length > 0;
     }
 
     /**
@@ -1182,14 +1214,31 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         // Update available options for column filters based on current abilities
         this.updateColumnFilterOptions();
 
-        // If no column filters are active, use current data
+        // If no column filters are active, use current data directly
         if (!this.hasActiveColumnFilters()) {
+            // Don't apply internal filtering when no column filters are active
+            // The server already returns the correct data for the current page
+            this.filteredAbilities = this.abilities;
+        } else {
+            // Only apply internal filtering when column filters are active
             this.applyColumnFiltersInternal();
         }
 
         // With server-side pagination, the dataSource is the same as filteredAbilities
         // The server returns only the current page's data
-        this.dataSource = this.filteredAbilities;
+        this.dataSource = [...this.filteredAbilities]; // Create new array reference to trigger change detection
+
+        console.log('🔍 updateTableData - Final data state:', {
+            abilitiesLength: this.abilities.length,
+            filteredAbilitiesLength: this.filteredAbilities.length,
+            dataSourceLength: this.dataSource.length,
+            currentPage: this.currentPage,
+            hasActiveColumnFilters: this.hasActiveColumnFilters(),
+            dataSourceSample: this.dataSource.slice(0, 3).map(a => ({ name: a.name, class: a.class }))
+        });
+
+        // Force change detection to ensure table updates
+        this.cdr.detectChanges();
     }
 
     /**
@@ -1207,10 +1256,16 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     goToPreviousPage() {
         if (this.currentPage > 1) {
             this.currentPage--;
+            console.log('🔍 Going to previous page:', this.currentPage);
+            console.log('🔍 Has active column filters:', this.hasActiveColumnFilters());
+            console.log('🔍 Has active main filters:', this.hasActiveMainFilters());
+
             if (this.hasActiveColumnFilters()) {
                 this.fetchAbilitiesWithColumnFilters();
+            } else if (this.hasActiveMainFilters()) {
+                this.fetchAbilities(); // Fetch new data from server with filters
             } else {
-                this.fetchAbilities(); // Fetch new data from server
+                this.fetchAllAbilities(); // Fetch all abilities without filters
             }
         }
     }
@@ -1221,10 +1276,16 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     goToNextPage() {
         if (this.currentPage < this.maxPage()) {
             this.currentPage++;
+            console.log('🔍 Going to next page:', this.currentPage);
+            console.log('🔍 Has active column filters:', this.hasActiveColumnFilters());
+            console.log('🔍 Has active main filters:', this.hasActiveMainFilters());
+
             if (this.hasActiveColumnFilters()) {
                 this.fetchAbilitiesWithColumnFilters();
+            } else if (this.hasActiveMainFilters()) {
+                this.fetchAbilities(); // Fetch new data from server with filters
             } else {
-                this.fetchAbilities(); // Fetch new data from server
+                this.fetchAllAbilities(); // Fetch all abilities without filters
             }
         }
     }

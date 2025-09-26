@@ -104,6 +104,7 @@ export class AbilitiesService {
             urlString += `?${params.toString()}`;
         }
 
+        console.log('🔍 AbilitiesService - Making API call to:', urlString);
         return this.http.get(urlString);
     }
 
