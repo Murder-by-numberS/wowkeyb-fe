@@ -1,6 +1,5 @@
 import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { Macro } from '../components/macros-home/macros-home.component';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -19,6 +18,7 @@ import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.compo
 import { takeUntil, map } from 'rxjs/operators';
 import { UserService } from 'app/core/user/user.service';
 import { Subject, Observable, of } from 'rxjs';
+import { MacroService, Macro, MacroResponse } from '../services/macro.service';
 
 @Component({
     selector: 'view-all-macros',
@@ -74,9 +74,12 @@ export class ViewAllMacrosComponent implements OnInit, OnChanges {
     sortBy = 'name';
     isLoading = false;
 
-    // Mock data for demonstration
+    // Macro data
     allMacros: Macro[] = [];
     filteredMacros: Macro[] = [];
+    totalMacros: number = 0;
+    currentPage: number = 1;
+    pageSize: number = 20;
 
     classes = [
         { name: 'deathknight', displayName: 'Death Knight', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_deathknight.jpg' },
@@ -101,7 +104,8 @@ export class ViewAllMacrosComponent implements OnInit, OnChanges {
         private router: Router,
         private snackBar: MatSnackBar,
         private dialog: MatDialog,
-        private _userService: UserService
+        private _userService: UserService,
+        private macroService: MacroService
     ) { }
 
     ngOnInit(): void {
@@ -123,107 +127,42 @@ export class ViewAllMacrosComponent implements OnInit, OnChanges {
     loadAllMacros(): void {
         this.isLoading = true;
 
-        // Mock data - replace with actual service call
-        setTimeout(() => {
-            this.allMacros = this.generateMockMacros();
-            this.filterMacros();
-            this.isLoading = false;
-        }, 1000);
-    }
+        const params = {
+            page: this.currentPage,
+            limit: this.pageSize,
+            search: this.searchTerm || undefined,
+            class: this.selectedClass || undefined,
+            sortBy: this.sortBy,
+            sortOrder: 'desc' as const
+        };
 
-    generateMockMacros(): Macro[] {
-        const classes = ['deathknight', 'demonhunter', 'druid', 'evoker', 'hunter', 'mage', 'monk', 'paladin', 'priest', 'rogue', 'shaman', 'warlock', 'warrior'];
-        const macros: Macro[] = [];
-
-        // Generate public macros
-        for (let i = 1; i <= 100; i++) {
-            const className = classes[Math.floor(Math.random() * classes.length)];
-
-            macros.push({
-                id: `public_macro_${i}`,
-                name: `${className.charAt(0).toUpperCase() + className.slice(1)} Macro ${i}`,
-                description: `A macro for ${className} - ${this.generateDescription()}`,
-                class: className,
-                macroText: `/cast ${className} ability\n/say Using macro!`,
-                tags: [className, 'public'],
-                isPublic: true,
-                usageCount: Math.floor(Math.random() * 500),
-                rating: Math.random() > 0.3 ? Math.floor(Math.random() * 5) + 1 : undefined,
-                createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000),
-                updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
+        this.macroService.getMacros(params)
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe({
+                next: (response: MacroResponse) => {
+                    this.allMacros = response.macros.map(macro => this.transformMacro(macro));
+                    this.totalMacros = response.total;
+                    this.filteredMacros = [...this.allMacros];
+                    this.isLoading = false;
+                },
+                error: (error) => {
+                    console.error('Error loading macros:', error);
+                    this.snackBar.open('Failed to load macros. Please try again.', 'Close', {
+                        duration: 3000,
+                        panelClass: ['error-snackbar']
+                    });
+                    this.isLoading = false;
+                    // Fallback to empty array
+                    this.allMacros = [];
+                    this.filteredMacros = [];
+                }
             });
-        }
-
-        // Add some miscellaneous macros
-        for (let i = 1; i <= 30; i++) {
-            macros.push({
-                id: `misc_macro_${i}`,
-                name: `Utility Macro ${i}`,
-                description: `A macro for various purposes - ${this.generateDescription()}`,
-                class: 'miscellaneous',
-                macroText: `/say This is a macro\n/run print("macro activated")`,
-                tags: ['miscellaneous', 'utility'],
-                isPublic: true,
-                usageCount: Math.floor(Math.random() * 300),
-                rating: Math.random() > 0.3 ? Math.floor(Math.random() * 5) + 1 : undefined,
-                createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000),
-                updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
-            });
-        }
-
-        return macros;
     }
 
-    generateDescription(): string {
-        const descriptions = [
-            'Optimized for maximum damage output and efficiency',
-            'Helps with quality of life improvements',
-            'Fun macros for interacting with other players',
-            'Enhances your roleplaying experience',
-            'Automates repetitive tasks',
-            'Makes questing easier and more efficient',
-            'Manages trinket usage and cooldowns',
-            'Various other useful functions'
-        ];
-        return descriptions[Math.floor(Math.random() * descriptions.length)];
-    }
 
     filterMacros(): void {
-        let filtered = [...this.allMacros];
-
-        // Filter by search term
-        if (this.searchTerm.trim()) {
-            const searchLower = this.searchTerm.toLowerCase();
-            filtered = filtered.filter(macro =>
-                macro.name.toLowerCase().includes(searchLower) ||
-                macro.description.toLowerCase().includes(searchLower) ||
-                macro.tags.some(tag => tag.toLowerCase().includes(searchLower))
-            );
-        }
-
-        // Filter by class
-        if (this.selectedClass) {
-            filtered = filtered.filter(macro => macro.class === this.selectedClass);
-        }
-
-
-        // Sort
-        filtered.sort((a, b) => {
-            switch (this.sortBy) {
-                case 'name':
-                    return a.name.localeCompare(b.name);
-                case 'createdAt':
-                    return b.createdAt.getTime() - a.createdAt.getTime();
-                case 'usageCount':
-                    return b.usageCount - a.usageCount;
-                case 'rating':
-                    return (b.rating || 0) - (a.rating || 0);
-                default:
-                    return 0;
-            }
-        });
-
-        this.filteredMacros = filtered;
+        // Since we're using server-side filtering, just reload the data
+        this.loadAllMacros();
     }
 
     onSearchChange(): void {
@@ -323,5 +262,29 @@ export class ViewAllMacrosComponent implements OnInit, OnChanges {
 
     trackByMacroId(index: number, macro: Macro): string {
         return macro.id;
+    }
+
+    /**
+     * Transform API macro data to match component interface
+     */
+    private transformMacro(apiMacro: any): Macro {
+        return {
+            id: apiMacro.id,
+            name: apiMacro.name,
+            description: apiMacro.description || '',
+            text: apiMacro.text || apiMacro.macroText || '',
+            macroText: apiMacro.text || apiMacro.macroText || '',
+            class: apiMacro.class || 'miscellaneous',
+            spec: apiMacro.spec,
+            heroTalent: apiMacro.heroTalent,
+            icon: apiMacro.icon?.url || apiMacro.icon,
+            tags: apiMacro.tags || [],
+            isPublic: apiMacro.isPublic || false,
+            createdBy: apiMacro.createdBy,
+            usageCount: apiMacro.usageCount || 0,
+            rating: apiMacro.rating,
+            createdAt: apiMacro.createdAt || (apiMacro.created_at ? new Date(apiMacro.created_at) : new Date()),
+            updatedAt: apiMacro.updatedAt || (apiMacro.updated_at ? new Date(apiMacro.updated_at) : new Date())
+        };
     }
 }

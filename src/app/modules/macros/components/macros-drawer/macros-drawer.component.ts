@@ -1,7 +1,7 @@
 //Angular
-import { Component, ViewEncapsulation, OnInit, signal, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, OnDestroy, signal, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, TitleCasePipe } from '@angular/common';
 
 //Angular Material
 import { MatButtonModule } from '@angular/material/button';
@@ -20,9 +20,12 @@ import { ClickOutsideDirective } from 'app/core/directives/click-outside/click-o
 
 //Services
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MacroService } from '../../services/macro.service';
+// import { IconService } from '../../services/icon.service';
+import { takeUntil, Subject } from 'rxjs';
 
 //Types
-import { Macro } from '../macros-home/macros-home.component';
+import { Macro } from '../../services/macro.service';
 import { classes } from 'app/core/data/classes';
 
 @Component({
@@ -33,6 +36,7 @@ import { classes } from 'app/core/data/classes';
     standalone: true,
     imports: [
         NgClass,
+        TitleCasePipe,
         FormsModule,
         ReactiveFormsModule,
         MatButtonModule,
@@ -48,7 +52,7 @@ import { classes } from 'app/core/data/classes';
         MatTooltipModule
     ]
 })
-export class MacrosDrawerComponent implements OnInit {
+export class MacrosDrawerComponent implements OnInit, OnDestroy {
     @ViewChild(MatAccordion) accordion: MatAccordion;
 
     readonly panelOpenState = signal(false);
@@ -70,10 +74,14 @@ export class MacrosDrawerComponent implements OnInit {
     filterApplied: boolean = false;
     preventAutoSelection: boolean = false;
     isLoading: boolean = false;
+    private destroy$ = new Subject<void>();
 
     snackBar = inject(MatSnackBar);
 
-    constructor() { }
+    constructor(
+        private macroService: MacroService
+        // private iconService: IconService
+    ) { }
 
     ngOnInit(): void {
         // Force refresh macros from server on component initialization
@@ -85,12 +93,49 @@ export class MacrosDrawerComponent implements OnInit {
         });
     }
 
+    ngOnChanges(changes: SimpleChanges): void {
+        // Refresh macros when refreshMacros input changes to true
+        if (changes['refreshMacros'] && changes['refreshMacros'].currentValue === true) {
+            this.forceRefreshMacros();
+        }
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
     forceRefreshMacros() {
         console.log('MacrosDrawerComponent - forceRefreshMacros');
-        // TODO: Replace with actual service call to fetch macros from database
-        // For now, initialize with empty array
-        this.macros = [];
-        this.applyFilter();
+        this.isLoading = true;
+
+        // Load user's macros from the backend
+        this.macroService.getMyMacros(1, 100) // Get first 100 macros
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (response) => {
+                    console.log('Loaded user macros:', response);
+                    this.macros = response.macros || [];
+                    this.applyFilter();
+                    this.isLoading = false;
+
+                    // Auto-select first macro if none selected and macros exist
+                    if (this.macros.length > 0 && !this.selectedMacroId && !this.preventAutoSelection) {
+                        this.selectMacro(this.macros[0]);
+                    }
+                },
+                error: (error) => {
+                    console.error('Error loading user macros:', error);
+                    this.macros = [];
+                    this.applyFilter();
+                    this.isLoading = false;
+
+                    this.snackBar.open('Failed to load your macros. Please try again.', 'Close', {
+                        duration: 3000,
+                        panelClass: ['error-snackbar']
+                    });
+                }
+            });
     }
 
 
@@ -181,6 +226,24 @@ export class MacrosDrawerComponent implements OnInit {
     getClassIcon(className: string): string {
         const classInfo = this.classList.find(c => c.name === className);
         return classInfo ? classInfo.icon : '';
+    }
+
+    getMacroIcon(macro: Macro): string {
+        // If macro has a custom icon, use it
+        if (macro.icon && typeof macro.icon === 'object' && macro.icon !== null) {
+            const icon = macro.icon as any;
+            // Use cloudfrontUrl directly if available
+            if (icon.cloudfrontUrl) {
+                return icon.cloudfrontUrl;
+            }
+            // Fallback to S3 URL if CloudFront not available
+            if (icon.s3Path) {
+                return `https://wowkeyb-dev-images.s3.amazonaws.com/${icon.s3Path}`;
+            }
+        }
+
+        // Fallback to class icon
+        return this.getClassIcon(macro.class);
     }
 
     applyFilter() {

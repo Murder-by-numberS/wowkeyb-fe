@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,24 +6,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { AuthService } from 'app/core/auth/auth.service';
+import { MacroService, Macro, MacroResponse } from '../../services/macro.service';
+import { Subject, takeUntil } from 'rxjs';
 
-export interface Macro {
-    id: string;
-    name: string;
-    description: string;
-    class: string;
-    spec?: string;
-    heroTalent?: string;
-    macroText: string;
-    icon?: string;
-    tags: string[];
-    isPublic: boolean;
-    createdBy?: string;
-    usageCount: number;
-    rating?: number;
-    createdAt: Date;
-    updatedAt: Date;
-}
 
 export interface ClassInfo {
     name: string;
@@ -54,9 +39,14 @@ export interface HomeMacrosResponse {
         RouterLink
     ]
 })
-export class MacrosHomeComponent implements OnInit {
+export class MacrosHomeComponent implements OnInit, OnDestroy {
     classMacros: HomeMacrosResponse = {};
     isAuthenticated = false;
+    isLoading = false;
+    private _unsubscribeAll: Subject<any> = new Subject<any>();
+
+    // Expose Object to template
+    Object = Object;
 
     classes: ClassInfo[] = [
         { name: 'deathknight', displayName: 'Death Knight', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_deathknight.jpg', color: '#C41F3B', macroCount: 0 },
@@ -77,7 +67,8 @@ export class MacrosHomeComponent implements OnInit {
 
     constructor(
         private _authService: AuthService,
-        private router: Router
+        private router: Router,
+        private macroService: MacroService
     ) { }
 
     ngOnInit(): void {
@@ -88,56 +79,72 @@ export class MacrosHomeComponent implements OnInit {
         this.loadMacros();
     }
 
+    ngOnDestroy(): void {
+        this._unsubscribeAll.next(null);
+        this._unsubscribeAll.complete();
+    }
+
     loadMacros() {
-        // Mock data - replace with actual service call
-        // For now, we'll generate mock data similar to keybinds-home structure
-        const mockResponse: HomeMacrosResponse = {};
+        this.isLoading = true;
+        this.classMacros = {};
 
+        // Load popular macros for all classes
+        this.macroService.getPopularMacros(1, 5)
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe({
+                next: (response: MacroResponse) => {
+                    this.processMacrosResponse(response);
+                    this.isLoading = false;
+                },
+                error: (error) => {
+                    console.error('Error loading popular macros:', error);
+                    this.isLoading = false;
+                }
+            });
+    }
+
+    private processMacrosResponse(response: MacroResponse) {
+        const processedResponse: HomeMacrosResponse = {};
+
+        // Initialize all classes with empty arrays
         this.classes.forEach(classInfo => {
-            const recentMacros: Macro[] = [];
-            const popularMacros: Macro[] = [];
-
-            // Generate 3-5 recent macros
-            for (let i = 1; i <= Math.floor(Math.random() * 3) + 3; i++) {
-                recentMacros.push({
-                    id: `${classInfo.name}_recent_${i}`,
-                    name: `${classInfo.displayName} Recent Macro ${i}`,
-                    description: `A recent macro for ${classInfo.displayName}`,
-                    class: classInfo.name,
-                    macroText: `/cast ${classInfo.name} ability`,
-                    tags: ['recent', classInfo.name],
-                    isPublic: true,
-                    usageCount: Math.floor(Math.random() * 50),
-                    rating: Math.floor(Math.random() * 5) + 1,
-                    createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-                    updatedAt: new Date(Date.now() - Math.random() * 2 * 24 * 60 * 60 * 1000)
-                });
-            }
-
-            // Generate 3-5 popular macros
-            for (let i = 1; i <= Math.floor(Math.random() * 3) + 3; i++) {
-                popularMacros.push({
-                    id: `${classInfo.name}_popular_${i}`,
-                    name: `${classInfo.displayName} Popular Macro ${i}`,
-                    description: `A popular macro for ${classInfo.displayName}`,
-                    class: classInfo.name,
-                    macroText: `/cast ${classInfo.name} utility`,
-                    tags: ['popular', classInfo.name],
-                    isPublic: true,
-                    usageCount: Math.floor(Math.random() * 200) + 100,
-                    rating: Math.floor(Math.random() * 2) + 4,
-                    createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-                    updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000)
-                });
-            }
-
-            mockResponse[classInfo.name] = {
-                recent: recentMacros,
-                popular: popularMacros
+            processedResponse[classInfo.name] = {
+                recent: [],
+                popular: []
             };
         });
 
-        this.classMacros = mockResponse;
+        // Group macros by class
+        response.macros.forEach(macro => {
+            const className = macro.class || 'miscellaneous';
+            if (processedResponse[className]) {
+                // Add to popular macros (since we're using getPopularMacros)
+                processedResponse[className].popular.push(this.transformMacro(macro));
+            }
+        });
+
+        this.classMacros = processedResponse;
+    }
+
+    private transformMacro(apiMacro: any): Macro {
+        return {
+            id: apiMacro.id,
+            name: apiMacro.name,
+            description: apiMacro.description || '',
+            text: apiMacro.text || apiMacro.macroText || '',
+            macroText: apiMacro.text || apiMacro.macroText || '',
+            class: apiMacro.class || 'miscellaneous',
+            spec: apiMacro.spec,
+            heroTalent: apiMacro.heroTalent,
+            icon: apiMacro.icon?.url || apiMacro.icon,
+            tags: apiMacro.tags || [],
+            isPublic: apiMacro.isPublic || false,
+            createdBy: apiMacro.createdBy,
+            usageCount: apiMacro.usageCount || 0,
+            rating: apiMacro.rating,
+            createdAt: apiMacro.createdAt || (apiMacro.created_at ? new Date(apiMacro.created_at) : new Date()),
+            updatedAt: apiMacro.updatedAt || (apiMacro.updated_at ? new Date(apiMacro.updated_at) : new Date())
+        };
     }
 
     scrollToClass(className: string): void {

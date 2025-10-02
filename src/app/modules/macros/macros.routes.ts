@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { MacrosComponent } from './macros.component';
+import { CreateMacroComponent } from './create-macro/create-macro.component';
 import { AuthGuard } from 'app/core/auth/guards/auth.guard';
 import { MacrosHomeComponent } from './components/macros-home/macros-home.component';
 import { ViewMacroComponent } from './view-macro/view-macro.component';
@@ -20,7 +21,7 @@ export default [
     },
     {
         path: 'create',
-        component: MacrosComponent,
+        component: CreateMacroComponent,
         canActivate: [AuthGuard]
     },
     {

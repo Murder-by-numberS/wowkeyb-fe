@@ -1,6 +1,6 @@
-<div class="flex flex-col h-full text-nowrap">
+<div class="flex flex-col h-full text-nowrap overflow-hidden">
     <!-- Row 1 -->
-    <div class="flex-0 max-h-14 min-h-6 items-center justify-center p-2 sm:p-4">
+    <div class="flex-shrink-0 max-h-14 min-h-6 items-center justify-center p-2 sm:p-4">
         <div class="text-lg sm:text-3xl font-semibold leading-8 tracking-tight text-center">
             <span class="hidden sm:inline">Macros List</span>
             <span class="sm:hidden">Macros</span>
@@ -8,7 +8,7 @@
     </div>
 
     <!-- Row 2 -->
-    <div class="flex-0 min-h-12 items-center justify-center">
+    <div class="flex-shrink-0 min-h-12 items-center justify-center">
         <mat-accordion appClickOutside (clickOutside)="closeAccordion()">
             <mat-expansion-panel hideToggle>
                 <mat-expansion-panel-header>
@@ -54,11 +54,11 @@
                 'bg-gray-200 text-black': !isSelected(macro.id)
              }" (click)="selectMacro(macro)">
             <div class="flex-1 flex items-center gap-2">
-                <img [src]="getClassIcon(macro.class)" [alt]="macro.class" class="w-6 h-6">
-                <p>{{macro.name}} - {{macro.class}}</p>
+                <img [src]="getMacroIcon(macro)" [alt]="macro.name" class="w-6 h-6">
+                <p>{{macro.name}} - {{macro.class | titlecase}}</p>
             </div>
             <div class="flex items-center">
-                @if (macro.isPublic) {
+                @if (macro.is_public) {
                 <mat-icon class="text-green-500">public</mat-icon>
                 } @else {
                 <mat-icon class="text-gray-500">public_off</mat-icon>
@@ -69,7 +69,7 @@
     </div>
 
     <!-- Last Row until max 100 has reached -->
-    @if (macros.length < MAX_SIZE) { <div class="flex flex-0 max-h-16 min-h-12 items-center justify-center">
+    @if (macros.length < MAX_SIZE) { <div class="flex-shrink-0 flex max-h-16 min-h-12 items-center justify-center">
         <button type="button" class="ml-3 hidden sm:inline-flex" mat-flat-button [color]="'primary'"
             (click)="createMacro()">
             <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon>

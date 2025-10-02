@@ -10,9 +10,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, takeUntil } from 'rxjs';
-import { Macro } from '../components/macros-home/macros-home.component';
+import { Macro } from '../services/macro.service';
 import { AuthService } from 'app/core/auth/auth.service';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
+import { IconService } from '../../icons/services/icon.service';
 
 @Component({
     selector: 'app-view-macro',
@@ -33,6 +34,7 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
     isOwner = false;
     isAuthenticated = false;
     isLoading = true;
+    iconUrl: string | null = null;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
 
     constructor(
@@ -40,7 +42,8 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
         private router: Router,
         private snackBar: MatSnackBar,
         private authService: AuthService,
-        private dialog: MatDialog
+        private dialog: MatDialog,
+        private iconService: IconService
     ) { }
 
     ngOnInit(): void {
@@ -68,7 +71,14 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
         setTimeout(() => {
             this.macro = this.generateMockMacro(id);
             this.isOwner = this.macro?.createdBy === 'current-user'; // Mock ownership check
-            this.isLoading = false;
+
+            // Load icon URL if macro has an icon ID
+            if (this.macro?.icon) {
+                this.loadIconUrl(this.macro.icon);
+            } else {
+                this.iconUrl = null;
+                this.isLoading = false;
+            }
         }, 1000);
     }
 
@@ -78,17 +88,19 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
 
         return {
             id: id,
-            name: `${className.charAt(0).toUpperCase() + className.slice(1)} Macro`,
-            description: `A comprehensive macro for ${className}. This macro provides enhanced functionality and automation for your ${className} character. Perfect for both PvE and PvP content.`,
-            class: className,
-            macroText: `# ${className.charAt(0).toUpperCase() + className.slice(1)} Macro\n/cast ${className} ability\n/say Using macro!\n/run print("${className} macro activated")`,
-            tags: [className, 'pve', 'pvp', 'optimized'],
-            isPublic: Math.random() > 0.3,
-            createdBy: Math.random() > 0.5 ? 'current-user' : 'other-user',
-            usageCount: Math.floor(Math.random() * 500) + 50,
-            rating: Math.floor(Math.random() * 5) + 1,
-            createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000),
-            updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
+            name: `Auto C Strike`,
+            description: `No description provided`,
+            text: `#showtooltip crusader strike\n/cast [harm] crusader strike\n/stopmacro [harm]\n/targetenemy\n/cast crusader strike\n/targetlasttarget`,
+            macroText: `#showtooltip crusader strike\n/cast [harm] crusader strike\n/stopmacro [harm]\n/targetenemy\n/cast crusader strike\n/targetlasttarget`,
+            class: 'paladin',
+            tags: ['paladin', 'pve', 'pvp', 'optimized'],
+            isPublic: false,
+            createdBy: 'current-user',
+            usageCount: 0,
+            rating: undefined,
+            createdAt: new Date('2025-09-29T17:15:00'),
+            updatedAt: new Date('2025-09-29T17:15:00'),
+            icon: 'icon123' // Mock icon ID for testing
         };
     }
 
@@ -171,6 +183,51 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
             this.snackBar.open('Macro text copied to clipboard!', 'Close', { duration: 3000 });
         }).catch(() => {
             this.snackBar.open('Failed to copy to clipboard', 'Close', { duration: 3000 });
+        });
+    }
+
+    formatMacroText(text: string): string {
+        if (!text) return '';
+
+        // Split by forward slash and join with newlines, but preserve the slash at the beginning of each line
+        return text.split('/').map((segment, index) => {
+            if (index === 0) {
+                // First segment might not start with / (like comments)
+                return segment.trim();
+            } else {
+                // Add the / back to each subsequent segment
+                return '/' + segment.trim();
+            }
+        }).filter(segment => segment.length > 0).join('\n');
+    }
+
+    private loadIconUrl(iconId: string): void {
+        // For mock data, create a mock icon response
+        if (iconId === 'icon123') {
+            const mockIcon = {
+                id: 'icon123',
+                name: 'Crusader Strike',
+                keywords: ['paladin', 'crusader', 'strike', 'holy'],
+                usageCount: 42,
+                cloudfrontUrl: 'https://d10lzq0xgj2wa0.cloudfront.net/icons/spell_holy_crusaderstrike.jpg',
+                s3Path: 'icons/spell_holy_crusaderstrike.jpg'
+            };
+            this.iconUrl = this.iconService.getIconUrl(mockIcon);
+            this.isLoading = false;
+            return;
+        }
+
+        // For real data, fetch from the service
+        this.iconService.getIcon(iconId).subscribe({
+            next: (icon) => {
+                this.iconUrl = this.iconService.getIconUrl(icon);
+                this.isLoading = false;
+            },
+            error: (error) => {
+                console.error('Error loading icon:', error);
+                this.iconUrl = null;
+                this.isLoading = false;
+            }
         });
     }
 }

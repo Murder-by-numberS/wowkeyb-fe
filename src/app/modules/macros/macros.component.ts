@@ -3,24 +3,19 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, takeUntil, filter } from 'rxjs';
+import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from 'app/core/auth/auth.service';
-import { IconPickerComponent } from './components/icon-picker/icon-picker.component';
-import { MacroIcon } from './services/macro-icon.service';
 import { MacrosHomeComponent } from './components/macros-home/macros-home.component';
 import { ViewAllMacrosComponent } from './view-all-macros/view-all-macros.component';
 import { MyMacrosComponent } from './my-macros/my-macros.component';
 import { ViewMacroComponent } from './view-macro/view-macro.component';
-import { MacrosDrawerComponent } from './components/macros-drawer/macros-drawer.component';
 
 @Component({
     selector: 'macros',
@@ -46,6 +41,16 @@ import { MacrosDrawerComponent } from './components/macros-drawer/macros-drawer.
         .no-border::after {
             display: none !important;
         }
+
+        ::ng-deep .success-snackbar {
+            background-color: #4caf50 !important;
+            color: white !important;
+        }
+
+        ::ng-deep .error-snackbar {
+            background-color: #f44336 !important;
+            color: white !important;
+        }
     `],
     standalone: true,
     imports: [
@@ -53,20 +58,15 @@ import { MacrosDrawerComponent } from './components/macros-drawer/macros-drawer.
         MatButtonModule,
         MatIconModule,
         MatCardModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatSelectModule,
-        MatChipsModule,
         MatTooltipModule,
         MatSidenavModule,
         MatMenuModule,
+        MatSnackBarModule,
         FormsModule,
-        IconPickerComponent,
         MacrosHomeComponent,
         ViewAllMacrosComponent,
         MyMacrosComponent,
-        ViewMacroComponent,
-        MacrosDrawerComponent
+        ViewMacroComponent
     ],
 })
 export class MacrosComponent implements OnInit, OnDestroy {
@@ -74,11 +74,10 @@ export class MacrosComponent implements OnInit, OnDestroy {
     @ViewChild(ViewAllMacrosComponent) viewAllMacrosComponent: ViewAllMacrosComponent;
     @ViewChild(MyMacrosComponent) myMacrosComponent: MyMacrosComponent;
     @ViewChild(ViewMacroComponent) viewMacroComponent: ViewMacroComponent;
-    @ViewChild(MacrosDrawerComponent) macrosDrawerComponent: MacrosDrawerComponent;
 
     isAuthenticated: boolean = false;
     isMobile: boolean = false;
-    refreshMacros: boolean = false;
+    refreshMacros$ = new Subject<void>();
     isHomeRoute: boolean = false;
     isViewAllRoute: boolean = false;
     isMyMacrosRoute: boolean = false;
@@ -93,16 +92,12 @@ export class MacrosComponent implements OnInit, OnDestroy {
     macroSelected: boolean = false;
     canDuplicate: boolean = true;
 
+    // Selected macro state
+    selectedMacro: any = null;
+    selectedMacroName: string = '';
+
     private _unsubscribeAll: Subject<any> = new Subject<any>();
 
-    // Create macro form properties
-    selectedIcon: MacroIcon | null = null;
-    macroName = '';
-    macroDescription = '';
-    macroText = '';
-    selectedClass = '';
-    selectedSpec = '';
-    tags: string[] = [];
 
     /**
      * Constructor
@@ -140,6 +135,22 @@ export class MacrosComponent implements OnInit, OnDestroy {
                 this.updateDrawerState();
             });
 
+        // Listen for navigation events to refresh macros when coming from create route
+        this.router.events
+            .pipe(
+                filter(event => event instanceof NavigationEnd),
+                takeUntil(this._unsubscribeAll)
+            )
+            .subscribe((event: NavigationEnd) => {
+                // If navigating to my-macros, trigger a refresh to show newly created macros
+                if (event.url.includes('/macros/my-macros')) {
+                    // Small delay to ensure the drawer component is ready
+                    setTimeout(() => {
+                        this.triggerMacroRefresh();
+                    }, 100);
+                }
+            });
+
         // Initialize drawer state
         this.updateDrawerState();
     }
@@ -156,32 +167,6 @@ export class MacrosComponent implements OnInit, OnDestroy {
         });
     }
 
-    onIconSelected(icon: MacroIcon | null) {
-        this.selectedIcon = icon;
-    }
-
-    addTag(tag: string) {
-        if (tag.trim() && !this.tags.includes(tag.trim())) {
-            this.tags.push(tag.trim());
-        }
-    }
-
-    removeTag(tag: string) {
-        this.tags = this.tags.filter(t => t !== tag);
-    }
-
-    saveMacro() {
-        // TODO: Implement macro saving logic
-        console.log('Saving macro:', {
-            name: this.macroName,
-            description: this.macroDescription,
-            text: this.macroText,
-            class: this.selectedClass,
-            spec: this.selectedSpec,
-            tags: this.tags,
-            icon: this.selectedIcon
-        });
-    }
 
     updateDrawerState(): void {
         // Show drawer only on my-macros route and only if authenticated
@@ -201,7 +186,9 @@ export class MacrosComponent implements OnInit, OnDestroy {
 
     onMacroSelected(macro: any): void {
         console.log('Macro selected:', macro);
-        // Handle macro selection if needed
+        this.selectedMacro = macro;
+        this.selectedMacroName = macro ? macro.name : '';
+        this.macroSelected = !!macro;
     }
 
     onCreateNewMacro(): void {
@@ -227,5 +214,10 @@ export class MacrosComponent implements OnInit, OnDestroy {
         if (this.myMacrosComponent) {
             this.myMacrosComponent.onShareMacro();
         }
+    }
+
+    triggerMacroRefresh(): void {
+        // Emit refresh event to trigger child components to refresh
+        this.refreshMacros$.next();
     }
 }

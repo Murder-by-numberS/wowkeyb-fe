@@ -70,7 +70,7 @@
 
 <div class="w-full pl-4 flex pb-0">
     <!-- Mobile: Show all abilities -->
-    <div class="flex items-center overflow-x-auto gap-2 sm:hidden">
+    <div class="flex items-center overflow-x-auto gap-1 sm:hidden">
         @if (abilities?.length > 0) {
         @for (ability of abilities; track $index) {
         <div class="flex flex-col w-10 h-10 flex-shrink-0">
@@ -86,7 +86,7 @@
     </div>
 
     <!-- Desktop: Show paginated abilities -->
-    <div class="hidden sm:flex items-center overflow-x-auto gap-2">
+    <div class="hidden sm:flex items-center overflow-x-auto gap-1">
         @if (abilities?.length > 0) {
         <mat-icon class="text-gray-500 cursor-pointer flex-shrink-0" (click)="goToPreviousPage()"
             [class.opacity-50]="currentPage === 0">arrow_back</mat-icon>
