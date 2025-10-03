@@ -22,6 +22,7 @@ import { Subject, Observable, of } from 'rxjs';
 import { MacroService, Macro, MacroResponse } from '../services/macro.service';
 import { IconService } from '../../icons/services/icon.service';
 import { Icon } from '../../icons/services/icon.service';
+import { fullClasses } from 'app/core/data/classes';
 
 // Extended Macro interface to support expandable list functionality
 interface ExpandableMacro extends Macro {
@@ -33,7 +34,6 @@ interface ExpandableMacro extends Macro {
 @Component({
     selector: 'my-macros',
     templateUrl: './my-macros.component.html',
-    styleUrls: ['./my-macros.component.scss'],
     standalone: true,
     imports: [
         CommonModule,
@@ -71,6 +71,37 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     selectedIcon: Icon | null = null;
     currentSelectedMacro: ExpandableMacro | null = null;
     isEditing: boolean = false;
+    isCreating: boolean = false; // New state for create mode
+    drawerOpen: boolean = true; // Drawer is open by default
+
+    // Create macro form properties
+    createForm: FormGroup;
+    createSelectedIcon: Icon | null = null;
+    createMacroName = '';
+    createMacroDescription = '';
+    createMacroText = '';
+    createSelectedClass = '';
+    createSelectedSpec = '';
+    createSelectedHeroTalent = '';
+    createSpecs: string[] = [];
+    createHeroTalents: string[] = [];
+
+    // Classes data for create form
+    classes = [
+        { value: 'deathknight', label: 'Death Knight' },
+        { value: 'demonhunter', label: 'Demon Hunter' },
+        { value: 'druid', label: 'Druid' },
+        { value: 'evoker', label: 'Evoker' },
+        { value: 'hunter', label: 'Hunter' },
+        { value: 'mage', label: 'Mage' },
+        { value: 'monk', label: 'Monk' },
+        { value: 'paladin', label: 'Paladin' },
+        { value: 'priest', label: 'Priest' },
+        { value: 'rogue', label: 'Rogue' },
+        { value: 'shaman', label: 'Shaman' },
+        { value: 'warlock', label: 'Warlock' },
+        { value: 'warrior', label: 'Warrior' }
+    ];
 
     private destroy$ = new Subject<void>();
 
@@ -89,6 +120,15 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             macro_text: ['', [Validators.required, Validators.maxLength(255)]],
             class: ['', [Validators.required]],
             tags: [[]]
+        });
+
+        this.createForm = this.fb.group({
+            name: ['', [Validators.required, Validators.maxLength(100)]],
+            description: ['', [Validators.maxLength(500)]],
+            macro_text: ['', [Validators.required, Validators.maxLength(255)]],
+            class: ['', [Validators.required]],
+            spec: [{ value: '', disabled: true }],
+            hero_talent: [{ value: '', disabled: true }]
         });
     }
 
@@ -245,7 +285,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             text: formData.macro_text,
             class: formData.class,
             tags: formData.tags,
-            isPublic: macro.is_public,
+            is_public: macro.is_public,
             icon: macro.selectedIcon?._id || null
         };
 
@@ -349,9 +389,6 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.hasChanges = hasFormChanges || hasIconChanges || hasPublicChanges;
     }
 
-    onCreateNewMacro(): void {
-        this.router.navigate(['/macros/create']);
-    }
 
     getClassDisplayName(className: string): string {
         const classNames: { [key: string]: string } = {
@@ -384,7 +421,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         const dialogRef = this.dialog.open(ConfirmDialogComponent, {
             data: {
                 title: 'Delete Macro',
-                message: `Are you sure you want to delete "${this.currentSelectedMacro.name}"? This action cannot be undone.`,
+                message: `Are you sure you want to delete "${this.currentSelectedMacro.name}"?`,
                 confirmText: 'Delete',
                 cancelText: 'Cancel'
             }
@@ -438,7 +475,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
         // Make the macro public
         const updateData = {
-            isPublic: true
+            is_public: true
         };
 
         this.macroService.updateMacro(this.currentSelectedMacro.id, updateData).subscribe({
@@ -456,5 +493,128 @@ export class MyMacrosComponent implements OnInit, OnChanges {
                 this.snackBar.open('Failed to share macro', 'Close', { duration: 3000 });
             }
         });
+    }
+
+    toggleDrawer(): void {
+        this.drawerOpen = !this.drawerOpen;
+    }
+
+    // Create macro methods
+    onCreateNewMacro(): void {
+        this.isCreating = true;
+        this.isEditing = false;
+        this.currentSelectedMacro = null;
+        this.resetCreateForm();
+    }
+
+    onCancelCreate(): void {
+        this.isCreating = false;
+        this.resetCreateForm();
+    }
+
+    onSaveCreate(): void {
+        if (this.createForm.invalid || this.isLoading) return;
+
+        this.isLoading = true;
+        const formData = this.createForm.value;
+
+        const createData = {
+            name: formData.name,
+            description: formData.description,
+            macro_text: formData.macro_text,
+            class: formData.class,
+            spec: formData.spec || undefined,
+            hero_talent: formData.hero_talent || undefined,
+            icon: this.createSelectedIcon?._id || undefined,
+            is_public: false
+        };
+
+        this.macroService.createMacro(createData).subscribe({
+            next: (response: any) => {
+                const createdMacro = response.macro || response;
+                this.snackBar.open('Macro created successfully!', 'Close', { duration: 3000 });
+                this.isLoading = false;
+                this.isCreating = false;
+                this.resetCreateForm();
+                this.loadMacros(); // Reload the list
+
+                // Auto-select the newly created macro
+                if (createdMacro) {
+                    const newMacro = this.macros.find(m => m.id === createdMacro.id);
+                    if (newMacro) {
+                        this.selectMacro(newMacro);
+                    }
+                }
+            },
+            error: (error) => {
+                console.error('Error creating macro:', error);
+                this.snackBar.open('Failed to create macro', 'Close', { duration: 3000 });
+                this.isLoading = false;
+            }
+        });
+    }
+
+    onCreateIconSelected(icon: Icon): void {
+        this.createSelectedIcon = icon;
+    }
+
+    onCreateIconCleared(): void {
+        this.createSelectedIcon = null;
+    }
+
+    onCreateClassChange(): void {
+        this.createSelectedSpec = '';
+        this.createSelectedHeroTalent = '';
+        this.createForm.patchValue({ spec: '', hero_talent: '' });
+
+        if (this.createSelectedClass) {
+            const classData = fullClasses[this.createSelectedClass];
+            if (classData && classData.specs) {
+                this.createSpecs = Object.keys(classData.specs);
+                this.createForm.get('spec')?.enable();
+            } else {
+                this.createSpecs = [];
+                this.createForm.get('spec')?.disable();
+            }
+        } else {
+            this.createSpecs = [];
+            this.createForm.get('spec')?.disable();
+        }
+        this.createHeroTalents = [];
+        this.createForm.get('hero_talent')?.disable();
+    }
+
+    onCreateSpecChange(): void {
+        this.createSelectedHeroTalent = '';
+        this.createForm.patchValue({ hero_talent: '' });
+
+        if (this.createSelectedClass && this.createSelectedSpec) {
+            const classData = fullClasses[this.createSelectedClass];
+            if (classData && classData.specs && classData.specs[this.createSelectedSpec]) {
+                this.createHeroTalents = classData.specs[this.createSelectedSpec];
+                this.createForm.get('hero_talent')?.enable();
+            } else {
+                this.createHeroTalents = [];
+                this.createForm.get('hero_talent')?.disable();
+            }
+        } else {
+            this.createHeroTalents = [];
+            this.createForm.get('hero_talent')?.disable();
+        }
+    }
+
+    private resetCreateForm(): void {
+        this.createForm.reset();
+        this.createForm.get('spec')?.disable();
+        this.createForm.get('hero_talent')?.disable();
+        this.createSelectedIcon = null;
+        this.createMacroName = '';
+        this.createMacroDescription = '';
+        this.createMacroText = '';
+        this.createSelectedClass = '';
+        this.createSelectedSpec = '';
+        this.createSelectedHeroTalent = '';
+        this.createSpecs = [];
+        this.createHeroTalents = [];
     }
 }

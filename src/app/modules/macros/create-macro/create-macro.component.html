@@ -1,9 +1,9 @@
-<div class="create-macro-container">
-    <div class="create-macro-header">
-        <h1>Create New Macro</h1>
+<div class="w-[90%] max-w-[1800px] mx-auto p-8 font-inter min-h-screen">
+    <div class="text-center mb-8">
+        <h1 class="text-slate-800 text-3xl font-semibold mb-2">Create New Macro</h1>
     </div>
 
-    <div class="create-macro-form">
+    <div class="flex flex-col gap-6">
         <mat-form-field appearance="outline" class="w-full">
             <mat-label>Macro Name</mat-label>
             <input matInput [(ngModel)]="macroName" placeholder="Enter macro name" required>
@@ -15,8 +15,8 @@
         </mat-form-field>
 
         <!-- Icon Picker -->
-        <div class="form-group">
-            <label class="form-label">Macro Icon</label>
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-gray-700">Macro Icon</label>
             <app-icon-picker [selectedIcon]="selectedIcon" (iconSelected)="onIconSelected($event)"
                 (iconCleared)="onIconCleared()" placeholder="Select an icon for your macro">
             </app-icon-picker>
@@ -66,12 +66,13 @@
         </mat-form-field>
 
         <!-- Action Buttons -->
-        <div class="form-actions">
-            <button mat-button (click)="cancel()" class="cancel-button">
+        <div class="flex justify-end gap-4">
+            <button mat-button (click)="cancel()" class="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors">
                 Cancel
             </button>
             <button mat-raised-button color="primary" (click)="saveMacro()"
-                [disabled]="!macroName || !macroText || !selectedClass" class="save-button">
+                [disabled]="!macroName || !macroText || !selectedClass"
+                class="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 transition-colors">
                 Create Macro
             </button>
         </div>

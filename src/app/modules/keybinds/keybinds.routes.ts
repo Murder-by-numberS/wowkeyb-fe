@@ -1,21 +1,21 @@
 import { Routes } from '@angular/router';
-import { KeybindsComponent } from './keybinds.component';
+import { MyKeybindingsComponent } from './my-keybindings/my-keybindings.component';
 import { AuthGuard } from 'app/core/auth/guards/auth.guard';
-import { KeybindsHomeComponent } from './keybinds-home/keybinds-home.component';
 import { ViewKeybindingComponent } from './view-keybinding/view-keybinding.component';
+import { ViewAllKeybindingsComponent } from './view-all-keybindings/view-all-keybindings.component';
 
 export default [
     {
         path: '',
-        component: KeybindsHomeComponent,
+        component: ViewAllKeybindingsComponent,
     },
     {
         path: 'view-all',
-        component: KeybindsHomeComponent,
+        component: ViewAllKeybindingsComponent,
     },
     {
         path: 'my-keybindings',
-        component: KeybindsComponent,
+        component: MyKeybindingsComponent,
         canActivate: [AuthGuard]
     },
     {

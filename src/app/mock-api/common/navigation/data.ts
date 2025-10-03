@@ -1260,7 +1260,7 @@ export const horizontalNavigation: FuseNavigationItem[] = [
         title: 'Keybindings',
         type: 'basic',
         icon: 'heroicons_outline:keyboard',
-        link: '/keybinds/view-all',
+        link: '/keybinds',
     },
     {
         id: 'macros',

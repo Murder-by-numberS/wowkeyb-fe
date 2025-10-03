@@ -27,8 +27,7 @@ import { MacroService, CreateMacroRequest } from '../services/macro.service';
         MatSnackBarModule,
         IconPickerComponent
     ],
-    templateUrl: './create-macro.component.html',
-    styleUrls: ['./create-macro.component.scss']
+    templateUrl: './create-macro.component.html'
 })
 export class CreateMacroComponent implements OnInit {
     // Form properties

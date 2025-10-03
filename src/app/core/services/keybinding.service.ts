@@ -1,19 +1,20 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { tap, map, catchError } from 'rxjs/operators';
 
 import { environment } from 'environments/environment';
 
 import { Keybinding } from '../types/keybinding';
 import { Keybind } from '../types/keybind';
+import { formatClassNameForFrontend, formatClassNameForBackend } from '../utils/class-name-utils';
 
 interface KeybindUpdate {
     addedKeybinds: Keybind[];
     removedKeybinds: Keybind[];
 }
 
-interface HomeKeybindingsResponse {
+export interface HomeKeybindingsResponse {
     [className: string]: {
         recent: Keybinding[];
         popular: Keybinding[];
@@ -141,8 +142,18 @@ export class KeybindingService {
             spellId: kb.spell?.spellId
         })));
 
-        return this.http.put<Keybinding>(`${environment.apiUrl}/keybindings/${id}`, updatedKeybinding)
+        // Transform frontend class name to backend format before sending
+        const backendUpdatedKeybinding = {
+            ...updatedKeybinding,
+            ...(updatedKeybinding.class && { class: formatClassNameForBackend(updatedKeybinding.class) })
+        };
+
+        return this.http.put<Keybinding>(`${environment.apiUrl}/keybindings/${id}`, backendUpdatedKeybinding)
             .pipe(
+                map((response: Keybinding) => ({
+                    ...response,
+                    class: formatClassNameForFrontend(response.class)
+                })),
                 tap((response: Keybinding) => {
                     console.log('updateKeybinding - backend response:', response);
                     console.log('updateKeybinding - response keybinds:', response.keybinds?.length);
@@ -181,7 +192,18 @@ export class KeybindingService {
 
     createKeybinding(keybinding?: Keybinding): Observable<Keybinding> {
         console.log('creating keybinding');
-        return this.http.post<Keybinding>(`${environment.apiUrl}/keybindings`, keybinding || {}).pipe(
+
+        // Transform frontend class name to backend format before sending
+        const backendKeybinding = keybinding ? {
+            ...keybinding,
+            class: formatClassNameForBackend(keybinding.class)
+        } : {};
+
+        return this.http.post<Keybinding>(`${environment.apiUrl}/keybindings`, backendKeybinding).pipe(
+            map((newKeybinding: Keybinding) => ({
+                ...newKeybinding,
+                class: formatClassNameForFrontend(newKeybinding.class)
+            })),
             tap((newKeybinding: Keybinding) => {
                 console.log('after created - newKeybinding', newKeybinding);
                 const currentKeybindings = this.keybindingsSource.getValue();
@@ -194,6 +216,13 @@ export class KeybindingService {
     getKeybindings(): Observable<Keybinding[]> {
         console.log('getting keybindings');
         return this.http.get<Keybinding[]>(`${environment.apiUrl}/keybindings`).pipe(
+            map((keybindings: Keybinding[]) => {
+                // Transform backend class names (lowercase) to frontend format (capitalized)
+                return keybindings.map(keybinding => ({
+                    ...keybinding,
+                    class: formatClassNameForFrontend(keybinding.class)
+                }));
+            }),
             tap((keybindings: Keybinding[]) => {
                 console.log('getKeybindings - raw keybindings from server:', keybindings.length);
                 console.log('getKeybindings - keybinding IDs from server:', keybindings.map(kb => kb.keybindingId));
@@ -213,9 +242,49 @@ export class KeybindingService {
         );
     }
 
+    getPopularKeybindings(page?: number, limit?: number): Observable<Keybinding[]> {
+        console.log('getting popular keybindings');
+        let params = new HttpParams();
+        if (page) params = params.set('page', page.toString());
+        if (limit) params = params.set('limit', limit.toString());
+
+        return this.http.get<Keybinding[]>(`${environment.apiUrl}/keybindings/popular`, { params }).pipe(
+            map((keybindings: Keybinding[]) => {
+                // Transform backend class names (lowercase) to frontend format (capitalized)
+                return keybindings.map(keybinding => ({
+                    ...keybinding,
+                    class: formatClassNameForFrontend(keybinding.class)
+                }));
+            })
+        );
+    }
+
     getHomeKeybindings(): Observable<HomeKeybindingsResponse> {
         console.log('getting home keybindings');
-        return this.http.get<HomeKeybindingsResponse>(`${environment.apiUrl}/keybindings/home`);
+        return this.http.get<HomeKeybindingsResponse>(`${environment.apiUrl}/keybindings/home`).pipe(
+            map((response: HomeKeybindingsResponse) => {
+                // Transform backend class names (lowercase) to frontend format (capitalized)
+                // Keep group keys in lowercase to match component expectations
+                const transformedResponse: HomeKeybindingsResponse = {};
+
+                Object.entries(response).forEach(([backendClassName, classData]) => {
+                    // Keep the group key in lowercase (backend format) to match component expectations
+                    transformedResponse[backendClassName] = {
+                        recent: classData.recent.map(keybinding => ({
+                            ...keybinding,
+                            class: formatClassNameForFrontend(keybinding.class)
+                        })),
+                        popular: classData.popular.map(keybinding => ({
+                            ...keybinding,
+                            class: formatClassNameForFrontend(keybinding.class)
+                        }))
+                    };
+                });
+
+                console.log('Transformed home keybindings response:', transformedResponse);
+                return transformedResponse;
+            })
+        );
     }
 
     clearKeybindings() {
@@ -232,6 +301,13 @@ export class KeybindingService {
         const timestamp = Date.now();
         console.log('Fetching keybindings with cache-busting timestamp:', timestamp);
         return this.http.get<Keybinding[]>(`${environment.apiUrl}/keybindings?t=${timestamp}`).pipe(
+            map((keybindings: Keybinding[]) => {
+                // Transform backend class names (lowercase) to frontend format (capitalized)
+                return keybindings.map(keybinding => ({
+                    ...keybinding,
+                    class: formatClassNameForFrontend(keybinding.class)
+                }));
+            }),
             tap((keybindings: Keybinding[]) => {
                 console.log('Force refresh completed - keybindings updated:', keybindings.length);
                 console.log('Force refresh - keybinding versions:', keybindings.map(kb => ({
@@ -250,14 +326,19 @@ export class KeybindingService {
 
     getKeybinding(id: string): Observable<Keybinding> {
         return this.http.get<Keybinding>(`${environment.apiUrl}/keybindings/${id}`).pipe(
-            tap((keybinding: Keybinding) => {
-                return keybinding;
-            })
+            map((keybinding: Keybinding) => ({
+                ...keybinding,
+                class: formatClassNameForFrontend(keybinding.class)
+            }))
         );
     }
 
     duplicateKeybinding(keybindingId: string): Observable<Keybinding> {
         return this.http.post<Keybinding>(`${environment.apiUrl}/keybindings/${keybindingId}/duplicate`, {}).pipe(
+            map((newKeybinding: Keybinding) => ({
+                ...newKeybinding,
+                class: formatClassNameForFrontend(newKeybinding.class)
+            })),
             tap((newKeybinding: Keybinding) => {
                 // Update the local state with the new keybinding
                 const currentKeybindings = this.keybindingsSource.getValue();
@@ -300,7 +381,7 @@ export class KeybindingService {
         // Update only the specific keybinding properties in place
         const keybindingToUpdate = currentKeybindings[keybindingIndex];
         keybindingToUpdate.name = updatedKeybinding.name;
-        keybindingToUpdate.class = updatedKeybinding.class;
+        keybindingToUpdate.class = formatClassNameForFrontend(updatedKeybinding.class); // Ensure frontend format
         keybindingToUpdate.spec = updatedKeybinding.spec;
         keybindingToUpdate.heroTalent = updatedKeybinding.heroTalent;
         keybindingToUpdate.version = updatedKeybinding.version;

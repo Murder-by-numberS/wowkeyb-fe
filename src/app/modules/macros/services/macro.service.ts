@@ -53,7 +53,7 @@ export interface UpdateMacroRequest {
     heroTalent?: string;
     tags?: string[];
     icon?: string; // Icon ID for macro icon
-    isPublic?: boolean;
+    is_public?: boolean;
 }
 
 export interface GetMacrosParams {

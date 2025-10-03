@@ -12,10 +12,10 @@ export const navigationConfig: NavigationItemWithAuth[] = [
         type: 'group',
         children: [
             {
-                id: 'keybinds.view-all',
-                title: 'View All',
+                id: 'keybinds.home',
+                title: 'Home',
                 type: 'basic',
-                link: '/keybinds/view-all'
+                link: '/keybinds'
             },
             {
                 id: 'keybinds.my-keybindings',

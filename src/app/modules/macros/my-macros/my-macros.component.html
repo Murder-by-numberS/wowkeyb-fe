@@ -1,198 +1,330 @@
-<div class="flex w-full h-full max-h-screen overflow-hidden macro-list-container">
-    <!-- Main Content - Macro List -->
-    <div class="flex-1 overflow-y-auto">
-        <!-- Header Section -->
-        <div class="flex-shrink-0 px-6 py-6 border-b bg-white">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">My Macros</h1>
-                    <p class="text-gray-600 mt-1">Manage your World of Warcraft macros</p>
+<div class="flex w-full h-full max-h-screen overflow-hidden">
+    <!-- Drawer - Fixed width sidebar -->
+    <div class="flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden border-r border-gray-200"
+        [class.w-0]="!drawerOpen" [class.w-80]="drawerOpen" [class.border-r-0]="!drawerOpen">
+        @if (drawerOpen) {
+        <div class="h-full bg-white flex flex-col overflow-hidden">
+            <!-- Drawer Header -->
+            <div class="flex-shrink-0 p-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900">My Macros</h2>
                 </div>
-                <button mat-flat-button color="primary" (click)="onCreateNewMacro()">
+            </div>
+
+            <!-- Macros List -->
+            <div class="flex-1 overflow-y-auto">
+                @if (macros && macros.length > 0) {
+                <div class="p-2">
+                    @for (macro of macros; track macro.id) {
+                    <div class="flex items-center p-3 cursor-pointer rounded-lg mb-1 hover:bg-gray-50 transition-colors"
+                        [class.bg-blue-100]="currentSelectedMacro?.id === macro.id"
+                        [class.border-blue-500]="currentSelectedMacro?.id === macro.id" (click)="selectMacro(macro)">
+                        <div class="flex-1 flex items-center gap-3">
+                            <!-- Macro Icon -->
+                            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <img *ngIf="getMacroIconUrl(macro)" [src]="getMacroIconUrl(macro)" [alt]="macro.name"
+                                    class="w-6 h-6 rounded">
+                                <mat-icon *ngIf="!getMacroIconUrl(macro)" class="text-gray-400 text-sm">code</mat-icon>
+                            </div>
+                            <!-- Macro Info -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-sm font-medium text-gray-900 truncate">{{ macro.name }}</h3>
+                                    <mat-icon *ngIf="macro.is_public" class="text-green-500 text-sm"
+                                        matTooltip="Public">public</mat-icon>
+                                    <mat-icon *ngIf="!macro.is_public" class="text-gray-400 text-sm"
+                                        matTooltip="Private">lock</mat-icon>
+                                </div>
+                                <p class="text-xs text-gray-600 truncate">
+                                    {{ getClassDisplayName(macro.class) }}
+                                    <span *ngIf="macro.spec"> - {{ macro.spec | titlecase }}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+                } @else {
+                <!-- No Macros State -->
+                <div class="text-center py-8 px-4">
+                    <mat-icon class="text-4xl text-gray-300 mb-4">code</mat-icon>
+                    <h3 class="text-sm font-medium text-gray-600 mb-2">No Macros Found</h3>
+                    <p class="text-xs text-gray-500 mb-4">Create your first macro to get started.</p>
+                    <button mat-flat-button color="primary" (click)="onCreateNewMacro()" class="text-xs">
+                        <mat-icon class="mr-1 text-sm">add</mat-icon>
+                        Create Macro
+                    </button>
+                </div>
+                }
+            </div>
+
+            <!-- Drawer Footer -->
+            <div class="flex-shrink-0 p-4 border-t border-gray-200">
+                <button mat-flat-button color="primary" (click)="onCreateNewMacro()" class="w-full">
                     <mat-icon class="mr-2">add</mat-icon>
                     Create New Macro
                 </button>
             </div>
         </div>
-
-        <!-- Macros List -->
-        <div class="flex-1 overflow-y-auto p-6 min-h-0">
-            @if (macros && macros.length > 0) {
-            <div class="grid gap-4">
-                @for (macro of macros; track macro.id) {
-                <div class="bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors cursor-pointer"
-                    [class.border-blue-500]="currentSelectedMacro?.id === macro.id" (click)="selectMacro(macro)">
-                    <div class="p-4">
-                        <div class="flex items-center gap-4">
-                            <!-- Macro Icon -->
-                            <div
-                                class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <img *ngIf="getMacroIconUrl(macro)" [src]="getMacroIconUrl(macro)" [alt]="macro.name"
-                                    class="w-8 h-8 rounded">
-                                <mat-icon *ngIf="!getMacroIconUrl(macro)" class="text-gray-400 text-xl">code</mat-icon>
-                            </div>
-
-                            <!-- Macro Info -->
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <h3 class="text-lg font-semibold text-gray-900 truncate">{{ macro.name }}</h3>
-                                    <mat-icon *ngIf="macro.is_public" class="text-green-500 text-lg"
-                                        matTooltip="Public">public</mat-icon>
-                                    <mat-icon *ngIf="!macro.is_public" class="text-gray-400 text-lg"
-                                        matTooltip="Private">lock</mat-icon>
-                                </div>
-                                <p class="text-sm text-gray-600 mt-1">
-                                    {{ getClassDisplayName(macro.class) }}
-                                    <span *ngIf="macro.spec"> - {{ macro.spec | titlecase }}</span>
-                                </p>
-                                <p class="text-sm text-gray-500 mt-1 line-clamp-2">
-                                    {{ macro.description || 'No description provided' }}
-                                </p>
-                            </div>
-
-                            <!-- Quick Stats -->
-                            <div class="flex items-center gap-4 text-sm text-gray-500">
-                                <div class="text-center">
-                                    <div class="font-medium">{{ macro.usage_count || macro.usageCount || 0 }}</div>
-                                    <div class="text-xs">Uses</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="font-medium">{{ macro.rating || 'N/A' }}</div>
-                                    <div class="text-xs">Rating</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="font-medium">{{ macro.updated_at | date:'short' }}</div>
-                                    <div class="text-xs">Updated</div>
-                                </div>
-                            </div>
-
-                            <!-- Action Button -->
-                            <button mat-icon-button (click)="selectMacro(macro); $event.stopPropagation()"
-                                matTooltip="View Details">
-                                <mat-icon>chevron_right</mat-icon>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                }
-            </div>
-            } @else {
-            <!-- No Macros State -->
-            <div class="text-center py-16">
-                <mat-icon class="text-8xl text-gray-300 mb-6">code</mat-icon>
-                <h3 class="text-2xl font-medium text-gray-600 mb-4">No Macros Found</h3>
-                <p class="text-gray-500 mb-8 max-w-md mx-auto">Create your first macro to get started with managing your
-                    World of Warcraft commands and abilities.</p>
-                <button mat-flat-button color="primary" (click)="onCreateNewMacro()">
-                    <mat-icon class="mr-2">add</mat-icon>
-                    Create Your First Macro
-                </button>
-            </div>
-            }
-        </div>
+        }
     </div>
 
-    <!-- Side Panel -->
-    <div class="side-panel w-0 overflow-hidden transition-all duration-300 ease-in-out h-full"
-        [class.open]="currentSelectedMacro" [class.border-l]="currentSelectedMacro">
-        @if (currentSelectedMacro) {
-        <div class="panel-container bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-            <!-- Panel Header -->
-            <div class="flex-shrink-0 p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-gray-900">Macro Details</h2>
-                    <button mat-icon-button (click)="closePanel()" matTooltip="Close">
-                        <mat-icon>close</mat-icon>
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <!-- Header -->
+        <div class="flex-shrink-0 px-6 py-4 border-b bg-white">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button mat-icon-button (click)="toggleDrawer()" matTooltip="Toggle Drawer">
+                        <mat-icon>{{ drawerOpen ? 'menu_open' : 'menu' }}</mat-icon>
                     </button>
-                </div>
-
-                <!-- Selected Macro Header -->
-                <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <img *ngIf="getMacroIconUrl(currentSelectedMacro)" [src]="getMacroIconUrl(currentSelectedMacro)"
-                            [alt]="currentSelectedMacro.name" class="w-8 h-8 rounded">
-                        <mat-icon *ngIf="!getMacroIconUrl(currentSelectedMacro)"
-                            class="text-gray-400 text-xl">code</mat-icon>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                            <h3 class="text-lg font-semibold text-gray-900 truncate">{{ currentSelectedMacro.name }}
-                            </h3>
-                            <mat-icon *ngIf="currentSelectedMacro.is_public" class="text-green-500 text-lg"
-                                matTooltip="Public">public</mat-icon>
-                            <mat-icon *ngIf="!currentSelectedMacro.is_public" class="text-gray-400 text-lg"
-                                matTooltip="Private">lock</mat-icon>
-                        </div>
-                        <p class="text-sm text-gray-600">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">
+                            @if (isCreating) {
+                            Create New Macro
+                            } @else if (currentSelectedMacro) {
+                            {{ currentSelectedMacro.name }}
+                            } @else {
+                            My Macros
+                            }
+                        </h1>
+                        <p class="text-gray-600 text-sm">
+                            @if (isCreating) {
+                            Create a new World of Warcraft macro
+                            } @else if (currentSelectedMacro) {
                             {{ getClassDisplayName(currentSelectedMacro.class) }}
                             <span *ngIf="currentSelectedMacro.spec"> - {{ currentSelectedMacro.spec | titlecase
                                 }}</span>
+                            } @else {
+                            Manage your World of Warcraft macros
+                            }
                         </p>
                     </div>
                 </div>
+                @if (isCreating) {
+                <div class="flex items-center gap-2">
+                    <button type="button" mat-stroked-button (click)="onCancelCreate()" [disabled]="isLoading">
+                        Cancel
+                    </button>
+                    <button type="button" mat-flat-button color="primary" [disabled]="createForm.invalid || isLoading"
+                        (click)="onSaveCreate()">
+                        <mat-spinner *ngIf="isLoading" diameter="20" class="mr-2"></mat-spinner>
+                        Create Macro
+                    </button>
+                </div>
+                } @else if (currentSelectedMacro) {
+                <div class="flex items-center gap-2">
+                    @if (isEditing) {
+                    <button type="button" mat-stroked-button (click)="onCancelEdit(currentSelectedMacro)"
+                        [disabled]="isLoading">
+                        Cancel
+                    </button>
+                    <button type="button" mat-flat-button color="primary"
+                        [disabled]="editForm.invalid || isLoading || !hasChanges"
+                        (click)="onSaveEdit(currentSelectedMacro)">
+                        <mat-spinner *ngIf="isLoading" diameter="20" class="mr-2"></mat-spinner>
+                        Save Changes
+                    </button>
+                    } @else {
+                    <button mat-stroked-button (click)="onEditMacro(currentSelectedMacro)">
+                        <mat-icon class="mr-2">edit</mat-icon>
+                        Edit
+                    </button>
+                    <button mat-stroked-button (click)="onDuplicateMacro()">
+                        <mat-icon class="mr-2">content_copy</mat-icon>
+                        Duplicate
+                    </button>
+                    <button mat-flat-button color="warn" (click)="onDeleteMacro()">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                    }
+                </div>
+                }
             </div>
+        </div>
 
-            <!-- Panel Content -->
-            <div class="panel-content flex-1 overflow-y-auto p-6 min-h-0" style="flex: 1;">
+        <!-- Content Area - Scrollable when editing -->
+        <div class="flex-1 overflow-y-auto pb-5" [class.pb-10]="isEditing || isCreating">
+            @if (isCreating) {
+            <!-- Create Macro Mode -->
+            <div class="p-6">
+                <div class="max-w-4xl mx-auto">
+                    <div class="bg-white p-6 rounded-lg border">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-6">Create New Macro</h3>
+                        <form [formGroup]="createForm" (ngSubmit)="onSaveCreate()" class="space-y-6">
+                            <!-- Macro Name -->
+                            <mat-form-field appearance="outline" class="w-full">
+                                <mat-label>Macro Name</mat-label>
+                                <input matInput formControlName="name" placeholder="Enter macro name" maxlength="100">
+                                <mat-error *ngIf="createForm.get('name')?.hasError('required')">Name is
+                                    required</mat-error>
+                                <mat-error *ngIf="createForm.get('name')?.hasError('maxlength')">Name is too
+                                    long</mat-error>
+                            </mat-form-field>
+
+                            <!-- Description -->
+                            <mat-form-field appearance="outline" class="w-full">
+                                <mat-label>Description (Optional)</mat-label>
+                                <textarea matInput formControlName="description" placeholder="Enter macro description"
+                                    rows="3" maxlength="500"></textarea>
+                                <mat-error *ngIf="createForm.get('description')?.hasError('maxlength')">Description is
+                                    too long</mat-error>
+                            </mat-form-field>
+
+                            <!-- Icon Picker -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-700">Macro Icon</label>
+                                <app-icon-picker [selectedIcon]="createSelectedIcon"
+                                    (iconSelected)="onCreateIconSelected($event)" (iconCleared)="onCreateIconCleared()"
+                                    placeholder="Select an icon for your macro">
+                                </app-icon-picker>
+                            </div>
+
+                            <!-- Class, Spec, and Hero Talent Selection -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Class Selection -->
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Class</mat-label>
+                                    <mat-select formControlName="class" (selectionChange)="onCreateClassChange()">
+                                        <mat-option value="">Select Class</mat-option>
+                                        <mat-option *ngFor="let class of classes" [value]="class.value">
+                                            {{ class.label }}
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-error *ngIf="createForm.get('class')?.hasError('required')">Class is
+                                        required</mat-error>
+                                </mat-form-field>
+
+                                <!-- Spec Selection -->
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Specialization (Optional)</mat-label>
+                                    <mat-select formControlName="spec" (selectionChange)="onCreateSpecChange()">
+                                        <mat-option value="">Select Spec</mat-option>
+                                        <mat-option *ngFor="let spec of createSpecs" [value]="spec">
+                                            {{ spec }}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+
+                                <!-- Hero Talent Selection -->
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Hero Talent (Optional)</mat-label>
+                                    <mat-select formControlName="hero_talent">
+                                        <mat-option value="">Select Hero Talent</mat-option>
+                                        <mat-option *ngFor="let heroTalent of createHeroTalents" [value]="heroTalent">
+                                            {{ heroTalent }}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+
+                            <!-- Macro Text -->
+                            <mat-form-field appearance="outline" class="w-full">
+                                <mat-label>Macro Text</mat-label>
+                                <textarea matInput formControlName="macro_text" placeholder="Enter your macro commands"
+                                    rows="6" maxlength="255"></textarea>
+                                <mat-hint align="end">{{ createForm.get('macro_text')?.value?.length || 0
+                                    }}/255</mat-hint>
+                                <mat-error *ngIf="createForm.get('macro_text')?.hasError('required')">Macro text is
+                                    required</mat-error>
+                                <mat-error *ngIf="createForm.get('macro_text')?.hasError('maxlength')">Macro text is too
+                                    long</mat-error>
+                            </mat-form-field>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            } @else if (currentSelectedMacro) {
+            <!-- Selected Macro Details -->
+            <div class="p-6">
                 @if (!isEditing) {
                 <!-- View Mode -->
-                <div class="space-y-4">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Macro Header -->
+                    <div class="flex items-center gap-4 p-6 bg-gray-50 rounded-lg">
+                        <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <img *ngIf="getMacroIconUrl(currentSelectedMacro)"
+                                [src]="getMacroIconUrl(currentSelectedMacro)" [alt]="currentSelectedMacro.name"
+                                class="w-12 h-12 rounded">
+                            <mat-icon *ngIf="!getMacroIconUrl(currentSelectedMacro)"
+                                class="text-gray-400 text-2xl">code</mat-icon>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <h2 class="text-2xl font-bold text-gray-900">{{ currentSelectedMacro.name }}</h2>
+                                <mat-icon *ngIf="currentSelectedMacro.is_public" class="text-green-500 text-xl"
+                                    matTooltip="Public">public</mat-icon>
+                                <mat-icon *ngIf="!currentSelectedMacro.is_public" class="text-gray-400 text-xl"
+                                    matTooltip="Private">lock</mat-icon>
+                            </div>
+                            <p class="text-gray-600 mt-1">
+                                {{ getClassDisplayName(currentSelectedMacro.class) }}
+                                <span *ngIf="currentSelectedMacro.spec"> - {{ currentSelectedMacro.spec | titlecase
+                                    }}</span>
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Description -->
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Description</h4>
-                        <p class="text-gray-600 text-sm">{{ currentSelectedMacro.description || 'No description
-                            provided' }}</p>
+                    <div class="bg-white p-6 rounded-lg border">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+                        <p class="text-gray-600">{{ currentSelectedMacro.description || 'No description provided' }}</p>
                     </div>
 
                     <!-- Macro Text -->
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Macro Text</h4>
-                        <div class="bg-gray-50 p-4 rounded-lg font-mono text-xs whitespace-pre-line border">
+                    <div class="bg-white p-6 rounded-lg border">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Macro Text</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg font-mono text-sm whitespace-pre-line border">
                             {{ formatMacroText(currentSelectedMacro.macro_text || currentSelectedMacro.text || 'No macro
                             text provided') }}
                         </div>
                     </div>
 
                     <!-- Tags -->
-                    <div *ngIf="currentSelectedMacro.tags && currentSelectedMacro.tags.length > 0">
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Tags</h4>
+                    <div *ngIf="currentSelectedMacro.tags && currentSelectedMacro.tags.length > 0"
+                        class="bg-white p-6 rounded-lg border">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Tags</h3>
                         <div class="flex flex-wrap gap-2">
                             <span *ngFor="let tag of currentSelectedMacro.tags"
-                                class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
                                 {{ tag }}
                             </span>
                         </div>
                     </div>
 
                     <!-- Stats -->
-                    <div class="grid grid-cols-2 gap-4 pt-2 border-t">
-                        <div class="text-center space-y-1">
-                            <div class="text-2xl font-bold text-blue-600">{{ currentSelectedMacro.usage_count ||
-                                currentSelectedMacro.usageCount || 0 }}</div>
-                            <div class="text-xs text-gray-600">Usage Count</div>
-                        </div>
-                        <div class="text-center space-y-1">
-                            <div class="text-2xl font-bold text-yellow-600">{{ currentSelectedMacro.rating || 'N/A' }}
+                    <div class="bg-white p-6 rounded-lg border">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistics</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-blue-600">{{ currentSelectedMacro.usage_count ||
+                                    currentSelectedMacro.usageCount || 0 }}</div>
+                                <div class="text-sm text-gray-600">Usage Count</div>
                             </div>
-                            <div class="text-xs text-gray-600">Rating</div>
-                        </div>
-                        <div class="text-center space-y-1">
-                            <div class="text-xs font-medium text-gray-600">Created</div>
-                            <div class="text-xs text-gray-500">{{ currentSelectedMacro.created_at | date:'short' }}
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-yellow-600">{{ currentSelectedMacro.rating || 'N/A'
+                                    }}</div>
+                                <div class="text-sm text-gray-600">Rating</div>
                             </div>
-                        </div>
-                        <div class="text-center space-y-1">
-                            <div class="text-xs font-medium text-gray-600">Updated</div>
-                            <div class="text-xs text-gray-500">{{ currentSelectedMacro.updated_at | date:'short' }}
+                            <div class="text-center">
+                                <div class="text-sm font-medium text-gray-600">Created</div>
+                                <div class="text-sm text-gray-500">{{ currentSelectedMacro.created_at | date:'short' }}
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-sm font-medium text-gray-600">Updated</div>
+                                <div class="text-sm text-gray-500">{{ currentSelectedMacro.updated_at | date:'short' }}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 } @else {
                 <!-- Edit Mode -->
-                <div class="edit-form-wrapper">
-                    <div class="edit-form-container space-y-4">
-                        <form [formGroup]="editForm" (ngSubmit)="onSaveEdit(currentSelectedMacro)" class="space-y-4">
+                <div class="max-w-4xl mx-auto">
+                    <div class="bg-white p-6 rounded-lg border">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-6">Edit Macro</h3>
+                        <form [formGroup]="editForm" (ngSubmit)="onSaveEdit(currentSelectedMacro)" class="space-y-6">
                             <!-- Macro Name -->
                             <mat-form-field appearance="outline" class="w-full">
                                 <mat-label>Macro Name</mat-label>
@@ -207,7 +339,7 @@
                             <mat-form-field appearance="outline" class="w-full">
                                 <mat-label>Description (Optional)</mat-label>
                                 <textarea matInput formControlName="description" placeholder="Enter macro description"
-                                    rows="2" maxlength="500"></textarea>
+                                    rows="3" maxlength="500"></textarea>
                                 <mat-error *ngIf="editForm.get('description')?.hasError('maxlength')">Description is too
                                     long</mat-error>
                             </mat-form-field>
@@ -226,7 +358,7 @@
                             <mat-form-field appearance="outline" class="w-full">
                                 <mat-label>Macro Text</mat-label>
                                 <textarea matInput formControlName="macro_text" placeholder="Enter your macro commands"
-                                    rows="3" maxlength="255"></textarea>
+                                    rows="4" maxlength="255"></textarea>
                                 <mat-hint align="end">{{ editForm.get('macro_text')?.value?.length || 0
                                     }}/255</mat-hint>
                                 <mat-error *ngIf="editForm.get('macro_text')?.hasError('required')">Macro text is
@@ -259,7 +391,7 @@
                             </mat-form-field>
 
                             <!-- Public/Private Toggle -->
-                            <div class="space-y-2">
+                            <div class="space-y-3">
                                 <label class="text-sm font-medium text-gray-700">Visibility</label>
                                 <div class="flex items-center gap-4">
                                     <mat-slide-toggle [checked]="currentSelectedMacro.is_public"
@@ -267,20 +399,19 @@
                                         <span class="ml-2">{{ currentSelectedMacro.is_public ? 'Public' : 'Private'
                                             }}</span>
                                     </mat-slide-toggle>
-                                    <div class="flex items-center gap-1 text-sm text-gray-600">
+                                    <div class="flex items-center gap-2 text-sm text-gray-600">
                                         <mat-icon *ngIf="currentSelectedMacro.is_public"
-                                            class="text-green-500 text-lg">public</mat-icon>
+                                            class="text-green-500">public</mat-icon>
                                         <mat-icon *ngIf="!currentSelectedMacro.is_public"
-                                            class="text-gray-400 text-lg">lock</mat-icon>
+                                            class="text-gray-400">lock</mat-icon>
                                         <span>{{ currentSelectedMacro.is_public ? 'Visible to everyone' : 'Only visible
-                                            to
-                                            you' }}</span>
+                                            to you' }}</span>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Tags -->
-                            <div class="space-y-2">
+                            <div class="space-y-3">
                                 <label class="text-sm font-medium text-gray-700">Tags</label>
                                 <div class="flex flex-wrap gap-2">
                                     <mat-chip *ngFor="let tag of editForm.get('tags')?.value" [removable]="true"
@@ -295,44 +426,28 @@
                                         (keyup.enter)="addTag(tagInput.value); tagInput.value=''">
                                 </mat-form-field>
                             </div>
-
-                            <!-- Actions -->
-                            <div class="flex gap-3 pt-4 border-t">
-                                <button type="button" mat-stroked-button (click)="onCancelEdit(currentSelectedMacro)"
-                                    [disabled]="isLoading" class="flex-1">
-                                    Cancel
-                                </button>
-                                <button type="submit" mat-flat-button color="primary"
-                                    [disabled]="editForm.invalid || isLoading || !hasChanges" class="flex-1">
-                                    <mat-spinner *ngIf="isLoading" diameter="20" class="mr-2"></mat-spinner>
-                                    Save Changes
-                                </button>
-                            </div>
                         </form>
                     </div>
                 </div>
                 }
             </div>
-
-            <!-- Panel Footer -->
-            <div class="panel-footer flex-shrink-0 p-6">
-                @if (!isEditing) {
-                <div class="flex gap-3">
-                    <button mat-stroked-button (click)="onEditMacro(currentSelectedMacro)" class="flex-1">
-                        <mat-icon class="mr-2">edit</mat-icon>
-                        Edit Macro
-                    </button>
-                    <button mat-stroked-button (click)="onDuplicateMacro()" class="flex-1">
-                        <mat-icon class="mr-2">content_copy</mat-icon>
-                        Duplicate
-                    </button>
-                    <button mat-flat-button color="warn" (click)="onDeleteMacro()">
-                        <mat-icon>delete</mat-icon>
+            } @else {
+            <!-- No Macro Selected State -->
+            <div class="flex-1 flex items-center justify-center">
+                <div class="text-center py-16">
+                    <mat-icon class="text-8xl text-gray-300 mb-6">code</mat-icon>
+                    <h3 class="text-2xl font-medium text-gray-600 mb-4">Select a Macro</h3>
+                    <p class="text-gray-500 mb-8 max-w-md mx-auto">
+                        Choose a macro from the drawer to view its details, or create a new one to get started.
+                    </p>
+                    <button mat-flat-button color="primary" (click)="onCreateNewMacro()">
+                        <mat-icon class="mr-2">add</mat-icon>
+                        Create New Macro
                     </button>
                 </div>
-                }
             </div>
+            }
         </div>
-        }
+
     </div>
 </div>

@@ -31,7 +31,6 @@ import { classes } from 'app/core/data/classes';
 @Component({
     selector: 'macros-drawer',
     templateUrl: './macros-drawer.component.html',
-    styleUrls: ['./macros-drawer.component.scss'],
     encapsulation: ViewEncapsulation.None,
     standalone: true,
     imports: [
@@ -268,9 +267,8 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
     }
 
     createMacro() {
-        // TODO: Implement macro creation logic
-        console.log('Create new macro from drawer');
-        this.snackBar.open('Create macro functionality coming soon!', 'Close', { duration: 3000 });
+        // Emit event to parent component to handle macro creation
+        this.macroSelected.emit({ action: 'create' });
     }
 
     getClassDisplayName(className: string): string {

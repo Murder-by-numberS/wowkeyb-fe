@@ -1,122 +1,80 @@
-import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatCardModule } from '@angular/material/card';
-import { MatSelectModule } from '@angular/material/select';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatDialog } from '@angular/material/dialog';
-import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
-import { takeUntil, map } from 'rxjs/operators';
-import { UserService } from 'app/core/user/user.service';
-import { Subject, Observable, of } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { AuthService } from 'app/core/auth/auth.service';
 import { MacroService, Macro, MacroResponse } from '../services/macro.service';
+import { Subject, takeUntil } from 'rxjs';
+
+export interface ClassInfo {
+    name: string;
+    displayName: string;
+    icon: string;
+    color: string;
+    macroCount: number;
+}
+
+export interface HomeMacrosResponse {
+    [className: string]: {
+        recent: Macro[];
+        popular: Macro[];
+    };
+}
 
 @Component({
     selector: 'view-all-macros',
-    templateUrl: './view-all-macros.component.html',
     standalone: true,
+    templateUrl: './view-all-macros.component.html',
     imports: [
         CommonModule,
-        ReactiveFormsModule,
-        FormsModule,
+        RouterModule,
         MatButtonModule,
         MatIconModule,
-        MatMenuModule,
         MatTooltipModule,
-        MatInputModule,
-        MatFormFieldModule,
-        MatCardModule,
-        MatSelectModule,
-        MatChipsModule,
-        MatProgressSpinnerModule
+        RouterLink
     ]
 })
-export class ViewAllMacrosComponent implements OnInit, OnChanges {
-    @Input() macroSelected: boolean = false;
-    @Input() selectedMacro: Macro | null = null;
-    @Input() selectedMacroName: string = '';
-    @Input() isAuthenticated: boolean = false;
-    @Input() editingName: boolean = false;
-    @Input() nameForm: FormGroup = this.fb.group({
-        name: ['', [Validators.required, Validators.maxLength(100)]]
-    });
-    @Input() opened: boolean = true;
-    @Input() currentMacroCount: number = 0;
-    @Input() maxMacros: number = 50;
-
-    @Output() deleteMacro = new EventEmitter<Macro>();
-    @Output() shareMacro = new EventEmitter<void>();
-    @Output() editName = new EventEmitter<void>();
-    @Output() saveName = new EventEmitter<void>();
-    @Output() cancelName = new EventEmitter<void>();
-    @Output() togglePublic = new EventEmitter<void>();
-    @Output() refreshChildMacros = new EventEmitter<void>();
-    @Output() updateMacro = new EventEmitter<Macro>();
-    @Output() toggleDrawer = new EventEmitter<void>();
-    @Output() macroUpdated = new EventEmitter<Macro>();
-    @Output() selectMacro = new EventEmitter<Macro>();
-
-    canDuplicate: boolean = false;
+export class ViewAllMacrosComponent implements OnInit, OnDestroy {
+    classMacros: HomeMacrosResponse = {};
+    isAuthenticated = false;
+    isLoading = false;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
 
-    // Filter and search properties
-    searchTerm = '';
-    selectedClass = '';
-    sortBy = 'name';
-    isLoading = false;
+    // Expose Object to template
+    Object = Object;
 
-    // Macro data
-    allMacros: Macro[] = [];
-    filteredMacros: Macro[] = [];
-    totalMacros: number = 0;
-    currentPage: number = 1;
-    pageSize: number = 20;
-
-    classes = [
-        { name: 'deathknight', displayName: 'Death Knight', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_deathknight.jpg' },
-        { name: 'demonhunter', displayName: 'Demon Hunter', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_demonhunter.jpg' },
-        { name: 'druid', displayName: 'Druid', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_druid.jpg' },
-        { name: 'evoker', displayName: 'Evoker', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_evoker.jpg' },
-        { name: 'hunter', displayName: 'Hunter', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_hunter.jpg' },
-        { name: 'mage', displayName: 'Mage', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg' },
-        { name: 'monk', displayName: 'Monk', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_monk.jpg' },
-        { name: 'paladin', displayName: 'Paladin', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_paladin.jpg' },
-        { name: 'priest', displayName: 'Priest', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_priest.jpg' },
-        { name: 'rogue', displayName: 'Rogue', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_rogue.jpg' },
-        { name: 'shaman', displayName: 'Shaman', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_shaman.jpg' },
-        { name: 'warlock', displayName: 'Warlock', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_warlock.jpg' },
-        { name: 'warrior', displayName: 'Warrior', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_warrior.jpg' },
-        { name: 'miscellaneous', displayName: 'Miscellaneous', icon: 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg' }
+    classes: ClassInfo[] = [
+        { name: 'deathknight', displayName: 'Death Knight', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_deathknight.jpg', color: '#C41F3B', macroCount: 0 },
+        { name: 'demonhunter', displayName: 'Demon Hunter', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_demonhunter.jpg', color: '#A330C9', macroCount: 0 },
+        { name: 'druid', displayName: 'Druid', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_druid.jpg', color: '#FF7D0A', macroCount: 0 },
+        { name: 'evoker', displayName: 'Evoker', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_evoker.jpg', color: '#33937F', macroCount: 0 },
+        { name: 'hunter', displayName: 'Hunter', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_hunter.jpg', color: '#ABD473', macroCount: 0 },
+        { name: 'mage', displayName: 'Mage', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg', color: '#69CCF0', macroCount: 0 },
+        { name: 'monk', displayName: 'Monk', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_monk.jpg', color: '#00FF96', macroCount: 0 },
+        { name: 'paladin', displayName: 'Paladin', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_paladin.jpg', color: '#F58CBA', macroCount: 0 },
+        { name: 'priest', displayName: 'Priest', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_priest.jpg', color: '#FFFFFF', macroCount: 0 },
+        { name: 'rogue', displayName: 'Rogue', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_rogue.jpg', color: '#FFF569', macroCount: 0 },
+        { name: 'shaman', displayName: 'Shaman', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_shaman.jpg', color: '#0070DE', macroCount: 0 },
+        { name: 'warlock', displayName: 'Warlock', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_warlock.jpg', color: '#9482C9', macroCount: 0 },
+        { name: 'warrior', displayName: 'Warrior', icon: 'https://wow.zamimg.com/images/wow/icons/large/classicon_warrior.jpg', color: '#C79C6E', macroCount: 0 },
+        { name: 'miscellaneous', displayName: 'Miscellaneous', icon: 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg', color: '#808080', macroCount: 0 }
     ];
 
-
     constructor(
-        private fb: FormBuilder,
+        private _authService: AuthService,
         private router: Router,
-        private snackBar: MatSnackBar,
-        private dialog: MatDialog,
-        private _userService: UserService,
         private macroService: MacroService
     ) { }
 
     ngOnInit(): void {
-        this.loadAllMacros();
-        this.canDuplicate = this.currentMacroCount < this.maxMacros;
-    }
+        this._authService.check().subscribe(authenticated => {
+            this.isAuthenticated = authenticated;
+        });
 
-    ngOnChanges(changes: SimpleChanges): void {
-        if (changes['currentMacroCount']) {
-            this.canDuplicate = this.currentMacroCount < this.maxMacros;
-        }
+        this.loadMacros();
     }
 
     ngOnDestroy(): void {
@@ -124,149 +82,48 @@ export class ViewAllMacrosComponent implements OnInit, OnChanges {
         this._unsubscribeAll.complete();
     }
 
-    loadAllMacros(): void {
+    loadMacros() {
         this.isLoading = true;
+        this.classMacros = {};
 
-        const params = {
-            page: this.currentPage,
-            limit: this.pageSize,
-            search: this.searchTerm || undefined,
-            class: this.selectedClass || undefined,
-            sortBy: this.sortBy,
-            sortOrder: 'desc' as const
-        };
-
-        this.macroService.getMacros(params)
+        // Load popular macros for all classes
+        this.macroService.getPopularMacros(1, 5)
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe({
                 next: (response: MacroResponse) => {
-                    this.allMacros = response.macros.map(macro => this.transformMacro(macro));
-                    this.totalMacros = response.total;
-                    this.filteredMacros = [...this.allMacros];
+                    this.processMacrosResponse(response);
                     this.isLoading = false;
                 },
                 error: (error) => {
-                    console.error('Error loading macros:', error);
-                    this.snackBar.open('Failed to load macros. Please try again.', 'Close', {
-                        duration: 3000,
-                        panelClass: ['error-snackbar']
-                    });
+                    console.error('Error loading popular macros:', error);
                     this.isLoading = false;
-                    // Fallback to empty array
-                    this.allMacros = [];
-                    this.filteredMacros = [];
                 }
             });
     }
 
+    private processMacrosResponse(response: MacroResponse) {
+        const processedResponse: HomeMacrosResponse = {};
 
-    filterMacros(): void {
-        // Since we're using server-side filtering, just reload the data
-        this.loadAllMacros();
-    }
+        // Initialize all classes with empty arrays
+        this.classes.forEach(classInfo => {
+            processedResponse[classInfo.name] = {
+                recent: [],
+                popular: []
+            };
+        });
 
-    onSearchChange(): void {
-        this.filterMacros();
-    }
-
-    onClassChange(): void {
-        this.filterMacros();
-    }
-
-    onCategoryChange(): void {
-        this.filterMacros();
-    }
-
-    onSortChange(): void {
-        this.filterMacros();
-    }
-
-    selectMacroHandler(macro: Macro): void {
-        this.selectMacro.emit(macro);
-    }
-
-    navigateToMacro(macro: Macro): void {
-        console.log('Navigating to macro:', macro);
-        if (!macro || !macro.id) {
-            console.error('Invalid macro or missing id:', macro);
-            return;
-        }
-        this.router.navigate(['/macros', macro.id]);
-    }
-
-    onCreateNewMacro(): void {
-        this.router.navigate(['/macros/create']);
-    }
-
-    onDeleteMacro(): void {
-        if (!this.selectedMacro) return;
-
-        const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-            data: {
-                title: 'Delete Macro',
-                message: `Are you sure you want to delete "${this.selectedMacro.name}"? This action cannot be undone.`,
-                confirmText: 'Delete',
-                cancelText: 'Cancel'
+        // Group macros by class
+        response.macros.forEach(macro => {
+            const className = macro.class || 'miscellaneous';
+            if (processedResponse[className]) {
+                // Add to popular macros (since we're using getPopularMacros)
+                processedResponse[className].popular.push(this.transformMacro(macro));
             }
         });
 
-        dialogRef.afterClosed().subscribe(result => {
-            if (result) {
-                this.deleteMacro.emit(this.selectedMacro!);
-            }
-        });
+        this.classMacros = processedResponse;
     }
 
-    onDuplicateMacro(): void {
-        if (!this.selectedMacro) return;
-        // TODO: Implement duplicate functionality
-        this.snackBar.open('Duplicate functionality coming soon!', 'Close', { duration: 3000 });
-    }
-
-    onShareMacro(): void {
-        if (!this.selectedMacro) return;
-        this.shareMacro.emit();
-    }
-
-    onEditName(): void {
-        this.editName.emit();
-    }
-
-    onSaveName(): void {
-        if (this.nameForm.valid) {
-            this.saveName.emit();
-        }
-    }
-
-    onCancelName(): void {
-        this.cancelName.emit();
-    }
-
-    onTogglePublic(): void {
-        this.togglePublic.emit();
-    }
-
-    onRefreshChildMacros(): void {
-        this.refreshChildMacros.emit();
-    }
-
-    onUpdateMacro(macro: Macro): void {
-        this.updateMacro.emit(macro);
-    }
-
-    getClassDisplayName(className: string): string {
-        const classInfo = this.classes.find(c => c.name === className);
-        return classInfo ? classInfo.displayName : className;
-    }
-
-
-    trackByMacroId(index: number, macro: Macro): string {
-        return macro.id;
-    }
-
-    /**
-     * Transform API macro data to match component interface
-     */
     private transformMacro(apiMacro: any): Macro {
         return {
             id: apiMacro.id,
@@ -286,5 +143,22 @@ export class ViewAllMacrosComponent implements OnInit, OnChanges {
             createdAt: apiMacro.createdAt || (apiMacro.created_at ? new Date(apiMacro.created_at) : new Date()),
             updatedAt: apiMacro.updatedAt || (apiMacro.updated_at ? new Date(apiMacro.updated_at) : new Date())
         };
+    }
+
+    scrollToClass(className: string): void {
+        const elementId = `class-${className.toLowerCase().replace(/\s+/g, '-')}`;
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    navigateToMacro(macro: Macro): void {
+        console.log('Navigating to macro:', macro);
+        if (!macro || !macro.id) {
+            console.error('Invalid macro or missing id:', macro);
+            return;
+        }
+        this.router.navigate(['/macros', macro.id]);
     }
 }

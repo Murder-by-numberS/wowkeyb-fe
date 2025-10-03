@@ -1,0 +1,38 @@
+# Frontend Class Name Formatting Rules
+
+## Class Name Convention
+- **Frontend**: Class names are displayed in capitalized format (e.g., "Hunter", "Paladin", "Death Knight")
+- **Backend**: Class names are stored in lowercase format (e.g., "hunter", "paladin", "deathknight")
+
+## Data Transformation Rules
+
+### When sending data TO the backend:
+- Convert class names from capitalized to lowercase
+- Example: "Death Knight" → "deathknight", "Hunter" → "hunter"
+
+### When receiving data FROM the backend:
+- Convert class names from lowercase to capitalized for display
+- Example: "deathknight" → "Death Knight", "hunter" → "Hunter"
+
+## Implementation Guidelines
+1. Always use utility functions for class name transformations
+2. Apply transformations in service layers before API calls
+3. Apply transformations in service layers after receiving API responses
+4. Keep display logic separate from data transformation logic
+5. Ensure consistent formatting across all components
+
+## Class Name Mapping
+Common class name transformations:
+- "deathknight" ↔ "Death Knight"
+- "demonhunter" ↔ "Demon Hunter"
+- "druid" ↔ "Druid"
+- "evoker" ↔ "Evoker"
+- "hunter" ↔ "Hunter"
+- "mage" ↔ "Mage"
+- "monk" ↔ "Monk"
+- "paladin" ↔ "Paladin"
+- "priest" ↔ "Priest"
+- "rogue" ↔ "Rogue"
+- "shaman" ↔ "Shaman"
+- "warlock" ↔ "Warlock"
+- "warrior" ↔ "Warrior"

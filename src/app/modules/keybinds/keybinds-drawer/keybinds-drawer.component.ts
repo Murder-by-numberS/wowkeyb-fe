@@ -1,5 +1,5 @@
 //Angular
-import { Component, ViewEncapsulation, OnInit, signal, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, OnDestroy, signal, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 
@@ -26,6 +26,7 @@ import { Keybinding } from 'app/core/types/keybinding';
 import { keybinds } from './data';
 import { classes } from 'app/core/data/classes';
 import { random } from 'lodash';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
     selector: 'keybinds-drawer',
@@ -49,17 +50,20 @@ import { random } from 'lodash';
         MatTooltipModule
     ],
 })
-export class KeybindsDrawerComponent implements OnInit {
+export class KeybindsDrawerComponent implements OnInit, OnDestroy {
     @ViewChild(MatAccordion) accordion: MatAccordion;
 
     readonly panelOpenState = signal(false);
 
-    @Input() refreshKeybindings: boolean;
+    @Input() isKeybindingSelected: boolean = false;
+    @Input() selectedKeybinding: any = null;
 
     keybindings: Keybinding[];
     filteredKeybindings: Keybinding[];
     selectedKeybindingId: string | null = null; // To keep track of the selected keybind
     @Output() keybindingSelected = new EventEmitter<any>();
+    @Output() refreshKeybindings = new EventEmitter<void>();
+    @Output() keybindingUpdated = new EventEmitter<any>();
     MAX_SIZE = 10;
 
     selectedClasses = new FormControl<any[]>([]);
@@ -68,6 +72,8 @@ export class KeybindsDrawerComponent implements OnInit {
 
     filterApplied: boolean = false;
     preventAutoSelection: boolean = false; // Flag to prevent auto-selection
+    isLoading: boolean = false;
+    private destroy$ = new Subject<void>();
 
     keybindingService = inject(KeybindingService);
     snackBar = inject(MatSnackBar);
@@ -107,30 +113,46 @@ export class KeybindsDrawerComponent implements OnInit {
         });
     }
 
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
     loadKeybindings() {
         console.log('KeybindsDrawerComponent - loadKeybindings');
-        this.keybindingService.currentKeybindings.subscribe(keybindings => {
-            console.log('KeybindsDrawerComponent - received keybindings:', keybindings.length);
-            console.log('KeybindsDrawerComponent - keybindings data:', keybindings);
-            this.keybindings = keybindings;
-            this.applyFilter();
+        this.isLoading = true;
 
-            // Only auto-select if we're not preventing auto-selection
-            if (!this.preventAutoSelection) {
-                // If we're on the my-keybindings page and no keybinding is selected, select the first one
-                if (window.location.pathname === '/keybinds/my-keybindings' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
-                    const firstKeybinding = this.filteredKeybindings[0];
-                    this.selectedKeybindingId = firstKeybinding.keybindingId;
-                    this.keybindingSelected.emit(firstKeybinding);
+        // Load user's keybindings from the backend
+        this.keybindingService.getKeybindings()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (keybindings) => {
+                    console.log('KeybindsDrawerComponent - loaded keybindings from backend:', keybindings.length);
+                    this.keybindings = keybindings;
+                    this.applyFilter();
+                    this.isLoading = false;
+
+                    // Only auto-select if we're not preventing auto-selection
+                    if (!this.preventAutoSelection) {
+                        // If we're on the my-keybindings page and no keybinding is selected, select the first one
+                        if (window.location.pathname === '/keybinds/my-keybindings' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
+                            const firstKeybinding = this.filteredKeybindings[0];
+                            this.selectedKeybindingId = firstKeybinding.keybindingId;
+                            this.keybindingSelected.emit(firstKeybinding);
+                        }
+                        // If we're on the home page and no keybinding is selected, select the last one
+                        else if (window.location.pathname === '/keybinds' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
+                            const lastKeybinding = this.filteredKeybindings[this.filteredKeybindings.length - 1];
+                            this.selectedKeybindingId = lastKeybinding.keybindingId;
+                            this.keybindingSelected.emit(lastKeybinding);
+                        }
+                    }
+                },
+                error: (error) => {
+                    console.error('Error loading keybindings:', error);
+                    this.isLoading = false;
                 }
-                // If we're on the view-all page and no keybinding is selected, select the last one
-                else if (window.location.pathname === '/keybinds/view' && !this.selectedKeybindingId && this.filteredKeybindings.length > 0) {
-                    const lastKeybinding = this.filteredKeybindings[this.filteredKeybindings.length - 1];
-                    this.selectedKeybindingId = lastKeybinding.keybindingId;
-                    this.keybindingSelected.emit(lastKeybinding);
-                }
-            }
-        });
+            });
     }
 
     forceRefreshKeybindings() {

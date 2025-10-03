@@ -28,7 +28,7 @@ import { AbilitiesService } from 'app/core/services/abilities.service';
 import { VersionCompareService } from 'app/core/services/version-compare.service';
 
 //Data
-import { classes, fullClasses } from 'app/core/data/classes';
+import { fullClasses } from 'app/core/data/classes';
 
 //Interfaces
 import { Ability } from 'app/core/types/ability';
@@ -88,7 +88,21 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     // Data properties
     abilities: Ability[] = [];
     filteredAbilities: Ability[] = [];
-    classes = classes;
+    classes = [
+        { value: 'deathknight', label: 'Death Knight' },
+        { value: 'demonhunter', label: 'Demon Hunter' },
+        { value: 'druid', label: 'Druid' },
+        { value: 'evoker', label: 'Evoker' },
+        { value: 'hunter', label: 'Hunter' },
+        { value: 'mage', label: 'Mage' },
+        { value: 'monk', label: 'Monk' },
+        { value: 'paladin', label: 'Paladin' },
+        { value: 'priest', label: 'Priest' },
+        { value: 'rogue', label: 'Rogue' },
+        { value: 'shaman', label: 'Shaman' },
+        { value: 'warlock', label: 'Warlock' },
+        { value: 'warrior', label: 'Warrior' }
+    ];
     specs = [];
     heroTalents = [];
     gameVersions: string[] = [];
@@ -99,8 +113,8 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     dataSource: Ability[] = [];
 
     // Pagination
-    currentPage = 1; // Changed to 1-based indexing for backend compatibility
-    abilitiesPerPage = 100; // Changed to 100 for server-side pagination
+    currentPage = 1; // 1-based indexing for backend compatibility
+    abilitiesPerPage = 100; // 100 abilities per page
 
     // Infinite scroll
     displayedAbilities: Ability[] = [];
@@ -238,16 +252,27 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         if (params['class']) {
             this.selectedClass = params['class'];
             // Load specs for this class
-            this.specs = Object.keys(fullClasses[this.selectedClass].specs);
-            const allHeroTalents = Object.values(fullClasses[this.selectedClass].specs).flat();
-            this.heroTalents = [...new Set(allHeroTalents)];
+            const classData = fullClasses[this.selectedClass];
+            if (classData && classData.specs) {
+                this.specs = Object.keys(classData.specs);
+                const allHeroTalents = Object.values(classData.specs).flat();
+                this.heroTalents = [...new Set(allHeroTalents)];
+            } else {
+                this.specs = [];
+                this.heroTalents = [];
+            }
         }
 
         if (params['spec']) {
             this.selectedSpec = params['spec'];
             // Load hero talents for this spec
             if (this.selectedClass && this.selectedSpec) {
-                this.heroTalents = fullClasses[this.selectedClass].specs[this.selectedSpec];
+                const classData = fullClasses[this.selectedClass];
+                if (classData && classData.specs && classData.specs[this.selectedSpec]) {
+                    this.heroTalents = classData.specs[this.selectedSpec];
+                } else {
+                    this.heroTalents = [];
+                }
             }
         }
 
@@ -320,11 +345,17 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         this.selectedHeroTalent = undefined;
 
         if (selectedClass) {
-            // Show actual specs plus an option to view all hero talents
-            this.specs = Object.keys(fullClasses[selectedClass].specs);
-            // Get all hero talents for this class (remove duplicates)
-            const allHeroTalents = Object.values(fullClasses[selectedClass].specs).flat();
-            this.heroTalents = [...new Set(allHeroTalents)];
+            const classData = fullClasses[selectedClass];
+            if (classData && classData.specs) {
+                // Show actual specs plus an option to view all hero talents
+                this.specs = Object.keys(classData.specs);
+                // Get all hero talents for this class (remove duplicates)
+                const allHeroTalents = Object.values(classData.specs).flat();
+                this.heroTalents = [...new Set(allHeroTalents)];
+            } else {
+                this.specs = [];
+                this.heroTalents = [];
+            }
         } else {
             this.specs = [];
             this.heroTalents = [];
@@ -344,13 +375,22 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         this.selectedHeroTalent = undefined;
 
         if (this.selectedClass) {
-            if (selectedSpec) {
-                // Show hero talents for the selected spec
-                this.heroTalents = fullClasses[this.selectedClass].specs[selectedSpec];
+            const classData = fullClasses[this.selectedClass];
+            if (classData && classData.specs) {
+                if (selectedSpec) {
+                    // Show hero talents for the selected spec
+                    if (classData.specs[selectedSpec]) {
+                        this.heroTalents = classData.specs[selectedSpec];
+                    } else {
+                        this.heroTalents = [];
+                    }
+                } else {
+                    // Show all hero talents for the class (remove duplicates)
+                    const allHeroTalents = Object.values(classData.specs).flat();
+                    this.heroTalents = [...new Set(allHeroTalents)];
+                }
             } else {
-                // Show all hero talents for the class (remove duplicates)
-                const allHeroTalents = Object.values(fullClasses[this.selectedClass].specs).flat();
-                this.heroTalents = [...new Set(allHeroTalents)];
+                this.heroTalents = [];
             }
         } else {
             this.heroTalents = [];
@@ -478,7 +518,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         const gameVersion = this.selectedGameVersion || this.gameVersions[0];
         console.log('Game version for all abilities:', gameVersion);
 
-        // Call the abilities endpoint with only game version filter and pagination
+        // Call the abilities endpoint with only game version filter (no pagination)
         console.log('🔍 AbilitiesComponent - Calling getAbilitiesWithFilters with:', {
             gameVersion,
             filterMode: 'inclusion',
@@ -493,7 +533,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
             limit: this.abilitiesPerPage
         }).subscribe({
             next: (data) => {
-                console.log('✅ All abilities loaded successfully for page', this.currentPage, ':', data);
+                console.log('✅ All abilities loaded successfully:', data);
 
                 // Handle response format - could be array or object with data and total
                 let abilities = data;
@@ -764,6 +804,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         this.clearAllColumnFilters();
     }
 
+
     /**
      * Check if any filters are active
      */
@@ -803,6 +844,22 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
      */
     toggleFilters() {
         this.filtersExpanded = !this.filtersExpanded;
+    }
+
+    /**
+     * Handle click outside filters to close them on desktop
+     */
+    onOutsideClick(event: Event) {
+        // Only close filters on desktop if clicking outside the filter card
+        if (this.isMobile) return;
+
+        const target = event.target as HTMLElement;
+        const filterCard = target.closest('mat-card');
+
+        // If click is not inside the filter card, close the filters
+        if (!filterCard && this.filtersExpanded) {
+            this.filtersExpanded = false;
+        }
     }
 
     /**
@@ -1242,30 +1299,19 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Get abilities for current page
-     */
-    getAbilitiesForCurrentPage() {
-        const startIndex = (this.currentPage - 1) * this.abilitiesPerPage;
-        const endIndex = startIndex + this.abilitiesPerPage;
-        return this.filteredAbilities.slice(startIndex, endIndex);
-    }
-
-    /**
      * Go to previous page
      */
     goToPreviousPage() {
         if (this.currentPage > 1) {
             this.currentPage--;
             console.log('🔍 Going to previous page:', this.currentPage);
-            console.log('🔍 Has active column filters:', this.hasActiveColumnFilters());
-            console.log('🔍 Has active main filters:', this.hasActiveMainFilters());
 
             if (this.hasActiveColumnFilters()) {
                 this.fetchAbilitiesWithColumnFilters();
             } else if (this.hasActiveMainFilters()) {
-                this.fetchAbilities(); // Fetch new data from server with filters
+                this.fetchAbilities();
             } else {
-                this.fetchAllAbilities(); // Fetch all abilities without filters
+                this.fetchAllAbilities();
             }
         }
     }
@@ -1277,15 +1323,13 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         if (this.currentPage < this.maxPage()) {
             this.currentPage++;
             console.log('🔍 Going to next page:', this.currentPage);
-            console.log('🔍 Has active column filters:', this.hasActiveColumnFilters());
-            console.log('🔍 Has active main filters:', this.hasActiveMainFilters());
 
             if (this.hasActiveColumnFilters()) {
                 this.fetchAbilitiesWithColumnFilters();
             } else if (this.hasActiveMainFilters()) {
-                this.fetchAbilities(); // Fetch new data from server with filters
+                this.fetchAbilities();
             } else {
-                this.fetchAllAbilities(); // Fetch all abilities without filters
+                this.fetchAllAbilities();
             }
         }
     }
@@ -1470,8 +1514,13 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
 
         // Reload hero talents for the current class (all hero talents)
         if (this.selectedClass) {
-            const allHeroTalents = Object.values(fullClasses[this.selectedClass].specs).flat();
-            this.heroTalents = [...new Set(allHeroTalents)];
+            const classData = fullClasses[this.selectedClass];
+            if (classData && classData.specs) {
+                const allHeroTalents = Object.values(classData.specs).flat();
+                this.heroTalents = [...new Set(allHeroTalents)];
+            } else {
+                this.heroTalents = [];
+            }
         }
 
         // Update URL and fetch abilities

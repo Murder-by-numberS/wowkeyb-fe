@@ -9,14 +9,13 @@ import { MatButtonModule } from '@angular/material/button';
         MatDialogActions, MatDialogContent, MatButtonModule,
     ],
     template: `
-    <h2 mat-dialog-title>Confirm Selection</h2>
+    <h2 mat-dialog-title>{{ data?.title || 'Confirm' }}</h2>
     <mat-dialog-content>
-      <div class="flex flex-row"><p>{{data.text}}<p>
-        @if(data.option){<p class="ml-2">{{ data.option }}?<p>}</div>
+      <p class="leading-relaxed">{{ data?.message || 'Are you sure you want to proceed?' }}</p>
     </mat-dialog-content>
     <mat-dialog-actions>
-      <button mat-stroked-button (click)="onCancel()">Cancel</button>
-      <button mat-stroked-button color="primary" (click)="onConfirm()">Confirm</button>
+      <button mat-stroked-button (click)="onCancel()">{{ data?.cancelText || 'Cancel' }}</button>
+      <button mat-stroked-button color="primary" (click)="onConfirm()">{{ data?.confirmText || 'Confirm' }}</button>
     </mat-dialog-actions>
   `
 })
