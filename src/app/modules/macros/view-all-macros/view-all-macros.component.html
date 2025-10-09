@@ -2,7 +2,7 @@
     <!-- Header -->
     <div class="flex flex-col items-center justify-center p-4 sm:p-8">
         <h1 class="text-2xl sm:text-4xl font-bold mb-4">Macros</h1>
-        <p class="text-base sm:text-xl mb-8 text-center">Browse public macros or create your own</p>
+        <p class="text-base sm:text-xl mb-8 text-center">Browse public macros shared by the community</p>
         @if (isAuthenticated) {
         <button mat-raised-button color="primary" routerLink="/macros/my-macros">
             <mat-icon class="mr-2">add</mat-icon>
@@ -11,7 +11,7 @@
         } @else {
         <button mat-raised-button color="primary" routerLink="/sign-in">
             <mat-icon class="mr-2">login</mat-icon>
-            Login to Create
+            Login to Create Macros
         </button>
         }
     </div>

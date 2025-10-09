@@ -11,6 +11,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { IconPickerComponent } from '../../icons/components/icon-picker/icon-picker.component';
+import { AbilityPickerComponent, AbilitySelection } from '../components/ability-picker/ability-picker.component';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -49,7 +50,8 @@ interface ExpandableMacro extends Macro {
         MatChipsModule,
         MatProgressSpinnerModule,
         MatSlideToggleModule,
-        IconPickerComponent
+        IconPickerComponent,
+        AbilityPickerComponent
     ]
 })
 export class MyMacrosComponent implements OnInit, OnChanges {
@@ -77,31 +79,8 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     // Create macro form properties
     createForm: FormGroup;
     createSelectedIcon: Icon | null = null;
-    createMacroName = '';
-    createMacroDescription = '';
-    createMacroText = '';
-    createSelectedClass = '';
-    createSelectedSpec = '';
-    createSelectedHeroTalent = '';
-    createSpecs: string[] = [];
-    createHeroTalents: string[] = [];
+    createSelectedAbility: AbilitySelection | null = null;
 
-    // Classes data for create form
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
 
     private destroy$ = new Subject<void>();
 
@@ -125,10 +104,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.createForm = this.fb.group({
             name: ['', [Validators.required, Validators.maxLength(100)]],
             description: ['', [Validators.maxLength(500)]],
-            macro_text: ['', [Validators.required, Validators.maxLength(255)]],
-            class: ['', [Validators.required]],
-            spec: [{ value: '', disabled: true }],
-            hero_talent: [{ value: '', disabled: true }]
+            macro_text: ['', [Validators.required, Validators.maxLength(255)]]
         });
     }
 
@@ -522,9 +498,9 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             name: formData.name,
             description: formData.description,
             macro_text: formData.macro_text,
-            class: formData.class,
-            spec: formData.spec || undefined,
-            hero_talent: formData.hero_talent || undefined,
+            class: this.createSelectedAbility?.class || undefined,
+            spec: this.createSelectedAbility?.spec || undefined,
+            hero_talent: this.createSelectedAbility?.heroTalent || undefined,
             icon: this.createSelectedIcon?._id || undefined,
             is_public: false
         };
@@ -562,59 +538,18 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.createSelectedIcon = null;
     }
 
-    onCreateClassChange(): void {
-        this.createSelectedSpec = '';
-        this.createSelectedHeroTalent = '';
-        this.createForm.patchValue({ spec: '', hero_talent: '' });
-
-        if (this.createSelectedClass) {
-            const classData = fullClasses[this.createSelectedClass];
-            if (classData && classData.specs) {
-                this.createSpecs = Object.keys(classData.specs);
-                this.createForm.get('spec')?.enable();
-            } else {
-                this.createSpecs = [];
-                this.createForm.get('spec')?.disable();
-            }
-        } else {
-            this.createSpecs = [];
-            this.createForm.get('spec')?.disable();
-        }
-        this.createHeroTalents = [];
-        this.createForm.get('hero_talent')?.disable();
+    onCreateAbilitySelected(ability: AbilitySelection): void {
+        this.createSelectedAbility = ability;
     }
 
-    onCreateSpecChange(): void {
-        this.createSelectedHeroTalent = '';
-        this.createForm.patchValue({ hero_talent: '' });
-
-        if (this.createSelectedClass && this.createSelectedSpec) {
-            const classData = fullClasses[this.createSelectedClass];
-            if (classData && classData.specs && classData.specs[this.createSelectedSpec]) {
-                this.createHeroTalents = classData.specs[this.createSelectedSpec];
-                this.createForm.get('hero_talent')?.enable();
-            } else {
-                this.createHeroTalents = [];
-                this.createForm.get('hero_talent')?.disable();
-            }
-        } else {
-            this.createHeroTalents = [];
-            this.createForm.get('hero_talent')?.disable();
-        }
+    onCreateAbilityCleared(): void {
+        this.createSelectedAbility = null;
     }
+
 
     private resetCreateForm(): void {
         this.createForm.reset();
-        this.createForm.get('spec')?.disable();
-        this.createForm.get('hero_talent')?.disable();
         this.createSelectedIcon = null;
-        this.createMacroName = '';
-        this.createMacroDescription = '';
-        this.createMacroText = '';
-        this.createSelectedClass = '';
-        this.createSelectedSpec = '';
-        this.createSelectedHeroTalent = '';
-        this.createSpecs = [];
-        this.createHeroTalents = [];
+        this.createSelectedAbility = null;
     }
 }

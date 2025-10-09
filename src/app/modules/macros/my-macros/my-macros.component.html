@@ -58,13 +58,6 @@
                 }
             </div>
 
-            <!-- Drawer Footer -->
-            <div class="flex-shrink-0 p-4 border-t border-gray-200">
-                <button mat-flat-button color="primary" (click)="onCreateNewMacro()" class="w-full">
-                    <mat-icon class="mr-2">add</mat-icon>
-                    Create New Macro
-                </button>
-            </div>
         </div>
         }
     </div>
@@ -180,42 +173,14 @@
                                 </app-icon-picker>
                             </div>
 
-                            <!-- Class, Spec, and Hero Talent Selection -->
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <!-- Class Selection -->
-                                <mat-form-field appearance="outline" class="w-full">
-                                    <mat-label>Class</mat-label>
-                                    <mat-select formControlName="class" (selectionChange)="onCreateClassChange()">
-                                        <mat-option value="">Select Class</mat-option>
-                                        <mat-option *ngFor="let class of classes" [value]="class.value">
-                                            {{ class.label }}
-                                        </mat-option>
-                                    </mat-select>
-                                    <mat-error *ngIf="createForm.get('class')?.hasError('required')">Class is
-                                        required</mat-error>
-                                </mat-form-field>
-
-                                <!-- Spec Selection -->
-                                <mat-form-field appearance="outline" class="w-full">
-                                    <mat-label>Specialization (Optional)</mat-label>
-                                    <mat-select formControlName="spec" (selectionChange)="onCreateSpecChange()">
-                                        <mat-option value="">Select Spec</mat-option>
-                                        <mat-option *ngFor="let spec of createSpecs" [value]="spec">
-                                            {{ spec }}
-                                        </mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-
-                                <!-- Hero Talent Selection -->
-                                <mat-form-field appearance="outline" class="w-full">
-                                    <mat-label>Hero Talent (Optional)</mat-label>
-                                    <mat-select formControlName="hero_talent">
-                                        <mat-option value="">Select Hero Talent</mat-option>
-                                        <mat-option *ngFor="let heroTalent of createHeroTalents" [value]="heroTalent">
-                                            {{ heroTalent }}
-                                        </mat-option>
-                                    </mat-select>
-                                </mat-form-field>
+                            <!-- Ability Picker -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-700">Ability Selection (Optional)</label>
+                                <app-ability-picker [selectedAbility]="createSelectedAbility"
+                                    (abilitySelected)="onCreateAbilitySelected($event)"
+                                    (abilityCleared)="onCreateAbilityCleared()"
+                                    placeholder="Configure ability selection for your macro">
+                                </app-ability-picker>
                             </div>
 
                             <!-- Macro Text -->

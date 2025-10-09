@@ -15,6 +15,7 @@ export interface Macro {
     spec?: string;
     hero_talent?: string; // Backend field name
     heroTalent?: string; // For compatibility
+    ability?: string; // Ability ID reference
     tags?: string[];
     icon?: string; // Icon ID for macro icon
     is_public?: boolean; // Backend field name
@@ -35,9 +36,10 @@ export interface CreateMacroRequest {
     name: string;
     description?: string;
     macro_text: string;
-    class: string;
+    class?: string; // Made optional - only required when ability is specified
     spec?: string;
     hero_talent?: string;
+    ability?: string; // Ability ID reference
     game_version?: string; // Optional - backend will auto-set to latest
     tags?: string[];
     icon?: string; // Icon ID, not object

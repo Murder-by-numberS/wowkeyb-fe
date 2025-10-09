@@ -1,0 +1,95 @@
+<!-- Ability Picker Container -->
+<div class="w-full">
+    <!-- Selected Ability Display -->
+    <div *ngIf="hasSelection()"
+        class="flex items-center justify-between p-3 bg-slate-50 border-2 border-slate-200 rounded-lg mb-2 hover:border-slate-300 hover:bg-slate-100 transition-all duration-200">
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+            <mat-icon class="text-blue-600 text-xl">auto_awesome</mat-icon>
+            <span class="text-sm font-medium text-slate-800 truncate">{{ getDisplayText() }}</span>
+        </div>
+        <button mat-icon-button (click)="clearSelection()" matTooltip="Clear selection" class="flex-shrink-0 ml-2">
+            <mat-icon class="text-slate-500 hover:text-red-500">close</mat-icon>
+        </button>
+    </div>
+
+    <!-- Ability Picker Button -->
+    <button type="button" mat-stroked-button (click)="openAbilityPicker()"
+        class="w-full p-3 border-2 border-dashed border-slate-300 rounded-lg bg-white text-slate-500 font-medium transition-all duration-200 flex items-center justify-center gap-2 hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50">
+        <mat-icon>auto_awesome</mat-icon>
+        <span>{{ hasSelection() ? 'Change Ability' : 'Select Ability' }}</span>
+    </button>
+</div>
+
+<!-- Simple Centered Modal -->
+<div *ngIf="showDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-5"
+    (click)="onBackdropClick($event)">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        (click)="$event.stopPropagation()">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-slate-200">
+            <h2 class="text-xl font-semibold text-slate-800">Configure Ability Selection</h2>
+            <button mat-icon-button (click)="cancelSelection()">
+                <mat-icon class="text-slate-500 hover:text-slate-700">close</mat-icon>
+            </button>
+        </div>
+
+        <!-- Ability Selection Form -->
+        <div class="p-6 overflow-y-auto flex-1">
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <!-- Class Selection -->
+                <mat-form-field appearance="outline" class="w-full md:flex-1">
+                    <mat-label>Class (Optional)</mat-label>
+                    <mat-select [(ngModel)]="selectedClass" (selectionChange)="onClassChange()">
+                        <mat-option value="">No Class</mat-option>
+                        <mat-option *ngFor="let class of classes" [value]="class.value">
+                            {{ class.label }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Spec Selection -->
+                <mat-form-field appearance="outline" class="w-full md:flex-1">
+                    <mat-label>Specialization (Optional)</mat-label>
+                    <mat-select [(ngModel)]="selectedSpec" (selectionChange)="onSpecChange()"
+                        [disabled]="!selectedClass">
+                        <mat-option value="">No Spec</mat-option>
+                        <mat-option *ngFor="let spec of specs" [value]="spec">
+                            {{ spec }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Hero Talent Selection -->
+                <mat-form-field appearance="outline" class="w-full md:flex-1">
+                    <mat-label>Hero Talent (Optional)</mat-label>
+                    <mat-select [(ngModel)]="selectedHeroTalent" [disabled]="!selectedSpec">
+                        <mat-option value="">No Hero Talent</mat-option>
+                        <mat-option *ngFor="let heroTalent of heroTalents" [value]="heroTalent">
+                            {{ heroTalent }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <!-- Info Text -->
+            <div class="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <mat-icon class="text-blue-600 text-xl mt-0.5">info</mat-icon>
+                <p class="text-sm text-blue-800 leading-relaxed m-0">Select a class, specialization, and hero talent to
+                    associate with this macro. All fields are optional, but selecting an ability will help users find
+                    your macro more easily.</p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
+            <button mat-button (click)="cancelSelection()"
+                class="text-slate-600 hover:text-slate-800 hover:bg-slate-100">
+                Cancel
+            </button>
+            <button mat-flat-button color="primary" (click)="confirmSelection()"
+                class="bg-blue-600 text-white hover:bg-blue-700">
+                Confirm Selection
+            </button>
+        </div>
+    </div>
+</div>

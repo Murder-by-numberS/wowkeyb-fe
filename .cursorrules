@@ -1,38 +1,58 @@
-# Frontend Class Name Formatting Rules
+# WoWKeyb Frontend - Cursor Rules
 
-## Class Name Convention
-- **Frontend**: Class names are displayed in capitalized format (e.g., "Hunter", "Paladin", "Death Knight")
-- **Backend**: Class names are stored in lowercase format (e.g., "hunter", "paladin", "deathknight")
+## Tech Stack
+- **Framework**: Angular (standalone components)
+- **Styling**: TailwindCSS
+- **UI Library**: Angular Material
+- **State Management**: RxJS Observables
 
-## Data Transformation Rules
+## Styling Guidelines
+- **Use TailwindCSS for all styling** - Do not create or use SCSS files for new components
+- **Prefer Tailwind utility classes** over custom CSS
+- **Use Angular Material components** with Tailwind for layout and spacing
+- **Responsive design** - Use Tailwind's responsive prefixes (sm:, md:, lg:, xl:)
 
-### When sending data TO the backend:
-- Convert class names from capitalized to lowercase
-- Example: "Death Knight" → "deathknight", "Hunter" → "hunter"
+## Component Guidelines
+- **Standalone components only** - All new components should be standalone
+- **No styleUrls** - New components should not include styleUrls or SCSS files
+- **Inline styles only** - Use Angular's `styles` property with Tailwind classes if needed
+- **Consistent spacing** - Use Tailwind's spacing scale (p-4, m-2, gap-6, etc.)
 
-### When receiving data FROM the backend:
-- Convert class names from lowercase to capitalized for display
-- Example: "deathknight" → "Death Knight", "hunter" → "Hunter"
+## Code Style
+- **TypeScript strict mode** - Use proper typing for all variables and functions
+- **Angular best practices** - Follow Angular's style guide and conventions
+- **Clean component structure** - Keep components focused and single-purpose
+- **Proper imports** - Import only what's needed, use barrel exports when appropriate
 
-## Implementation Guidelines
-1. Always use utility functions for class name transformations
-2. Apply transformations in service layers before API calls
-3. Apply transformations in service layers after receiving API responses
-4. Keep display logic separate from data transformation logic
-5. Ensure consistent formatting across all components
+## File Organization
+- **Feature-based structure** - Organize components by feature/module
+- **Shared components** - Place reusable components in shared directories
+- **Service layer** - Keep business logic in services, not components
 
-## Class Name Mapping
-Common class name transformations:
-- "deathknight" ↔ "Death Knight"
-- "demonhunter" ↔ "Demon Hunter"
-- "druid" ↔ "Druid"
-- "evoker" ↔ "Evoker"
-- "hunter" ↔ "Hunter"
-- "mage" ↔ "Mage"
-- "monk" ↔ "Monk"
-- "paladin" ↔ "Paladin"
-- "priest" ↔ "Priest"
-- "rogue" ↔ "Rogue"
-- "shaman" ↔ "Shaman"
-- "warlock" ↔ "Warlock"
-- "warrior" ↔ "Warrior"
+## Examples
+
+### Good Component Structure:
+```typescript
+@Component({
+  selector: 'app-example',
+  standalone: true,
+  imports: [CommonModule, MatButtonModule],
+  template: `
+    <div class="p-6 bg-white rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold mb-4">Title</h2>
+      <button mat-flat-button color="primary" class="px-4 py-2">
+        Action
+      </button>
+    </div>
+  `
+})
+export class ExampleComponent {
+  // Component logic here
+}
+```
+
+### Avoid:
+- Creating `.component.scss` files
+- Using custom CSS classes
+- Inline styles with `style` attributes
+- Non-standalone components
