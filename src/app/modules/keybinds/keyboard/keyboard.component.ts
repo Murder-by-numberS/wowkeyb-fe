@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, OnInit, viewChild, Input, signal, SimpleChanges, EventEmitter, Output, ViewChild, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { PanZoomDirective, PanZoomModel } from 'app/shared/directives/pan-zoom.directive';
 
@@ -26,6 +26,7 @@ interface Key {
     standalone: true,
     imports: [
         CommonModule,
+        NgClass,
         MatButtonModule,
         MatIconModule,
         MatSidenavModule,
@@ -59,6 +60,8 @@ export class KeyboardComponent implements OnInit, AfterViewInit, OnDestroy {
     set keybindingSelected(value: boolean) {
         this._keybindingSelected = value;
     }
+
+    @Input() drawerOpened: boolean = true;
 
     get keybindingSelected(): boolean {
         return this._keybindingSelected;

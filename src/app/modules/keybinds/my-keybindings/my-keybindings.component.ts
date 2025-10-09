@@ -66,7 +66,7 @@ export class MyKeybindingsComponent implements OnInit {
 
     nameForm: FormGroup;
 
-    opened: boolean = true; // Always show drawer for my-keybindings
+    opened: boolean = true; // Show drawer by default for my-keybindings
 
     selectedKeybinding: any = null;
     selectedKeybindingName: string;
@@ -698,5 +698,11 @@ export class MyKeybindingsComponent implements OnInit {
 
     private checkMobile(): void {
         this.isMobile = window.innerWidth < 768; // sm breakpoint
+        // Auto-hide drawer on mobile, show on desktop
+        if (this.isMobile) {
+            this.opened = false;
+        } else {
+            this.opened = true;
+        }
     }
 }
