@@ -13,12 +13,13 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { IconPickerComponent } from '../../icons/components/icon-picker/icon-picker.component';
 import { AbilityPickerComponent, AbilitySelection } from '../components/ability-picker/ability-picker.component';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
 import { takeUntil, map } from 'rxjs/operators';
 import { UserService } from 'app/core/user/user.service';
+import { AuthService } from 'app/core/auth/auth.service';
 import { Subject, Observable, of } from 'rxjs';
 import { MacroService, Macro, MacroResponse } from '../services/macro.service';
 import { IconService } from '../../icons/services/icon.service';
@@ -63,6 +64,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
     @Output() macroSelectedChange = new EventEmitter<Macro>();
     @Output() macroDeleted = new EventEmitter<Macro>();
+    @Output() macroCreated = new EventEmitter<Macro>();
 
     // Component state
     macros: ExpandableMacro[] = [];
@@ -89,9 +91,11 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         private iconService: IconService,
         private fb: FormBuilder,
         private router: Router,
+        private route: ActivatedRoute,
         private snackBar: MatSnackBar,
         private dialog: MatDialog,
-        private userService: UserService
+        private userService: UserService,
+        private authService: AuthService
     ) {
         this.editForm = this.fb.group({
             name: ['', [Validators.required, Validators.maxLength(100)]],
@@ -109,7 +113,26 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     }
 
     ngOnInit(): void {
-        this.loadMacros();
+        // Check authentication status first, then load macros
+        this.authService.check().pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(authenticated => {
+            console.log('MyMacrosComponent - Auth check result:', authenticated);
+            this.isAuthenticated = authenticated;
+            if (authenticated) {
+                this.loadMacros();
+
+                // Check if we have a macro ID in the route parameters for editing
+                this.route.params.pipe(
+                    takeUntil(this.destroy$)
+                ).subscribe(params => {
+                    if (params['id']) {
+                        this.loadMacroForEdit(params['id']);
+                    }
+                });
+            }
+        });
+
         this.setupChangeDetection();
 
         // Subscribe to refresh trigger if it's an Observable
@@ -134,21 +157,31 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     }
 
     loadMacros(): void {
-        if (!this.isAuthenticated) return;
+        console.log('MyMacrosComponent - loadMacros called');
+        console.log('Authentication status:', this.isAuthenticated);
+
+        if (!this.isAuthenticated) {
+            console.log('User not authenticated, skipping macro load');
+            return;
+        }
 
         this.isLoading = true;
         this.macroService.getMyMacros().subscribe({
             next: (response) => {
+                console.log('MyMacrosComponent - Loaded macros response:', response);
+                console.log('Number of macros:', response.macros?.length || 0);
                 this.macros = (response.macros || []).map(macro => ({
                     ...macro,
                     isExpanded: false,
                     isEditing: false,
                     selectedIcon: this.getIconFromMacro(macro)
                 }));
+                console.log('MyMacrosComponent - Final macros array:', this.macros);
                 this.isLoading = false;
             },
             error: (error) => {
-                console.error('Error loading macros:', error);
+                console.error('MyMacrosComponent - Error loading macros:', error);
+                console.error('Error details:', error.error);
                 this.snackBar.open('Failed to load macros', 'Close', { duration: 3000 });
                 this.isLoading = false;
             }
@@ -501,6 +534,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             class: this.createSelectedAbility?.class || undefined,
             spec: this.createSelectedAbility?.spec || undefined,
             hero_talent: this.createSelectedAbility?.heroTalent || undefined,
+            ability: this.createSelectedAbility?.ability?.id || undefined,
             icon: this.createSelectedIcon?._id || undefined,
             is_public: false
         };
@@ -513,6 +547,9 @@ export class MyMacrosComponent implements OnInit, OnChanges {
                 this.isCreating = false;
                 this.resetCreateForm();
                 this.loadMacros(); // Reload the list
+
+                // Emit event to notify parent components (like macro drawer) to refresh
+                this.macroCreated.emit(createdMacro);
 
                 // Auto-select the newly created macro
                 if (createdMacro) {
@@ -540,9 +577,31 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
     onCreateAbilitySelected(ability: AbilitySelection): void {
         this.createSelectedAbility = ability;
+
+        // Auto-add cast command to macro text if ability is selected
+        if (ability.ability) {
+            const castCommand = `/cast ${ability.ability.name}`;
+            const currentText = this.createForm.get('macro_text')?.value || '';
+
+            // Only add if not already present
+            if (!currentText.includes(castCommand)) {
+                const newText = currentText ? `${currentText}\n${castCommand}` : castCommand;
+                this.createForm.get('macro_text')?.setValue(newText);
+            }
+        }
     }
 
     onCreateAbilityCleared(): void {
+        // Remove cast command from macro text if ability is cleared
+        if (this.createSelectedAbility?.ability) {
+            const castCommand = `/cast ${this.createSelectedAbility.ability.name}`;
+            const currentText = this.createForm.get('macro_text')?.value || '';
+
+            // Remove the cast command if it exists
+            const newText = currentText.replace(new RegExp(`\\n?${castCommand}\\n?`, 'g'), '').trim();
+            this.createForm.get('macro_text')?.setValue(newText);
+        }
+
         this.createSelectedAbility = null;
     }
 
@@ -551,5 +610,32 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.createForm.reset();
         this.createSelectedIcon = null;
         this.createSelectedAbility = null;
+    }
+
+    private loadMacroForEdit(macroId: string): void {
+        // Find the macro in the loaded macros list
+        const macro = this.macros.find(m => m.id === macroId);
+        if (macro) {
+            this.selectMacro(macro);
+            // Automatically enter edit mode
+            this.onEditMacro(macro);
+        } else {
+            // If macro not found in the list, fetch it individually
+            this.macroService.getMacro(macroId).subscribe({
+                next: (fetchedMacro) => {
+                    // Add the macro to the list if it's not already there
+                    const existingIndex = this.macros.findIndex(m => m.id === macroId);
+                    if (existingIndex === -1) {
+                        this.macros.push(fetchedMacro as ExpandableMacro);
+                    }
+                    this.selectMacro(fetchedMacro as ExpandableMacro);
+                    this.onEditMacro(fetchedMacro as ExpandableMacro);
+                },
+                error: (error) => {
+                    console.error('Error loading macro for edit:', error);
+                    this.snackBar.open('Error loading macro for editing', 'Close', { duration: 3000 });
+                }
+            });
+        }
     }
 }

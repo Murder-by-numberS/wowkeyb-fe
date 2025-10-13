@@ -12,35 +12,35 @@
         </button>
     </div>
 
-    <!-- Ability Picker Button -->
-    <button type="button" mat-stroked-button (click)="openAbilityPicker()"
+    <!-- Ability Picker Button (only visible if no selection) -->
+    <button *ngIf="!hasSelection()" type="button" mat-stroked-button (click)="openAbilityPicker()"
         class="w-full p-3 border-2 border-dashed border-slate-300 rounded-lg bg-white text-slate-500 font-medium transition-all duration-200 flex items-center justify-center gap-2 hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50">
         <mat-icon>auto_awesome</mat-icon>
-        <span>{{ hasSelection() ? 'Change Ability' : 'Select Ability' }}</span>
+        <span>Select Ability</span>
     </button>
 </div>
 
 <!-- Simple Centered Modal -->
 <div *ngIf="showDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-5"
     (click)="onBackdropClick($event)">
-    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         (click)="$event.stopPropagation()">
         <!-- Header -->
         <div class="flex items-center justify-between p-6 border-b border-slate-200">
-            <h2 class="text-xl font-semibold text-slate-800">Configure Ability Selection</h2>
+            <h2 class="text-xl font-semibold text-slate-800">Select Ability</h2>
             <button mat-icon-button (click)="cancelSelection()">
                 <mat-icon class="text-slate-500 hover:text-slate-700">close</mat-icon>
             </button>
         </div>
 
-        <!-- Ability Selection Form -->
-        <div class="p-6 overflow-y-auto flex-1">
-            <div class="flex flex-col md:flex-row gap-4 mb-6">
+        <!-- Filters Section -->
+        <div class="p-6 border-b border-slate-200 bg-slate-50">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <!-- Class Selection -->
-                <mat-form-field appearance="outline" class="w-full md:flex-1">
-                    <mat-label>Class (Optional)</mat-label>
+                <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Class</mat-label>
                     <mat-select [(ngModel)]="selectedClass" (selectionChange)="onClassChange()">
-                        <mat-option value="">No Class</mat-option>
+                        <mat-option value="">All Classes</mat-option>
                         <mat-option *ngFor="let class of classes" [value]="class.value">
                             {{ class.label }}
                         </mat-option>
@@ -48,11 +48,11 @@
                 </mat-form-field>
 
                 <!-- Spec Selection -->
-                <mat-form-field appearance="outline" class="w-full md:flex-1">
-                    <mat-label>Specialization (Optional)</mat-label>
+                <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Specialization</mat-label>
                     <mat-select [(ngModel)]="selectedSpec" (selectionChange)="onSpecChange()"
                         [disabled]="!selectedClass">
-                        <mat-option value="">No Spec</mat-option>
+                        <mat-option value="">All Specs</mat-option>
                         <mat-option *ngFor="let spec of specs" [value]="spec">
                             {{ spec }}
                         </mat-option>
@@ -60,10 +60,11 @@
                 </mat-form-field>
 
                 <!-- Hero Talent Selection -->
-                <mat-form-field appearance="outline" class="w-full md:flex-1">
-                    <mat-label>Hero Talent (Optional)</mat-label>
-                    <mat-select [(ngModel)]="selectedHeroTalent" [disabled]="!selectedSpec">
-                        <mat-option value="">No Hero Talent</mat-option>
+                <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Hero Talent</mat-label>
+                    <mat-select [(ngModel)]="selectedHeroTalent" (selectionChange)="onHeroTalentChange()"
+                        [disabled]="!selectedClass">
+                        <mat-option value="">All Hero Talents</mat-option>
                         <mat-option *ngFor="let heroTalent of heroTalents" [value]="heroTalent">
                             {{ heroTalent }}
                         </mat-option>
@@ -71,25 +72,87 @@
                 </mat-form-field>
             </div>
 
-            <!-- Info Text -->
-            <div class="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <mat-icon class="text-blue-600 text-xl mt-0.5">info</mat-icon>
-                <p class="text-sm text-blue-800 leading-relaxed m-0">Select a class, specialization, and hero talent to
-                    associate with this macro. All fields are optional, but selecting an ability will help users find
-                    your macro more easily.</p>
+            <!-- Search Bar -->
+            <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Search abilities</mat-label>
+                <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+                    placeholder="Search by name or description...">
+                <mat-icon matPrefix class="text-slate-400">search</mat-icon>
+            </mat-form-field>
+        </div>
+
+        <!-- Abilities List -->
+        <div class="p-6 overflow-y-auto flex-1">
+            <!-- Loading State -->
+            <div *ngIf="isLoadingAbilities" class="flex items-center justify-center py-12">
+                <mat-spinner diameter="40"></mat-spinner>
+            </div>
+
+            <!-- No Class Selected and No Search -->
+            <div *ngIf="!selectedClass && !searchQuery && !isLoadingAbilities"
+                class="flex flex-col items-center justify-center py-12 text-center">
+                <mat-icon class="text-slate-300 text-6xl mb-4">auto_awesome</mat-icon>
+                <p class="text-slate-500 text-lg font-medium">Get started</p>
+                <p class="text-slate-400 text-sm mt-2">Search for an ability by name or select a class to browse</p>
+            </div>
+
+            <!-- No Abilities Found -->
+            <div *ngIf="!isLoadingAbilities && abilities.length === 0 && (selectedClass || searchQuery)"
+                class="flex flex-col items-center justify-center py-12 text-center">
+                <mat-icon class="text-slate-300 text-6xl mb-4">search_off</mat-icon>
+                <p class="text-slate-500 text-lg font-medium">No abilities found</p>
+                <p class="text-slate-400 text-sm mt-2">Try adjusting your search query or filters</p>
+            </div>
+
+            <!-- No Abilities Match Filters -->
+            <div *ngIf="!isLoadingAbilities && abilities.length > 0 && filteredAbilities.length === 0"
+                class="flex flex-col items-center justify-center py-12 text-center">
+                <mat-icon class="text-slate-300 text-6xl mb-4">search_off</mat-icon>
+                <p class="text-slate-500 text-lg font-medium">No abilities match your search</p>
+                <p class="text-slate-400 text-sm mt-2">Try adjusting your search query or filters</p>
+            </div>
+
+            <!-- Abilities Grid -->
+            <div *ngIf="!isLoadingAbilities && filteredAbilities.length > 0"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div *ngFor="let ability of filteredAbilities" (click)="selectAbility(ability)"
+                    [class.ring-2]="isAbilitySelected(ability)" [class.ring-blue-500]="isAbilitySelected(ability)"
+                    [class.bg-blue-50]="isAbilitySelected(ability)"
+                    class="flex items-start gap-3 p-3 border-2 border-slate-200 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all duration-200">
+                    <!-- Ability Icon -->
+                    <img [src]="ability.icon" [alt]="ability.name"
+                        class="w-12 h-12 rounded-md border border-slate-300 flex-shrink-0 object-cover">
+
+                    <!-- Ability Info -->
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-semibold text-slate-800 truncate">{{ ability.name }}</h3>
+                        <p class="text-xs text-slate-500 line-clamp-2 mt-1">{{ ability.description }}</p>
+                    </div>
+
+                    <!-- Selected Indicator -->
+                    <mat-icon *ngIf="isAbilitySelected(ability)" class="text-blue-600 flex-shrink-0">
+                        check_circle
+                    </mat-icon>
+                </div>
             </div>
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
-            <button mat-button (click)="cancelSelection()"
-                class="text-slate-600 hover:text-slate-800 hover:bg-slate-100">
-                Cancel
-            </button>
-            <button mat-flat-button color="primary" (click)="confirmSelection()"
-                class="bg-blue-600 text-white hover:bg-blue-700">
-                Confirm Selection
-            </button>
+        <div class="flex items-center justify-between p-6 border-t border-slate-200 bg-slate-50">
+            <div class="text-sm text-slate-600">
+                <span *ngIf="selectedAbilityItem">Selected: <strong>{{ selectedAbilityItem.name }}</strong></span>
+                <span *ngIf="!selectedAbilityItem">No ability selected</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button mat-button (click)="cancelSelection()"
+                    class="text-slate-600 hover:text-slate-800 hover:bg-slate-100">
+                    Cancel
+                </button>
+                <button mat-flat-button color="primary" (click)="confirmSelection()" [disabled]="!selectedAbilityItem"
+                    class="bg-blue-600 text-white hover:bg-blue-700">
+                    Confirm
+                </button>
+            </div>
         </div>
     </div>
 </div>

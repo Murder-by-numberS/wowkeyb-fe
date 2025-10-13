@@ -19,6 +19,11 @@ export default [
         canActivate: [AuthGuard]
     },
     {
+        path: 'my-macros/edit/:id',
+        component: MyMacrosComponent,
+        canActivate: [AuthGuard]
+    },
+    {
         path: ':id',
         component: ViewMacroComponent,
     },

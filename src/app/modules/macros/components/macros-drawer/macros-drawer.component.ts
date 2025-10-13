@@ -106,7 +106,15 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
 
     forceRefreshMacros() {
         console.log('MacrosDrawerComponent - forceRefreshMacros');
+        console.log('Authentication status:', this.isAuthenticated);
         this.isLoading = true;
+
+        // Only load macros if user is authenticated
+        if (!this.isAuthenticated) {
+            console.log('User not authenticated, skipping macro load');
+            this.isLoading = false;
+            return;
+        }
 
         // Load user's macros from the backend
         this.macroService.getMyMacros(1, 100) // Get first 100 macros
@@ -114,6 +122,7 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (response) => {
                     console.log('Loaded user macros:', response);
+                    console.log('Number of macros:', response.macros?.length || 0);
                     this.macros = response.macros || [];
                     this.applyFilter();
                     this.isLoading = false;
@@ -125,6 +134,7 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
                 },
                 error: (error) => {
                     console.error('Error loading user macros:', error);
+                    console.error('Error details:', error.error);
                     this.macros = [];
                     this.applyFilter();
                     this.isLoading = false;

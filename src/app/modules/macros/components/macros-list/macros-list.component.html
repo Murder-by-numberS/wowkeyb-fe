@@ -135,7 +135,6 @@
                                         <mat-option value="name">Name</mat-option>
                                         <mat-option value="createdAt">Date Created</mat-option>
                                         <mat-option value="usageCount">Usage Count</mat-option>
-                                        <mat-option value="rating">Rating</mat-option>
                                     </mat-select>
                                 </mat-form-field>
                             </div>
@@ -216,10 +215,6 @@
                                         <span class="flex items-center gap-1">
                                             <mat-icon class="text-sm">visibility</mat-icon>
                                             {{ macro.usageCount }}
-                                        </span>
-                                        <span *ngIf="macro.rating" class="flex items-center gap-1">
-                                            <mat-icon class="text-sm">star</mat-icon>
-                                            {{ macro.rating }}
                                         </span>
                                     </div>
                                     <span>{{ macro.createdAt | date:'short' }}</span>
@@ -305,7 +300,6 @@
                                 <mat-option value="name">Name</mat-option>
                                 <mat-option value="createdAt">Date Created</mat-option>
                                 <mat-option value="usageCount">Usage Count</mat-option>
-                                <mat-option value="rating">Rating</mat-option>
                             </mat-select>
                         </mat-form-field>
                     </div>

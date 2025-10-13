@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from 'environments/environment';
 import { AuthService } from 'app/core/auth/auth.service';
 
@@ -17,14 +18,13 @@ export interface Macro {
     heroTalent?: string; // For compatibility
     ability?: string; // Ability ID reference
     tags?: string[];
-    icon?: string; // Icon ID for macro icon
+    icon?: string | { _id: string; name: string; cloudfrontUrl: string; keywords: string[] }; // Icon ID or populated icon object
     is_public?: boolean; // Backend field name
     isPublic?: boolean; // For compatibility
     created_by?: string; // Backend field name
     createdBy?: string; // For compatibility
     usage_count?: number; // Backend field name
     usageCount?: number; // For compatibility
-    rating?: number;
     created_at?: string; // Backend field name
     updated_at?: string; // Backend field name
     createdAt?: Date; // For compatibility
@@ -192,7 +192,9 @@ export class MacroService {
     getMacro(id: string): Observable<Macro> {
         this.getBackendURL();
         const url = `${this.apiUrl}/macros/${id}`;
-        return this.http.get<Macro>(url);
+        return this.http.get<{ macro: Macro }>(url).pipe(
+            map(response => response.macro)
+        );
     }
 
     /**
@@ -290,5 +292,14 @@ export class MacroService {
             ...params
         };
         return this.getMacros(heroTalentParams);
+    }
+
+    /**
+     * Increment usage count for a macro
+     */
+    incrementUsageCount(id: string): Observable<any> {
+        this.getBackendURL();
+        const url = `${this.apiUrl}/macros/${id}/usage`;
+        return this.http.post(url, {});
     }
 }

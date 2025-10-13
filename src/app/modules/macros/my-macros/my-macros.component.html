@@ -164,23 +164,28 @@
                                     too long</mat-error>
                             </mat-form-field>
 
-                            <!-- Icon Picker -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-700">Macro Icon</label>
-                                <app-icon-picker [selectedIcon]="createSelectedIcon"
-                                    (iconSelected)="onCreateIconSelected($event)" (iconCleared)="onCreateIconCleared()"
-                                    placeholder="Select an icon for your macro">
-                                </app-icon-picker>
-                            </div>
+                            <!-- Icon Picker and Ability Picker Side by Side -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Icon Picker -->
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-gray-700">Macro Icon</label>
+                                    <app-icon-picker [selectedIcon]="createSelectedIcon"
+                                        (iconSelected)="onCreateIconSelected($event)"
+                                        (iconCleared)="onCreateIconCleared()"
+                                        placeholder="Select an icon for your macro">
+                                    </app-icon-picker>
+                                </div>
 
-                            <!-- Ability Picker -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-700">Ability Selection (Optional)</label>
-                                <app-ability-picker [selectedAbility]="createSelectedAbility"
-                                    (abilitySelected)="onCreateAbilitySelected($event)"
-                                    (abilityCleared)="onCreateAbilityCleared()"
-                                    placeholder="Configure ability selection for your macro">
-                                </app-ability-picker>
+                                <!-- Ability Picker -->
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-gray-700">Ability Selection
+                                        (Optional)</label>
+                                    <app-ability-picker [selectedAbility]="createSelectedAbility"
+                                        (abilitySelected)="onCreateAbilitySelected($event)"
+                                        (abilityCleared)="onCreateAbilityCleared()"
+                                        placeholder="Configure ability selection for your macro">
+                                    </app-ability-picker>
+                                </div>
                             </div>
 
                             <!-- Macro Text -->
@@ -265,11 +270,6 @@
                                 <div class="text-3xl font-bold text-blue-600">{{ currentSelectedMacro.usage_count ||
                                     currentSelectedMacro.usageCount || 0 }}</div>
                                 <div class="text-sm text-gray-600">Usage Count</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-bold text-yellow-600">{{ currentSelectedMacro.rating || 'N/A'
-                                    }}</div>
-                                <div class="text-sm text-gray-600">Rating</div>
                             </div>
                             <div class="text-center">
                                 <div class="text-sm font-medium text-gray-600">Created</div>

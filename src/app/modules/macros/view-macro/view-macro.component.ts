@@ -10,7 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, takeUntil } from 'rxjs';
-import { Macro } from '../services/macro.service';
+import { Macro, MacroService } from '../services/macro.service';
 import { AuthService } from 'app/core/auth/auth.service';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
 import { IconService } from '../../icons/services/icon.service';
@@ -43,7 +43,8 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
         private snackBar: MatSnackBar,
         private authService: AuthService,
         private dialog: MatDialog,
-        private iconService: IconService
+        private iconService: IconService,
+        private macroService: MacroService
     ) { }
 
     ngOnInit(): void {
@@ -67,19 +68,47 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
     loadMacro(id: string): void {
         this.isLoading = true;
 
-        // Mock data - replace with actual service call
-        setTimeout(() => {
-            this.macro = this.generateMockMacro(id);
-            this.isOwner = this.macro?.createdBy === 'current-user'; // Mock ownership check
+        // Load macro from API
+        this.macroService.getMacro(id).subscribe({
+            next: (macro) => {
+                console.log('ViewMacroComponent - Loaded macro:', macro);
+                this.macro = macro;
 
-            // Load icon URL if macro has an icon ID
-            if (this.macro?.icon) {
-                this.loadIconUrl(this.macro.icon);
-            } else {
-                this.iconUrl = null;
+                // Check if current user owns this macro
+                this.authService.check().subscribe(authenticated => {
+                    if (authenticated) {
+                        // For now, we'll assume ownership - this should be enhanced with proper user comparison
+                        this.isOwner = true;
+                    } else {
+                        this.isOwner = false;
+                    }
+                });
+
+                // Set loading to false first, then handle icon
                 this.isLoading = false;
+
+                // Load icon URL if macro has an icon
+                if (this.macro?.icon) {
+                    if (typeof this.macro.icon === 'string') {
+                        // Icon is just an ID, fetch the full icon data
+                        this.loadIconUrl(this.macro.icon);
+                    } else if (this.macro.icon.cloudfrontUrl) {
+                        // Icon is already populated with full data
+                        this.iconUrl = this.macro.icon.cloudfrontUrl;
+                    } else {
+                        this.iconUrl = null;
+                    }
+                } else {
+                    this.iconUrl = null;
+                }
+            },
+            error: (error) => {
+                console.error('Error loading macro:', error);
+                this.macro = null;
+                this.isLoading = false;
+                this.snackBar.open('Failed to load macro', 'Close', { duration: 3000 });
             }
-        }, 1000);
+        });
     }
 
     generateMockMacro(id: string): Macro {
@@ -97,7 +126,6 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
             isPublic: false,
             createdBy: 'current-user',
             usageCount: 0,
-            rating: undefined,
             createdAt: new Date('2025-09-29T17:15:00'),
             updatedAt: new Date('2025-09-29T17:15:00'),
             icon: 'icon123' // Mock icon ID for testing
@@ -106,7 +134,7 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
 
     onEditMacro(): void {
         if (this.macro) {
-            this.router.navigate(['/macros/edit', this.macro.id]);
+            this.router.navigate(['/macros/my-macros/edit', this.macro.id]);
         }
     }
 
@@ -145,13 +173,6 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
         }
     }
 
-    onTogglePublic(): void {
-        if (this.macro) {
-            this.macro.isPublic = !this.macro.isPublic;
-            // TODO: Implement API call to update visibility
-            this.snackBar.open(`Macro is now ${this.macro.isPublic ? 'public' : 'private'}`, 'Close', { duration: 3000 });
-        }
-    }
 
     onBackToMacros(): void {
         this.router.navigate(['/macros']);
@@ -181,6 +202,11 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
     copyToClipboard(text: string): void {
         navigator.clipboard.writeText(text).then(() => {
             this.snackBar.open('Macro text copied to clipboard!', 'Close', { duration: 3000 });
+
+            // Increment usage count when macro is copied
+            if (this.macro?.id) {
+                this.incrementUsageCount();
+            }
         }).catch(() => {
             this.snackBar.open('Failed to copy to clipboard', 'Close', { duration: 3000 });
         });
@@ -202,31 +228,32 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
     }
 
     private loadIconUrl(iconId: string): void {
-        // For mock data, create a mock icon response
-        if (iconId === 'icon123') {
-            const mockIcon = {
-                id: 'icon123',
-                name: 'Crusader Strike',
-                keywords: ['paladin', 'crusader', 'strike', 'holy'],
-                usageCount: 42,
-                cloudfrontUrl: 'https://d10lzq0xgj2wa0.cloudfront.net/icons/spell_holy_crusaderstrike.jpg',
-                s3Path: 'icons/spell_holy_crusaderstrike.jpg'
-            };
-            this.iconUrl = this.iconService.getIconUrl(mockIcon);
-            this.isLoading = false;
-            return;
-        }
-
-        // For real data, fetch from the service
+        // Fetch icon from the service
         this.iconService.getIcon(iconId).subscribe({
             next: (icon) => {
                 this.iconUrl = this.iconService.getIconUrl(icon);
-                this.isLoading = false;
             },
             error: (error) => {
                 console.error('Error loading icon:', error);
                 this.iconUrl = null;
-                this.isLoading = false;
+            }
+        });
+    }
+
+    private incrementUsageCount(): void {
+        if (!this.macro?.id) return;
+
+        // Call backend to increment usage count
+        this.macroService.incrementUsageCount(this.macro.id).subscribe({
+            next: () => {
+                // Update local usage count
+                if (this.macro) {
+                    this.macro.usage_count = (this.macro.usage_count || 0) + 1;
+                    this.macro.usageCount = this.macro.usage_count;
+                }
+            },
+            error: (error) => {
+                console.error('Error incrementing usage count:', error);
             }
         });
     }

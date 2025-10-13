@@ -139,7 +139,6 @@ export class ViewAllMacrosComponent implements OnInit, OnDestroy {
             isPublic: apiMacro.isPublic || false,
             createdBy: apiMacro.createdBy,
             usageCount: apiMacro.usageCount || 0,
-            rating: apiMacro.rating,
             createdAt: apiMacro.createdAt || (apiMacro.created_at ? new Date(apiMacro.created_at) : new Date()),
             updatedAt: apiMacro.updatedAt || (apiMacro.updated_at ? new Date(apiMacro.updated_at) : new Date())
         };
