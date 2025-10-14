@@ -43,6 +43,13 @@
                         </div>
                     </div>
                     }
+                    <!-- Create New Macro Button -->
+                    <div class="p-2">
+                        <button mat-flat-button color="primary" (click)="onCreateNewMacro()" class="w-full">
+                            <mat-icon class="mr-2">add</mat-icon>
+                            Create New Macro
+                        </button>
+                    </div>
                 </div>
                 } @else {
                 <!-- No Macros State -->
@@ -185,6 +192,20 @@
                                         (abilityCleared)="onCreateAbilityCleared()"
                                         placeholder="Configure ability selection for your macro">
                                     </app-ability-picker>
+
+                                    <!-- Add Tooltip Checkbox -->
+                                    @if (createSelectedAbility?.ability) {
+                                    <div class="mt-3">
+                                        <mat-checkbox [(ngModel)]="createAddTooltip"
+                                            [ngModelOptions]="{standalone: true}"
+                                            (ngModelChange)="onCreateTooltipChanged($event)" color="primary">
+                                            Add #showtooltip command
+                                        </mat-checkbox>
+                                        <p class="text-xs text-gray-500 mt-1 ml-7">
+                                            Shows the ability tooltip when mousing over the macro button
+                                        </p>
+                                    </div>
+                                    }
                                 </div>
                             </div>
 
@@ -309,14 +330,41 @@
                                     long</mat-error>
                             </mat-form-field>
 
-                            <!-- Icon Picker -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-700">Macro Icon</label>
-                                <app-icon-picker [selectedIcon]="getSelectedIconForMacro(currentSelectedMacro)"
-                                    (iconSelected)="onIconSelected($event, currentSelectedMacro)"
-                                    (iconCleared)="onIconCleared(currentSelectedMacro)"
-                                    placeholder="Select an icon for your macro">
-                                </app-icon-picker>
+                            <!-- Icon Picker and Ability Picker Side by Side -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Icon Picker -->
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-gray-700">Macro Icon</label>
+                                    <app-icon-picker [selectedIcon]="getSelectedIconForMacro(currentSelectedMacro)"
+                                        (iconSelected)="onIconSelected($event, currentSelectedMacro)"
+                                        (iconCleared)="onIconCleared(currentSelectedMacro)"
+                                        placeholder="Select an icon for your macro">
+                                    </app-icon-picker>
+                                </div>
+
+                                <!-- Ability Picker -->
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-gray-700">Ability Selection
+                                        (Optional)</label>
+                                    <app-ability-picker [selectedAbility]="editSelectedAbility"
+                                        (abilitySelected)="onEditAbilitySelected($event)"
+                                        (abilityCleared)="onEditAbilityCleared()"
+                                        placeholder="Configure ability selection for your macro">
+                                    </app-ability-picker>
+
+                                    <!-- Add Tooltip Checkbox -->
+                                    @if (editSelectedAbility?.ability) {
+                                    <div class="mt-3">
+                                        <mat-checkbox [(ngModel)]="editAddTooltip" [ngModelOptions]="{standalone: true}"
+                                            (ngModelChange)="onEditTooltipChanged($event)" color="primary">
+                                            Add #showtooltip command
+                                        </mat-checkbox>
+                                        <p class="text-xs text-gray-500 mt-1 ml-7">
+                                            Shows the ability tooltip when mousing over the macro button
+                                        </p>
+                                    </div>
+                                    }
+                                </div>
                             </div>
 
                             <!-- Macro Text -->

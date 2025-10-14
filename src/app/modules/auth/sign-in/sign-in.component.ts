@@ -23,6 +23,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from 'app/core/auth/auth.service';
 import { BackendService } from 'app/core/services/backend.service';
 import { KeybindingService } from 'app/core/services/keybinding.service';
+import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
 
 @Component({
     selector: 'auth-sign-in',
@@ -41,6 +42,7 @@ import { KeybindingService } from 'app/core/services/keybinding.service';
         MatIconModule,
         MatCheckboxModule,
         MatProgressSpinnerModule,
+        AuthBackgroundComponent,
     ],
 })
 export class AuthSignInComponent implements OnInit {

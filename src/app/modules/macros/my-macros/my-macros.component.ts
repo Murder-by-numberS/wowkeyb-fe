@@ -10,6 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { IconPickerComponent } from '../../icons/components/icon-picker/icon-picker.component';
 import { AbilityPickerComponent, AbilitySelection } from '../components/ability-picker/ability-picker.component';
 import { CommonModule } from '@angular/common';
@@ -51,6 +52,7 @@ interface ExpandableMacro extends Macro {
         MatChipsModule,
         MatProgressSpinnerModule,
         MatSlideToggleModule,
+        MatCheckboxModule,
         IconPickerComponent,
         AbilityPickerComponent
     ]
@@ -82,7 +84,11 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     createForm: FormGroup;
     createSelectedIcon: Icon | null = null;
     createSelectedAbility: AbilitySelection | null = null;
+    createAddTooltip: boolean = false;
 
+    // Edit macro form properties
+    editSelectedAbility: AbilitySelection | null = null;
+    editAddTooltip: boolean = false;
 
     private destroy$ = new Subject<void>();
 
@@ -191,9 +197,20 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     selectMacro(macro: ExpandableMacro): void {
         this.currentSelectedMacro = macro;
         this.isEditing = false;
+        this.isCreating = false;
         this.editForm.reset();
         this.originalMacroData = null;
         this.hasChanges = false;
+
+        // Reset create form if we were creating
+        this.createForm.reset();
+        this.createSelectedIcon = null;
+        this.createSelectedAbility = null;
+        this.createAddTooltip = false;
+
+        // Reset edit ability
+        this.editSelectedAbility = null;
+        this.editAddTooltip = false;
 
         // Load icon if not already loaded
         if (!macro.selectedIcon) {
@@ -261,17 +278,41 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             this.loadIconForMacro(macro);
         }
 
+        // Load ability data if available
+        // Note: ability should be an object, not just an ID string
+        const abilityObject = (macro.ability && typeof macro.ability === 'object') ? macro.ability : null;
+
+        if (abilityObject || macro.spec || macro.hero_talent) {
+            this.editSelectedAbility = {
+                class: macro.class,
+                spec: macro.spec || undefined,
+                heroTalent: macro.hero_talent || undefined,
+                ability: abilityObject
+            };
+        } else {
+            this.editSelectedAbility = null;
+        }
+
+        const macroText = macro.macro_text || macro.text || '';
+
+        // Load tooltip preference from macro model
+        this.editAddTooltip = macro.show_tooltip || false;
+
         // Populate form with macro data
         this.editForm.patchValue({
             name: macro.name,
             description: macro.description || '',
-            macro_text: macro.macro_text || macro.text || '',
+            macro_text: macroText,
             class: macro.class,
             tags: macro.tags || []
         });
 
         // Store original data for change detection
-        this.originalMacroData = { ...macro };
+        this.originalMacroData = {
+            ...macro,
+            editSelectedAbility: this.editSelectedAbility,
+            editAddTooltip: this.editAddTooltip
+        };
         this.checkForChanges();
     }
 
@@ -280,6 +321,8 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.editForm.reset();
         this.originalMacroData = null;
         this.hasChanges = false;
+        this.editSelectedAbility = null;
+        this.editAddTooltip = false;
     }
 
     onSaveEdit(macro: ExpandableMacro): void {
@@ -292,7 +335,11 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             name: formData.name,
             description: formData.description,
             text: formData.macro_text,
-            class: formData.class,
+            class: this.editSelectedAbility?.class || formData.class,
+            spec: this.editSelectedAbility?.spec || undefined,
+            hero_talent: this.editSelectedAbility?.heroTalent || undefined,
+            ability: this.editSelectedAbility?.ability?.id || undefined,
+            show_tooltip: this.editAddTooltip,
             tags: formData.tags,
             is_public: macro.is_public,
             icon: macro.selectedIcon?._id || null
@@ -326,6 +373,8 @@ export class MyMacrosComponent implements OnInit, OnChanges {
                 this.isEditing = false;
                 this.hasChanges = false;
                 this.originalMacroData = null;
+                this.editSelectedAbility = null;
+                this.editAddTooltip = false;
             },
             error: (error) => {
                 console.error('Error updating macro:', error);
@@ -343,6 +392,88 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     onIconCleared(macro: ExpandableMacro): void {
         macro.selectedIcon = null;
         this.checkForChanges();
+    }
+
+    onEditAbilitySelected(ability: AbilitySelection): void {
+        this.editSelectedAbility = ability;
+
+        // Update class selection based on ability
+        if (ability.class) {
+            this.editForm.patchValue({ class: ability.class });
+        }
+
+        // Auto-add cast command to macro text if ability is selected
+        if (ability.ability) {
+            this.updateEditMacroTextWithAbility();
+        }
+
+        this.checkForChanges();
+    }
+
+    onEditTooltipChanged(checked: boolean): void {
+        console.log('Edit tooltip changed:', checked);
+        this.editAddTooltip = checked;
+
+        // Update macro text based on tooltip checkbox state
+        if (this.editSelectedAbility?.ability) {
+            this.updateEditMacroTextWithAbility();
+            console.log('Updated edit macro text:', this.editForm.get('macro_text')?.value);
+        }
+
+        this.checkForChanges();
+    }
+
+    private updateEditMacroTextWithAbility(): void {
+        if (!this.editSelectedAbility?.ability) return;
+
+        const abilityName = this.editSelectedAbility.ability.name;
+        const tooltipCommand = `#showtooltip ${abilityName}`;
+        const castCommand = `/cast ${abilityName}`;
+        const currentText = this.editForm.get('macro_text')?.value || '';
+
+        // Remove existing tooltip and cast commands for this ability
+        let newText = currentText
+            .replace(new RegExp(`\\n?${this.escapeRegExp(tooltipCommand)}\\n?`, 'g'), '')
+            .replace(new RegExp(`\\n?${this.escapeRegExp(castCommand)}\\n?`, 'g'), '')
+            .trim();
+
+        // Add the commands based on tooltip checkbox
+        if (this.editAddTooltip) {
+            const commands = `${tooltipCommand}\n${castCommand}`;
+            newText = newText ? `${newText}\n${commands}` : commands;
+        } else {
+            newText = newText ? `${newText}\n${castCommand}` : castCommand;
+        }
+
+        this.editForm.get('macro_text')?.setValue(newText);
+    }
+
+    onEditAbilityCleared(): void {
+        // Remove tooltip and cast commands from macro text if ability was previously selected
+        if (this.editSelectedAbility?.ability) {
+            const abilityName = this.editSelectedAbility.ability.name;
+            const tooltipCommand = `#showtooltip ${abilityName}`;
+            const castCommand = `/cast ${abilityName}`;
+            const currentText = this.editForm.get('macro_text')?.value || '';
+
+            // Remove both tooltip and cast commands if they exist
+            const newText = currentText
+                .replace(new RegExp(`\\n?${this.escapeRegExp(tooltipCommand)}\\n?`, 'g'), '')
+                .replace(new RegExp(`\\n?${this.escapeRegExp(castCommand)}\\n?`, 'g'), '')
+                .trim();
+            this.editForm.get('macro_text')?.setValue(newText);
+        }
+
+        // Clear class selection
+        this.editForm.patchValue({ class: '' });
+
+        this.editSelectedAbility = null;
+        this.editAddTooltip = false;
+        this.checkForChanges();
+    }
+
+    private escapeRegExp(string: string): string {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     onTogglePublicInEdit(event: any, macro: ExpandableMacro): void {
@@ -395,7 +526,14 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         const hasIconChanges = currentIcon !== originalIcon;
         const hasPublicChanges = this.currentSelectedMacro?.is_public !== this.originalMacroData.is_public;
 
-        this.hasChanges = hasFormChanges || hasIconChanges || hasPublicChanges;
+        // Check for ability changes
+        const hasAbilityChanges = JSON.stringify(this.editSelectedAbility) !==
+            JSON.stringify(this.originalMacroData.editSelectedAbility);
+
+        // Check for tooltip changes
+        const hasTooltipChanges = this.editAddTooltip !== this.originalMacroData.editAddTooltip;
+
+        this.hasChanges = hasFormChanges || hasIconChanges || hasPublicChanges || hasAbilityChanges || hasTooltipChanges;
     }
 
 
@@ -462,6 +600,12 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             description: this.currentSelectedMacro.description,
             macro_text: this.currentSelectedMacro.macro_text || this.currentSelectedMacro.text,
             class: this.currentSelectedMacro.class,
+            spec: this.currentSelectedMacro.spec,
+            hero_talent: this.currentSelectedMacro.hero_talent,
+            ability: typeof this.currentSelectedMacro.ability === 'object' ?
+                (this.currentSelectedMacro.ability as any)?._id :
+                this.currentSelectedMacro.ability,
+            show_tooltip: this.currentSelectedMacro.show_tooltip || false,
             tags: this.currentSelectedMacro.tags || [],
             is_public: false, // Duplicates are private by default
             icon: this.currentSelectedMacro.selectedIcon?._id || null
@@ -535,6 +679,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             spec: this.createSelectedAbility?.spec || undefined,
             hero_talent: this.createSelectedAbility?.heroTalent || undefined,
             ability: this.createSelectedAbility?.ability?.id || undefined,
+            show_tooltip: this.createAddTooltip,
             icon: this.createSelectedIcon?._id || undefined,
             is_public: false
         };
@@ -580,29 +725,64 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
         // Auto-add cast command to macro text if ability is selected
         if (ability.ability) {
-            const castCommand = `/cast ${ability.ability.name}`;
-            const currentText = this.createForm.get('macro_text')?.value || '';
-
-            // Only add if not already present
-            if (!currentText.includes(castCommand)) {
-                const newText = currentText ? `${currentText}\n${castCommand}` : castCommand;
-                this.createForm.get('macro_text')?.setValue(newText);
-            }
+            this.updateCreateMacroTextWithAbility();
         }
     }
 
-    onCreateAbilityCleared(): void {
-        // Remove cast command from macro text if ability is cleared
+    onCreateTooltipChanged(checked: boolean): void {
+        console.log('Create tooltip changed:', checked);
+        this.createAddTooltip = checked;
+
+        // Update macro text based on tooltip checkbox state
         if (this.createSelectedAbility?.ability) {
-            const castCommand = `/cast ${this.createSelectedAbility.ability.name}`;
+            this.updateCreateMacroTextWithAbility();
+            console.log('Updated create macro text:', this.createForm.get('macro_text')?.value);
+        }
+    }
+
+    private updateCreateMacroTextWithAbility(): void {
+        if (!this.createSelectedAbility?.ability) return;
+
+        const abilityName = this.createSelectedAbility.ability.name;
+        const tooltipCommand = `#showtooltip ${abilityName}`;
+        const castCommand = `/cast ${abilityName}`;
+        const currentText = this.createForm.get('macro_text')?.value || '';
+
+        // Remove existing tooltip and cast commands for this ability
+        let newText = currentText
+            .replace(new RegExp(`\\n?${this.escapeRegExp(tooltipCommand)}\\n?`, 'g'), '')
+            .replace(new RegExp(`\\n?${this.escapeRegExp(castCommand)}\\n?`, 'g'), '')
+            .trim();
+
+        // Add the commands based on tooltip checkbox
+        if (this.createAddTooltip) {
+            const commands = `${tooltipCommand}\n${castCommand}`;
+            newText = newText ? `${newText}\n${commands}` : commands;
+        } else {
+            newText = newText ? `${newText}\n${castCommand}` : castCommand;
+        }
+
+        this.createForm.get('macro_text')?.setValue(newText);
+    }
+
+    onCreateAbilityCleared(): void {
+        // Remove cast and tooltip commands from macro text if ability is cleared
+        if (this.createSelectedAbility?.ability) {
+            const abilityName = this.createSelectedAbility.ability.name;
+            const tooltipCommand = `#showtooltip ${abilityName}`;
+            const castCommand = `/cast ${abilityName}`;
             const currentText = this.createForm.get('macro_text')?.value || '';
 
-            // Remove the cast command if it exists
-            const newText = currentText.replace(new RegExp(`\\n?${castCommand}\\n?`, 'g'), '').trim();
+            // Remove both tooltip and cast commands if they exist
+            const newText = currentText
+                .replace(new RegExp(`\\n?${this.escapeRegExp(tooltipCommand)}\\n?`, 'g'), '')
+                .replace(new RegExp(`\\n?${this.escapeRegExp(castCommand)}\\n?`, 'g'), '')
+                .trim();
             this.createForm.get('macro_text')?.setValue(newText);
         }
 
         this.createSelectedAbility = null;
+        this.createAddTooltip = false;
     }
 
 
@@ -610,6 +790,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.createForm.reset();
         this.createSelectedIcon = null;
         this.createSelectedAbility = null;
+        this.createAddTooltip = false;
     }
 
     private loadMacroForEdit(macroId: string): void {

@@ -19,6 +19,7 @@ import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
 import { FuseValidators } from '@fuse/validators';
 import { AuthService } from 'app/core/auth/auth.service';
 import { finalize, Subject, takeUntil, takeWhile, tap, timer } from 'rxjs';
+import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
 @Component({
     selector: 'auth-reset-password',
     templateUrl: './reset-password.component.html',
@@ -35,6 +36,7 @@ import { finalize, Subject, takeUntil, takeWhile, tap, timer } from 'rxjs';
         MatIconModule,
         MatProgressSpinnerModule,
         RouterLink,
+        AuthBackgroundComponent,
     ],
 })
 export class AuthResetPasswordComponent implements OnInit {

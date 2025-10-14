@@ -16,6 +16,7 @@ import { fuseAnimations } from '@fuse/animations';
 import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
 import { AuthService } from 'app/core/auth/auth.service';
 import { finalize } from 'rxjs';
+import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
 
 @Component({
     selector: 'auth-forgot-password',
@@ -32,6 +33,7 @@ import { finalize } from 'rxjs';
         MatButtonModule,
         MatProgressSpinnerModule,
         RouterLink,
+        AuthBackgroundComponent,
     ],
 })
 export class AuthForgotPasswordComponent implements OnInit {
@@ -50,7 +52,7 @@ export class AuthForgotPasswordComponent implements OnInit {
     constructor(
         private _authService: AuthService,
         private _formBuilder: UntypedFormBuilder
-    ) {}
+    ) { }
 
     // -----------------------------------------------------------------------------------------------------
     // @ Lifecycle hooks
