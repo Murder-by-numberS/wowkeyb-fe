@@ -1,0 +1,139 @@
+<div class="macro-builder-dialog">
+    <h2 mat-dialog-title>
+        <mat-icon class="dialog-icon">construction</mat-icon>
+        Macro Builder
+    </h2>
+
+    <mat-dialog-content>
+        <div *ngIf="loading" class="loading-container">
+            <mat-spinner diameter="50"></mat-spinner>
+            <p>Loading...</p>
+        </div>
+
+        <div *ngIf="!loading && !generatedMacro">
+            <!-- Step 1: Select Template -->
+            <div class="step-section">
+                <h3>Step 1: Choose a Template</h3>
+                <div class="templates-grid">
+                    <div *ngFor="let template of templates" class="template-card"
+                        [class.selected]="selectedTemplate?.type === template.type" (click)="selectTemplate(template)"
+                        matTooltip="{{template.description}}">
+                        <div class="template-icon">{{ template.icon }}</div>
+                        <div class="template-name">{{ template.name }}</div>
+                        <div class="template-use-case">{{ template.useCase }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Configure Macro -->
+            <div class="step-section" *ngIf="selectedTemplate">
+                <h3>Step 2: Configure Your Macro</h3>
+                <form [formGroup]="builderForm" class="builder-form">
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Spell/Ability Name</mat-label>
+                        <input matInput formControlName="spellName" placeholder="e.g., Fireball, Flash Heal" required>
+                        <mat-icon matSuffix>edit</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Class (Optional)</mat-label>
+                        <mat-select formControlName="wowClass">
+                            <mat-option value="">None</mat-option>
+                            <mat-option *ngFor="let class of classes" [value]="class.value">
+                                {{ class.label }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                    <!-- Advanced Options -->
+                    <div class="advanced-options">
+                        <h4>Advanced Options</h4>
+
+                        <mat-form-field appearance="outline" class="full-width"
+                            *ngIf="selectedTemplate.type === 'mouseover' || selectedTemplate.type === 'focus'">
+                            <mat-label>Modifier Key (Optional)</mat-label>
+                            <mat-select formControlName="modifierKey">
+                                <mat-option value="">None</mat-option>
+                                <mat-option value="shift">Shift</mat-option>
+                                <mat-option value="ctrl">Ctrl</mat-option>
+                                <mat-option value="alt">Alt</mat-option>
+                            </mat-select>
+                            <mat-hint>Use modifier to activate this macro</mat-hint>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="form-actions">
+                        <button mat-raised-button color="primary" (click)="generateMacro()"
+                            [disabled]="builderForm.invalid || loading">
+                            <mat-icon>auto_fix_high</mat-icon>
+                            Generate Macro
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div *ngIf="error" class="error-message">
+                <mat-icon>error</mat-icon>
+                {{ error }}
+            </div>
+        </div>
+
+        <!-- Generated Macro Display -->
+        <div *ngIf="generatedMacro" class="generated-macro">
+            <div class="macro-header">
+                <h3>
+                    <mat-icon class="success-icon">check_circle</mat-icon>
+                    Your Macro is Ready!
+                </h3>
+            </div>
+
+            <div class="macro-content">
+                <div class="macro-text-box">
+                    <pre>{{ generatedMacro.macro_text }}</pre>
+                    <button mat-icon-button class="copy-button" (click)="copyToClipboard(generatedMacro.macro_text)">
+                        <mat-icon>content_copy</mat-icon>
+                    </button>
+                </div>
+
+                <div class="macro-explanation">
+                    <mat-icon>info</mat-icon>
+                    <p>{{ generatedMacro.explanation }}</p>
+                </div>
+
+                <div class="suggested-tags" *ngIf="generatedMacro.suggested_tags.length > 0">
+                    <h4>Suggested Tags:</h4>
+                    <mat-chip-set>
+                        <mat-chip *ngFor="let tag of generatedMacro.suggested_tags">
+                            {{ tag }}
+                        </mat-chip>
+                    </mat-chip-set>
+                </div>
+
+                <div class="conditional-examples" *ngIf="generatedMacro.suggestions?.examples?.length > 0">
+                    <h4>More Examples:</h4>
+                    <div class="examples-list">
+                        <div *ngFor="let example of generatedMacro.suggestions.examples" class="example-card">
+                            <div class="example-title">{{ example.type }}</div>
+                            <code>{{ example.macro }}</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="macro-actions">
+                <button mat-button (click)="reset()">
+                    <mat-icon>refresh</mat-icon>
+                    Start Over
+                </button>
+                <button mat-raised-button color="primary" (click)="useMacro()">
+                    <mat-icon>check</mat-icon>
+                    Use This Macro
+                </button>
+            </div>
+        </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+        <button mat-button (click)="close()">Cancel</button>
+    </mat-dialog-actions>
+</div>

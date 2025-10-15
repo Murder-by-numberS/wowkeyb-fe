@@ -95,6 +95,77 @@ export interface MacroResponse {
     totalPages: number;
 }
 
+export interface MacroValidation {
+    errors: ValidationError[];
+    warnings: ValidationWarning[];
+    quality: QualityScore;
+    is_valid: boolean;
+}
+
+export interface ValidationError {
+    line: number;
+    command: string;
+    message: string;
+    suggestions?: string[];
+}
+
+export interface ValidationWarning {
+    line: number;
+    command: string;
+    message: string;
+    detail?: string;
+}
+
+export interface QualityScore {
+    total: number;
+    grade: string;
+    issues: QualityIssue[];
+    suggestions: string[];
+}
+
+export interface QualityIssue {
+    severity: string;
+    count: number;
+    message: string;
+}
+
+export interface MacroTemplate {
+    type: string;
+    name: string;
+    description: string;
+    useCase: string;
+    icon: string;
+}
+
+export interface GenerateMacroRequest {
+    spell_name: string;
+    template_type: string;
+    ability_id?: string;
+    ability_type?: string;
+    wow_class?: string;
+    custom_options?: any;
+}
+
+export interface GenerateMacroResponse {
+    message: string;
+    macro_text: string;
+    suggested_tags: string[];
+    explanation: string;
+    ability_type: string;
+    suggestions: ConditionalSuggestions;
+}
+
+export interface ConditionalSuggestions {
+    conditionals: string[];
+    explanation: string;
+    examples: ConditionalExample[];
+}
+
+export interface ConditionalExample {
+    type: string;
+    macro: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -306,5 +377,65 @@ export class MacroService {
         this.getBackendURL();
         const url = `${this.apiUrl}/macros/${id}/usage`;
         return this.http.post(url, {});
+    }
+
+    /**
+     * Validate macro text in real-time
+     */
+    validateMacroText(macroText: string, wowClass?: string): Observable<{ validation: MacroValidation; suggested_tags: string[] }> {
+        this.getBackendURL();
+        const url = `${this.apiUrl}/macros/validate`;
+        return this.http.post<{ validation: MacroValidation; suggested_tags: string[] }>(url, {
+            macro_text: macroText,
+            class: wowClass
+        });
+    }
+
+    /**
+     * Get all available macro templates
+     */
+    getTemplates(): Observable<{ templates: MacroTemplate[] }> {
+        this.getBackendURL();
+        const url = `${this.apiUrl}/macro-builder/templates`;
+        return this.http.get<{ templates: MacroTemplate[] }>(url);
+    }
+
+    /**
+     * Generate a macro from a template
+     */
+    generateMacro(request: GenerateMacroRequest): Observable<GenerateMacroResponse> {
+        this.getBackendURL();
+        const url = `${this.apiUrl}/macro-builder/generate`;
+        return this.http.post<GenerateMacroResponse>(url, request);
+    }
+
+    /**
+     * Get conditional suggestions for an ability type
+     */
+    getConditionalSuggestions(abilityType?: string, abilityId?: string, wowClass?: string): Observable<{ suggestions: ConditionalSuggestions; ability_type: string }> {
+        this.getBackendURL();
+        let httpParams = new HttpParams();
+
+        if (abilityType) httpParams = httpParams.set('ability_type', abilityType);
+        if (abilityId) httpParams = httpParams.set('ability_id', abilityId);
+        if (wowClass) httpParams = httpParams.set('wow_class', wowClass);
+
+        const url = `${this.apiUrl}/macro-builder/suggestions`;
+        return this.http.get<{ suggestions: ConditionalSuggestions; ability_type: string }>(url, { params: httpParams });
+    }
+
+    /**
+     * Detect ability type from spell name/description
+     */
+    detectAbilityType(spellName: string, description?: string, abilityId?: string): Observable<{ ability_type: string; suggestions: ConditionalSuggestions }> {
+        this.getBackendURL();
+        let httpParams = new HttpParams();
+
+        if (spellName) httpParams = httpParams.set('spell_name', spellName);
+        if (description) httpParams = httpParams.set('description', description);
+        if (abilityId) httpParams = httpParams.set('ability_id', abilityId);
+
+        const url = `${this.apiUrl}/macro-builder/detect-type`;
+        return this.http.get<{ ability_type: string; suggestions: ConditionalSuggestions }>(url, { params: httpParams });
     }
 }

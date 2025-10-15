@@ -1,0 +1,118 @@
+<div class="macro-validator" *ngIf="macroText && macroText.trim()">
+    <!-- Loading State -->
+    <div class="validation-loading" *ngIf="loading">
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        <span class="loading-text">Validating macro...</span>
+    </div>
+
+    <!-- Error State -->
+    <div class="validation-error" *ngIf="error && !loading">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ error }}</span>
+    </div>
+
+    <!-- Validation Results -->
+    <div class="validation-results" *ngIf="validation && !loading && !error">
+        <!-- Quality Score -->
+        <div class="quality-score" [class]="getGradeClass(validation.quality.grade)">
+            <div class="score-header">
+                <mat-icon>school</mat-icon>
+                <span class="score-label">Quality Score</span>
+            </div>
+            <div class="score-value">
+                <span class="grade">{{ validation.quality.grade }}</span>
+                <span class="points">{{ validation.quality.total }}/100</span>
+            </div>
+        </div>
+
+        <!-- Valid Badge -->
+        <div class="valid-badge" *ngIf="validation.is_valid">
+            <mat-icon class="success-icon">check_circle</mat-icon>
+            <span>No Errors Found</span>
+        </div>
+
+        <!-- Errors -->
+        <div class="validation-section errors" *ngIf="validation.errors.length > 0">
+            <div class="section-header">
+                <mat-icon class="error-icon">error</mat-icon>
+                <h4>Errors ({{ validation.errors.length }})</h4>
+            </div>
+            <div class="validation-items">
+                <div *ngFor="let error of validation.errors" class="validation-item error-item">
+                    <div class="item-header">
+                        <span class="line-number">Line {{ error.line }}</span>
+                        <code class="command">{{ error.command }}</code>
+                    </div>
+                    <div class="item-message">{{ error.message }}</div>
+                    <div class="item-suggestions" *ngIf="error.suggestions && error.suggestions.length > 0">
+                        <span class="suggestions-label">Did you mean:</span>
+                        <mat-chip-set>
+                            <mat-chip *ngFor="let suggestion of error.suggestions">
+                                {{ suggestion }}
+                            </mat-chip>
+                        </mat-chip-set>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warnings -->
+        <div class="validation-section warnings" *ngIf="validation.warnings.length > 0">
+            <div class="section-header">
+                <mat-icon class="warning-icon">warning</mat-icon>
+                <h4>Warnings ({{ validation.warnings.length }})</h4>
+            </div>
+            <div class="validation-items">
+                <div *ngFor="let warning of validation.warnings" class="validation-item warning-item">
+                    <div class="item-header">
+                        <span class="line-number">Line {{ warning.line }}</span>
+                        <code class="command">{{ warning.command }}</code>
+                    </div>
+                    <div class="item-message">{{ warning.message }}</div>
+                    <div class="item-detail" *ngIf="warning.detail">
+                        <mat-icon>info</mat-icon>
+                        {{ warning.detail }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quality Issues -->
+        <div class="quality-issues" *ngIf="validation.quality.issues.length > 0">
+            <h4>Issues Affecting Score:</h4>
+            <div class="issues-list">
+                <div *ngFor="let issue of validation.quality.issues" class="issue-item"
+                    [class]="getSeverityClass(issue.severity)">
+                    <mat-icon>{{ getSeverityIcon(issue.severity) }}</mat-icon>
+                    <span>{{ issue.message }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suggestions -->
+        <div class="quality-suggestions" *ngIf="validation.quality.suggestions.length > 0">
+            <h4>
+                <mat-icon>tips_and_updates</mat-icon>
+                Suggestions for Improvement:
+            </h4>
+            <ul class="suggestions-list">
+                <li *ngFor="let suggestion of validation.quality.suggestions">
+                    {{ suggestion }}
+                </li>
+            </ul>
+        </div>
+
+        <!-- Suggested Tags -->
+        <div class="suggested-tags-section" *ngIf="suggestedTags.length > 0">
+            <h4>
+                <mat-icon>label</mat-icon>
+                Suggested Tags:
+            </h4>
+            <mat-chip-set>
+                <mat-chip *ngFor="let tag of suggestedTags">
+                    {{ tag }}
+                </mat-chip>
+            </mat-chip-set>
+        </div>
+    </div>
+</div>
