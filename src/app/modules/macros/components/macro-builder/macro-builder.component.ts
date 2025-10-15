@@ -30,8 +30,7 @@ import { MacroService, MacroTemplate, GenerateMacroResponse } from '../../servic
         MatProgressSpinnerModule,
         MatTooltipModule
     ],
-    templateUrl: './macro-builder.component.html',
-    styleUrls: ['./macro-builder.component.scss']
+    templateUrl: './macro-builder.component.html'
 })
 export class MacroBuilderComponent implements OnInit {
     builderForm: FormGroup;

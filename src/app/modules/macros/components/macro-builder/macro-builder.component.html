@@ -16,8 +16,12 @@
                 <h3 class="text-lg font-medium mb-4 text-gray-900">Step 1: Choose a Template</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div *ngFor="let template of templates"
-                         class="template-card border-2 border-gray-200 rounded-lg p-4 text-center cursor-pointer transition-all hover:border-blue-500 hover:shadow-md hover:-translate-y-1 bg-white"
-                         [class.selected]="selectedTemplate?.type === template.type"
+                         class="border-2 rounded-lg p-4 text-center cursor-pointer transition-all hover:border-blue-500 hover:shadow-md hover:-translate-y-1"
+                         [class.border-gray-200]="selectedTemplate?.type !== template.type"
+                         [class.bg-white]="selectedTemplate?.type !== template.type"
+                         [class.border-blue-500]="selectedTemplate?.type === template.type"
+                         [class.bg-blue-50]="selectedTemplate?.type === template.type"
+                         [class.shadow-lg]="selectedTemplate?.type === template.type"
                          (click)="selectTemplate(template)"
                          matTooltip="{{template.description}}">
                         <div class="text-3xl mb-2">{{ template.icon }}</div>
@@ -94,7 +98,7 @@
                 <div class="relative bg-gray-900 rounded-lg p-4 shadow-md">
                     <pre class="m-0 text-blue-300 font-mono text-sm leading-relaxed whitespace-pre-wrap">{{ generatedMacro.macro_text }}</pre>
                     <button mat-icon-button 
-                            class="copy-button absolute top-2 right-2 bg-white/10 text-white hover:bg-white/20" 
+                            class="absolute top-2 right-2 text-white hover:bg-white/20 transition-colors" 
                             (click)="copyToClipboard(generatedMacro.macro_text)">
                         <mat-icon>content_copy</mat-icon>
                     </button>

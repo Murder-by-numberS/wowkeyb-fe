@@ -17,8 +17,7 @@ import { MacroService, MacroValidation } from '../../services/macro.service';
         MatProgressBarModule,
         MatTooltipModule
     ],
-    templateUrl: './macro-validator.component.html',
-    styleUrls: ['./macro-validator.component.scss']
+    templateUrl: './macro-validator.component.html'
 })
 export class MacroValidatorComponent implements OnChanges {
     @Input() macroText: string = '';
@@ -80,17 +79,6 @@ export class MacroValidatorComponent implements OnChanges {
                 this.loading = false;
             }
         });
-    }
-
-    getGradeClass(grade: string): string {
-        switch (grade) {
-            case 'A': return 'grade-a';
-            case 'B': return 'grade-b';
-            case 'C': return 'grade-c';
-            case 'D': return 'grade-d';
-            case 'F': return 'grade-f';
-            default: return '';
-        }
     }
 
     getSeverityIcon(severity: string): string {
