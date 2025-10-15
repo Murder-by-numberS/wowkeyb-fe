@@ -210,17 +210,32 @@
                             </div>
 
                             <!-- Macro Text -->
-                            <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>Macro Text</mat-label>
-                                <textarea matInput formControlName="macro_text" placeholder="Enter your macro commands"
-                                    rows="6" maxlength="255"></textarea>
-                                <mat-hint align="end">{{ createForm.get('macro_text')?.value?.length || 0
-                                    }}/255</mat-hint>
-                                <mat-error *ngIf="createForm.get('macro_text')?.hasError('required')">Macro text is
-                                    required</mat-error>
-                                <mat-error *ngIf="createForm.get('macro_text')?.hasError('maxlength')">Macro text is too
-                                    long</mat-error>
-                            </mat-form-field>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-gray-700">Macro Text</label>
+                                    <button type="button" mat-stroked-button color="accent"
+                                        (click)="openMacroBuilderForCreate()">
+                                        <mat-icon class="mr-1">construction</mat-icon>
+                                        Use Macro Builder
+                                    </button>
+                                </div>
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <textarea matInput formControlName="macro_text"
+                                        placeholder="Enter your macro commands" rows="6" maxlength="255"></textarea>
+                                    <mat-hint align="end">{{ createForm.get('macro_text')?.value?.length || 0
+                                        }}/255</mat-hint>
+                                    <mat-error *ngIf="createForm.get('macro_text')?.hasError('required')">Macro text is
+                                        required</mat-error>
+                                    <mat-error *ngIf="createForm.get('macro_text')?.hasError('maxlength')">Macro text is
+                                        too
+                                        long</mat-error>
+                                </mat-form-field>
+
+                                <!-- Real-time Validator -->
+                                <app-macro-validator [macroText]="createForm.get('macro_text')?.value"
+                                    [wowClass]="createForm.get('class')?.value" [autoValidate]="true">
+                                </app-macro-validator>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -368,17 +383,32 @@
                             </div>
 
                             <!-- Macro Text -->
-                            <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>Macro Text</mat-label>
-                                <textarea matInput formControlName="macro_text" placeholder="Enter your macro commands"
-                                    rows="4" maxlength="255"></textarea>
-                                <mat-hint align="end">{{ editForm.get('macro_text')?.value?.length || 0
-                                    }}/255</mat-hint>
-                                <mat-error *ngIf="editForm.get('macro_text')?.hasError('required')">Macro text is
-                                    required</mat-error>
-                                <mat-error *ngIf="editForm.get('macro_text')?.hasError('maxlength')">Macro text is too
-                                    long</mat-error>
-                            </mat-form-field>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-gray-700">Macro Text</label>
+                                    <button type="button" mat-stroked-button color="accent"
+                                        (click)="openMacroBuilderForEdit()">
+                                        <mat-icon class="mr-1">construction</mat-icon>
+                                        Use Macro Builder
+                                    </button>
+                                </div>
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <textarea matInput formControlName="macro_text"
+                                        placeholder="Enter your macro commands" rows="6" maxlength="255"></textarea>
+                                    <mat-hint align="end">{{ editForm.get('macro_text')?.value?.length || 0
+                                        }}/255</mat-hint>
+                                    <mat-error *ngIf="editForm.get('macro_text')?.hasError('required')">Macro text is
+                                        required</mat-error>
+                                    <mat-error *ngIf="editForm.get('macro_text')?.hasError('maxlength')">Macro text is
+                                        too
+                                        long</mat-error>
+                                </mat-form-field>
+
+                                <!-- Real-time Validator -->
+                                <app-macro-validator [macroText]="editForm.get('macro_text')?.value"
+                                    [wowClass]="editForm.get('class')?.value" [autoValidate]="true">
+                                </app-macro-validator>
+                            </div>
 
                             <!-- Class Selection -->
                             <mat-form-field appearance="outline" class="w-full">

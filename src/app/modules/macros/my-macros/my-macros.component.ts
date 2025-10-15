@@ -13,6 +13,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { IconPickerComponent } from '../../icons/components/icon-picker/icon-picker.component';
 import { AbilityPickerComponent, AbilitySelection } from '../components/ability-picker/ability-picker.component';
+import { MacroBuilderComponent } from '../components/macro-builder/macro-builder.component';
+import { MacroValidatorComponent } from '../components/macro-validator/macro-validator.component';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -54,7 +56,8 @@ interface ExpandableMacro extends Macro {
         MatSlideToggleModule,
         MatCheckboxModule,
         IconPickerComponent,
-        AbilityPickerComponent
+        AbilityPickerComponent,
+        MacroValidatorComponent
     ]
 })
 export class MyMacrosComponent implements OnInit, OnChanges {
@@ -818,5 +821,67 @@ export class MyMacrosComponent implements OnInit, OnChanges {
                 }
             });
         }
+    }
+
+    /**
+     * Open the Macro Builder dialog (for create mode)
+     */
+    openMacroBuilderForCreate(): void {
+        const dialogRef = this.dialog.open(MacroBuilderComponent, {
+            width: '900px',
+            data: {
+                class: this.createForm.get('class')?.value,
+                spellName: this.createSelectedAbility?.ability?.name || ''
+            }
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+                // Update the form with generated macro
+                this.createForm.patchValue({
+                    macro_text: result.macroText
+                });
+
+                // Add suggested tags if none exist
+                const currentTags = this.createForm.get('tags')?.value || [];
+                if (currentTags.length === 0 && result.tags) {
+                    this.createForm.patchValue({
+                        tags: result.tags
+                    });
+                }
+
+                this.snackBar.open('Macro generated successfully!', 'Close', { duration: 3000 });
+            }
+        });
+    }
+
+    /**
+     * Open the Macro Builder dialog (for edit mode)
+     */
+    openMacroBuilderForEdit(): void {
+        if (!this.currentSelectedMacro) return;
+
+        const dialogRef = this.dialog.open(MacroBuilderComponent, {
+            width: '900px',
+            data: {
+                class: this.editForm.get('class')?.value,
+                spellName: this.editSelectedAbility?.ability?.name || ''
+            }
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+                // Update the form with generated macro
+                this.editForm.patchValue({
+                    macro_text: result.macroText
+                });
+
+                // Mark form as touched to enable save button
+                this.editForm.markAsDirty();
+                this.hasChanges = true;
+
+                this.snackBar.open('Macro generated successfully!', 'Close', { duration: 3000 });
+            }
+        });
     }
 }
