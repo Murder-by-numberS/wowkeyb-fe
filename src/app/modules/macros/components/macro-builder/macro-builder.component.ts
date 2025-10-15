@@ -195,12 +195,12 @@ export class MacroBuilderComponent implements OnInit {
 
     onAbilitySelected(selection: AbilitySelection): void {
         this.selectedAbility = selection;
-
+        
         // Auto-fill spell name from ability
         if (selection.ability?.name) {
             this.builderForm.patchValue({
                 spellName: selection.ability.name,
-                abilityId: selection.ability._id || selection.ability.id
+                abilityId: selection.ability.id
             });
         }
 
