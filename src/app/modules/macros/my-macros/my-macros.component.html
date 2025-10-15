@@ -103,6 +103,10 @@
                 </div>
                 @if (isCreating) {
                 <div class="flex items-center gap-2">
+                    <button type="button" mat-stroked-button color="accent" (click)="openMacroBuilderForCreate()">
+                        <mat-icon class="mr-1">construction</mat-icon>
+                        Use Macro Builder
+                    </button>
                     <button type="button" mat-stroked-button (click)="onCancelCreate()" [disabled]="isLoading">
                         Cancel
                     </button>
@@ -115,6 +119,10 @@
                 } @else if (currentSelectedMacro) {
                 <div class="flex items-center gap-2">
                     @if (isEditing) {
+                    <button type="button" mat-stroked-button color="accent" (click)="openMacroBuilderForEdit()">
+                        <mat-icon class="mr-1">construction</mat-icon>
+                        Use Macro Builder
+                    </button>
                     <button type="button" mat-stroked-button (click)="onCancelEdit(currentSelectedMacro)"
                         [disabled]="isLoading">
                         Cancel
@@ -211,14 +219,7 @@
 
                             <!-- Macro Text -->
                             <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-gray-700">Macro Text</label>
-                                    <button type="button" mat-stroked-button color="accent"
-                                        (click)="openMacroBuilderForCreate()">
-                                        <mat-icon class="mr-1">construction</mat-icon>
-                                        Use Macro Builder
-                                    </button>
-                                </div>
+                                <label class="text-sm font-medium text-gray-700">Macro Text</label>
                                 <mat-form-field appearance="outline" class="w-full">
                                     <textarea matInput formControlName="macro_text"
                                         placeholder="Enter your macro commands" rows="6" maxlength="255"></textarea>
@@ -384,14 +385,7 @@
 
                             <!-- Macro Text -->
                             <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-gray-700">Macro Text</label>
-                                    <button type="button" mat-stroked-button color="accent"
-                                        (click)="openMacroBuilderForEdit()">
-                                        <mat-icon class="mr-1">construction</mat-icon>
-                                        Use Macro Builder
-                                    </button>
-                                </div>
+                                <label class="text-sm font-medium text-gray-700">Macro Text</label>
                                 <mat-form-field appearance="outline" class="w-full">
                                     <textarea matInput formControlName="macro_text"
                                         placeholder="Enter your macro commands" rows="6" maxlength="255"></textarea>
