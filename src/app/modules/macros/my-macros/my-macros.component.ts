@@ -831,7 +831,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             width: '900px',
             data: {
                 class: this.createForm.get('class')?.value,
-                spellName: this.createSelectedAbility?.ability?.name || ''
+                selectedAbility: this.createSelectedAbility
             }
         });
 
@@ -865,7 +865,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             width: '900px',
             data: {
                 class: this.editForm.get('class')?.value,
-                spellName: this.editSelectedAbility?.ability?.name || ''
+                selectedAbility: this.editSelectedAbility
             }
         });
 

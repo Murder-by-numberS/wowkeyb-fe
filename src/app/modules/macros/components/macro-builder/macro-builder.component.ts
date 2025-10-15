@@ -12,6 +12,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MacroService, MacroTemplate, GenerateMacroResponse } from '../../services/macro.service';
+import { AbilityPickerComponent, AbilitySelection } from '../ability-picker/ability-picker.component';
 
 @Component({
     selector: 'app-macro-builder',
@@ -28,7 +29,8 @@ import { MacroService, MacroTemplate, GenerateMacroResponse } from '../../servic
         MatChipsModule,
         MatTabsModule,
         MatProgressSpinnerModule,
-        MatTooltipModule
+        MatTooltipModule,
+        AbilityPickerComponent
     ],
     templateUrl: './macro-builder.component.html'
 })
@@ -37,6 +39,7 @@ export class MacroBuilderComponent implements OnInit {
     templates: MacroTemplate[] = [];
     selectedTemplate: MacroTemplate | null = null;
     generatedMacro: GenerateMacroResponse | null = null;
+    selectedAbility: AbilitySelection | null = null;
     loading = false;
     error: string | null = null;
 
@@ -85,6 +88,12 @@ export class MacroBuilderComponent implements OnInit {
         }
         if (this.data?.abilityId) {
             this.builderForm.patchValue({ abilityId: this.data.abilityId });
+        }
+        if (this.data?.selectedAbility) {
+            this.selectedAbility = this.data.selectedAbility;
+            if (this.selectedAbility?.ability?.name) {
+                this.builderForm.patchValue({ spellName: this.selectedAbility.ability.name });
+            }
         }
     }
 
@@ -182,6 +191,33 @@ export class MacroBuilderComponent implements OnInit {
         }).catch(err => {
             console.error('Failed to copy macro:', err);
         });
+    }
+
+    onAbilitySelected(selection: AbilitySelection): void {
+        this.selectedAbility = selection;
+
+        // Auto-fill spell name from ability
+        if (selection.ability?.name) {
+            this.builderForm.patchValue({
+                spellName: selection.ability.name,
+                abilityId: selection.ability._id || selection.ability.id
+            });
+        }
+
+        // Auto-set class if ability has class info
+        if (selection.class && !this.builderForm.get('wowClass')?.value) {
+            this.builderForm.patchValue({
+                wowClass: selection.class
+            });
+        }
+    }
+
+    onAbilityCleared(): void {
+        this.selectedAbility = null;
+        this.builderForm.patchValue({
+            abilityId: ''
+        });
+        // Don't clear spell name in case user wants to keep it
     }
 }
 
