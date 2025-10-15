@@ -103,9 +103,9 @@ export class MacroValidatorComponent implements OnChanges {
 
     getSeverityClass(severity: string): string {
         switch (severity.toLowerCase()) {
-            case 'error': return 'severity-error';
-            case 'warning': return 'severity-warning';
-            default: return 'severity-info';
+            case 'error': return 'bg-red-50 text-red-900';
+            case 'warning': return 'bg-orange-50 text-orange-900';
+            default: return 'bg-blue-50 text-blue-900';
         }
     }
 }
