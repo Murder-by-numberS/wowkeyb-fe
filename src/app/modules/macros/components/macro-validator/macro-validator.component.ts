@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
@@ -23,6 +23,8 @@ export class MacroValidatorComponent implements OnChanges {
     @Input() macroText: string = '';
     @Input() wowClass?: string;
     @Input() autoValidate: boolean = true;
+
+    @Output() validationChange = new EventEmitter<{ isValid: boolean; hasErrors: boolean }>();
 
     validation: MacroValidation | null = null;
     suggestedTags: string[] = [];
@@ -72,11 +74,19 @@ export class MacroValidatorComponent implements OnChanges {
                 this.validation = response.validation;
                 this.suggestedTags = response.suggested_tags;
                 this.loading = false;
+
+                // Emit validation status
+                const hasErrors = (response.validation?.errors?.length || 0) > 0;
+                const isValid = !hasErrors;
+                this.validationChange.emit({ isValid, hasErrors });
             },
             error: (error) => {
                 console.error('Validation error:', error);
                 this.error = 'Failed to validate macro';
                 this.loading = false;
+
+                // Emit validation failure
+                this.validationChange.emit({ isValid: false, hasErrors: true });
             }
         });
     }

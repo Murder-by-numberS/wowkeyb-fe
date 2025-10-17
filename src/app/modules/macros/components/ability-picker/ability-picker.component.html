@@ -51,7 +51,7 @@
                 <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Specialization</mat-label>
                     <mat-select [(ngModel)]="selectedSpec" (selectionChange)="onSpecChange()"
-                        [disabled]="!selectedClass">
+                        [disabled]="isSpecDisabled()">
                         <mat-option value="">All Specs</mat-option>
                         <mat-option *ngFor="let spec of specs" [value]="spec">
                             {{ spec }}
@@ -63,7 +63,7 @@
                 <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Hero Talent</mat-label>
                     <mat-select [(ngModel)]="selectedHeroTalent" (selectionChange)="onHeroTalentChange()"
-                        [disabled]="!selectedClass">
+                        [disabled]="isHeroTalentDisabled()">
                         <mat-option value="">All Hero Talents</mat-option>
                         <mat-option *ngFor="let heroTalent of heroTalents" [value]="heroTalent">
                             {{ heroTalent }}

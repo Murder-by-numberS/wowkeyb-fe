@@ -55,13 +55,38 @@
 
                     <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Class (Optional)</mat-label>
-                        <mat-select formControlName="wowClass">
+                        <mat-select formControlName="wowClass" (selectionChange)="onClassChange()">
                             <mat-option value="">None</mat-option>
                             <mat-option *ngFor="let class of classes" [value]="class.value">
                                 {{ class.label }}
                             </mat-option>
                         </mat-select>
                         <mat-hint>Used for class-specific validation</mat-hint>
+                    </mat-form-field>
+
+                    <!-- Spec Selection (only show if class is selected) -->
+                    <mat-form-field appearance="outline" class="w-full" *ngIf="builderForm.get('wowClass')?.value">
+                        <mat-label>Specialization (Optional)</mat-label>
+                        <mat-select formControlName="spec" (selectionChange)="onSpecChange()">
+                            <mat-option value="">All Specs</mat-option>
+                            <mat-option *ngFor="let spec of availableSpecs" [value]="spec">
+                                {{ spec }}
+                            </mat-option>
+                        </mat-select>
+                        <mat-hint>Filter abilities by specialization</mat-hint>
+                    </mat-form-field>
+
+                    <!-- Hero Talent Selection (only show if class and spec are selected) -->
+                    <mat-form-field appearance="outline" class="w-full"
+                        *ngIf="builderForm.get('wowClass')?.value && builderForm.get('spec')?.value">
+                        <mat-label>Hero Talent (Optional)</mat-label>
+                        <mat-select formControlName="heroTalent">
+                            <mat-option value="">All Hero Talents</mat-option>
+                            <mat-option *ngFor="let heroTalent of availableHeroTalents" [value]="heroTalent">
+                                {{ heroTalent }}
+                            </mat-option>
+                        </mat-select>
+                        <mat-hint>Filter abilities by hero talent</mat-hint>
                     </mat-form-field>
 
                     <!-- Advanced Options -->
@@ -145,12 +170,24 @@
                 </div>
             </div>
 
+            <!-- Macro Title Input -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 class="text-sm font-medium mb-3 text-gray-900">Macro Title</h4>
+                <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Edit Macro Title</mat-label>
+                    <input matInput [(ngModel)]="macroTitle" placeholder="Auto-generated title" required>
+                    <mat-icon matSuffix>edit</mat-icon>
+                    <mat-hint>Auto-generated title - feel free to edit it</mat-hint>
+                </mat-form-field>
+            </div>
+
             <div class="flex justify-between mt-6 pt-4 border-t border-gray-200">
                 <button mat-button (click)="reset()" class="flex items-center gap-2">
                     <mat-icon>refresh</mat-icon>
                     Start Over
                 </button>
-                <button mat-raised-button color="primary" (click)="useMacro()" class="flex items-center gap-2">
+                <button mat-raised-button color="primary" (click)="useMacro()" [disabled]="!macroTitle?.trim()"
+                    class="flex items-center gap-2">
                     <mat-icon>check</mat-icon>
                     Use This Macro
                 </button>

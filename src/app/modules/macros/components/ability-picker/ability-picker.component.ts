@@ -215,7 +215,7 @@ export class AbilityPickerComponent implements OnInit {
         };
 
         if (this.selectedSpec) {
-            filters.spec = formatString(this.selectedSpec);
+            filters.spec = this.selectedSpec.toLowerCase();
         }
 
         if (this.selectedHeroTalent) {
@@ -325,13 +325,14 @@ export class AbilityPickerComponent implements OnInit {
         }
 
         // Handle different ability types:
-        // - Class abilities: only set class
-        // - Spec abilities: set class and spec
+        // - Class abilities: only set class, clear spec and hero talent
+        // - Spec abilities: set class and spec, clear hero talent
         // - Hero talent abilities: set class and hero talent (NOT spec, since hero talents can belong to multiple specs)
 
         if (ability.abilityType === 'spec' && ability.spec) {
-            // Spec abilities: populate spec
-            this.selectedSpec = ability.spec;
+            // Spec abilities: populate spec and clear hero talent
+            this.selectedSpec = this.capitalizeSpec(ability.spec);
+            this.selectedHeroTalent = '';
         } else if (ability.abilityType === 'hero_talent' && ability.heroTalent) {
             // Hero talent abilities: populate hero talent but NOT spec
             // Hero talents can belong to multiple specs, so don't auto-select one
@@ -340,8 +341,11 @@ export class AbilityPickerComponent implements OnInit {
             // Convert backend format to frontend format for the dropdown
             this.selectedHeroTalent = this.convertHeroTalentFormat(ability.heroTalent);
             console.log('Set hero talent to:', this.selectedHeroTalent);
+        } else {
+            // For class abilities, clear both spec and hero talent
+            this.selectedSpec = '';
+            this.selectedHeroTalent = '';
         }
-        // For class abilities (abilityType === 'class'), we don't set spec or hero talent
 
         // Update dropdowns after setting all values
         console.log('Before updateDropdowns - class:', this.selectedClass, 'spec:', this.selectedSpec, 'heroTalent:', this.selectedHeroTalent);
@@ -428,6 +432,11 @@ export class AbilityPickerComponent implements OnInit {
         return heroTalent.toLowerCase().replace(/\s+/g, '-');
     }
 
+    private capitalizeSpec(spec: string): string {
+        // Convert from backend format "holy" to frontend format "Holy"
+        return spec.charAt(0).toUpperCase() + spec.slice(1);
+    }
+
     private updateDropdowns() {
         console.log('updateDropdowns called with:', {
             selectedClass: this.selectedClass,
@@ -446,8 +455,13 @@ export class AbilityPickerComponent implements OnInit {
                 let allSpecs = Object.keys(classData.specs);
                 console.log('All specs for class:', allSpecs);
 
+                // If a spec ability is selected, only show that spec
+                if (this.selectedAbilityItem && this.selectedAbilityItem.abilityType === 'spec' && this.selectedAbilityItem.spec) {
+                    this.specs = [this.capitalizeSpec(this.selectedAbilityItem.spec)];
+                    console.log('Filtered specs to selected ability spec:', this.specs);
+                }
                 // If a hero talent is selected but no spec, filter specs to only show those that have the hero talent
-                if (this.selectedHeroTalent && !this.selectedSpec) {
+                else if (this.selectedHeroTalent && !this.selectedSpec) {
                     // Hero talent is already in frontend format, no conversion needed
                     console.log('Using hero talent directly:', this.selectedHeroTalent);
 
@@ -511,5 +525,31 @@ export class AbilityPickerComponent implements OnInit {
 
     hasSelection(): boolean {
         return !!(this.selectedAbility?.ability);
+    }
+
+    isSpecDisabled(): boolean {
+        // Disable spec dropdown if:
+        // 1. No class is selected, OR
+        // 2. An ability is selected and it's a hero talent (hero talents span multiple specs)
+        if (!this.selectedClass) {
+            return true;
+        }
+        if (this.selectedAbilityItem && this.selectedAbilityItem.abilityType === 'hero_talent') {
+            return true;
+        }
+        return false;
+    }
+
+    isHeroTalentDisabled(): boolean {
+        // Disable hero talent dropdown if:
+        // 1. No class is selected, OR
+        // 2. An ability is selected and it's NOT a hero talent ability
+        if (!this.selectedClass) {
+            return true;
+        }
+        if (this.selectedAbilityItem && this.selectedAbilityItem.abilityType !== 'hero_talent') {
+            return true;
+        }
+        return false;
     }
 }

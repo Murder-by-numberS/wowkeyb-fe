@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MacroService, MacroTemplate, GenerateMacroResponse } from '../../services/macro.service';
 import { AbilityPickerComponent, AbilitySelection } from '../ability-picker/ability-picker.component';
+import { fullClasses } from 'app/core/data/classes';
 
 @Component({
     selector: 'app-macro-builder',
@@ -20,6 +21,7 @@ import { AbilityPickerComponent, AbilitySelection } from '../ability-picker/abil
     imports: [
         CommonModule,
         ReactiveFormsModule,
+        FormsModule,
         MatDialogModule,
         MatButtonModule,
         MatFormFieldModule,
@@ -42,6 +44,9 @@ export class MacroBuilderComponent implements OnInit {
     selectedAbility: AbilitySelection | null = null;
     loading = false;
     error: string | null = null;
+    availableSpecs: string[] = [];
+    availableHeroTalents: string[] = [];
+    macroTitle: string = '';
 
     classes = [
         { value: 'deathknight', label: 'Death Knight' },
@@ -69,6 +74,8 @@ export class MacroBuilderComponent implements OnInit {
             spellName: ['', Validators.required],
             templateType: ['', Validators.required],
             wowClass: [''],
+            spec: [''],
+            heroTalent: [''],
             abilityId: [''],
             includeTooltip: [true],
             fallbackToPlayer: [false],
@@ -143,6 +150,8 @@ export class MacroBuilderComponent implements OnInit {
             spell_name: formValue.spellName,
             template_type: formValue.templateType,
             wow_class: formValue.wowClass || undefined,
+            spec: formValue.spec || undefined,
+            hero_talent: formValue.heroTalent || undefined,
             ability_id: formValue.abilityId || undefined,
             custom_options: customOptions
         };
@@ -150,6 +159,8 @@ export class MacroBuilderComponent implements OnInit {
         this.macroService.generateMacro(request).subscribe({
             next: (response) => {
                 this.generatedMacro = response;
+                // Generate a title based on the spell name and template type
+                this.macroTitle = this.generateMacroTitle(formValue.spellName, formValue.templateType, formValue.wowClass, formValue.spec);
                 this.loading = false;
             },
             error: (error) => {
@@ -161,8 +172,9 @@ export class MacroBuilderComponent implements OnInit {
     }
 
     useMacro(): void {
-        if (this.generatedMacro) {
+        if (this.generatedMacro && this.macroTitle?.trim()) {
             this.dialogRef.close({
+                title: this.macroTitle.trim(),
                 macroText: this.generatedMacro.macro_text,
                 tags: this.generatedMacro.suggested_tags,
                 explanation: this.generatedMacro.explanation
@@ -173,10 +185,13 @@ export class MacroBuilderComponent implements OnInit {
     reset(): void {
         this.generatedMacro = null;
         this.selectedTemplate = null;
+        this.macroTitle = '';
         this.builderForm.reset({
             includeTooltip: true,
             fallbackToPlayer: false
         });
+        this.availableSpecs = [];
+        this.availableHeroTalents = [];
         this.error = null;
     }
 
@@ -195,7 +210,7 @@ export class MacroBuilderComponent implements OnInit {
 
     onAbilitySelected(selection: AbilitySelection): void {
         this.selectedAbility = selection;
-        
+
         // Auto-fill spell name from ability
         if (selection.ability?.name) {
             this.builderForm.patchValue({
@@ -209,6 +224,26 @@ export class MacroBuilderComponent implements OnInit {
             this.builderForm.patchValue({
                 wowClass: selection.class
             });
+            // Trigger class change to populate specs
+            this.onClassChange();
+        }
+
+        // Auto-set spec if ability has spec info
+        if (selection.spec) {
+            this.builderForm.patchValue({
+                spec: selection.spec
+            });
+            // Filter specs to only show the ability's spec
+            this.availableSpecs = [selection.spec];
+            // Trigger spec change to populate hero talents
+            this.onSpecChange();
+        }
+
+        // Auto-set hero talent if ability has hero talent info
+        if (selection.heroTalent) {
+            this.builderForm.patchValue({
+                heroTalent: selection.heroTalent
+            });
         }
     }
 
@@ -217,7 +252,110 @@ export class MacroBuilderComponent implements OnInit {
         this.builderForm.patchValue({
             abilityId: ''
         });
+        // Reset available specs to show all specs for the selected class
+        const selectedClass = this.builderForm.get('wowClass')?.value;
+        if (selectedClass) {
+            const classData = fullClasses[selectedClass];
+            if (classData && classData.specs) {
+                this.availableSpecs = Object.keys(classData.specs);
+            }
+        }
         // Don't clear spell name in case user wants to keep it
+    }
+
+    onClassChange(): void {
+        const selectedClass = this.builderForm.get('wowClass')?.value;
+
+        // Clear spec and hero talent when class changes
+        this.builderForm.patchValue({
+            spec: '',
+            heroTalent: ''
+        });
+
+        if (selectedClass) {
+            const classData = fullClasses[selectedClass];
+            if (classData && classData.specs) {
+                // If an ability is selected and it has a specific spec, only show that spec
+                if (this.selectedAbility?.spec) {
+                    this.availableSpecs = [this.selectedAbility.spec];
+                } else {
+                    // Otherwise show all specs for the class
+                    this.availableSpecs = Object.keys(classData.specs);
+                }
+            } else {
+                this.availableSpecs = [];
+            }
+        } else {
+            this.availableSpecs = [];
+        }
+        this.availableHeroTalents = [];
+    }
+
+    onSpecChange(): void {
+        const selectedClass = this.builderForm.get('wowClass')?.value;
+        const selectedSpec = this.builderForm.get('spec')?.value;
+
+        // Clear hero talent when spec changes
+        this.builderForm.patchValue({
+            heroTalent: ''
+        });
+
+        if (selectedClass && selectedSpec) {
+            const classData = fullClasses[selectedClass];
+            if (classData && classData.specs && classData.specs[selectedSpec]) {
+                this.availableHeroTalents = classData.specs[selectedSpec];
+            } else {
+                this.availableHeroTalents = [];
+            }
+        } else {
+            this.availableHeroTalents = [];
+        }
+    }
+
+    private generateMacroTitle(spellName: string, templateType: string, wowClass?: string, spec?: string): string {
+        // Start with the spell name
+        let title = spellName;
+
+        // Add template type context
+        const templateContext = this.getTemplateContext(templateType);
+        if (templateContext) {
+            title += ` ${templateContext}`;
+        }
+
+        // Add class/spec context if available
+        if (spec && wowClass) {
+            const classLabel = this.classes.find(c => c.value === wowClass)?.label || wowClass;
+            title += ` (${classLabel} - ${spec})`;
+        } else if (wowClass) {
+            const classLabel = this.classes.find(c => c.value === wowClass)?.label || wowClass;
+            title += ` (${classLabel})`;
+        }
+
+        return title;
+    }
+
+    private getTemplateContext(templateType: string): string {
+        const templateContexts: { [key: string]: string } = {
+            'mouseover': 'Mouseover',
+            'focus': 'Focus',
+            'target': 'Target',
+            'self': 'Self',
+            'party': 'Party',
+            'raid': 'Raid',
+            'arena': 'Arena',
+            'pvp': 'PvP',
+            'pve': 'PvE',
+            'dps': 'DPS',
+            'heal': 'Heal',
+            'tank': 'Tank',
+            'utility': 'Utility',
+            'interrupt': 'Interrupt',
+            'cc': 'CC',
+            'buff': 'Buff',
+            'debuff': 'Debuff'
+        };
+
+        return templateContexts[templateType] || '';
     }
 }
 

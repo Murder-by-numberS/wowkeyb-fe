@@ -98,7 +98,7 @@ export interface MacroResponse {
 export interface MacroValidation {
     errors: ValidationError[];
     warnings: ValidationWarning[];
-    quality: QualityScore;
+    suggestions?: string[];
     is_valid: boolean;
 }
 
@@ -114,19 +114,6 @@ export interface ValidationWarning {
     command: string;
     message: string;
     detail?: string;
-}
-
-export interface QualityScore {
-    total: number;
-    grade: string;
-    issues: QualityIssue[];
-    suggestions: string[];
-}
-
-export interface QualityIssue {
-    severity: string;
-    count: number;
-    message: string;
 }
 
 export interface MacroTemplate {

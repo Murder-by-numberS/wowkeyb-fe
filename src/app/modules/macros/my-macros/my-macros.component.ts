@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,8 +9,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatStepperModule, MatStepper } from '@angular/material/stepper';
 import { IconPickerComponent } from '../../icons/components/icon-picker/icon-picker.component';
 import { AbilityPickerComponent, AbilitySelection } from '../components/ability-picker/ability-picker.component';
 import { MacroBuilderComponent } from '../components/macro-builder/macro-builder.component';
@@ -24,7 +24,7 @@ import { takeUntil, map } from 'rxjs/operators';
 import { UserService } from 'app/core/user/user.service';
 import { AuthService } from 'app/core/auth/auth.service';
 import { Subject, Observable, of } from 'rxjs';
-import { MacroService, Macro, MacroResponse } from '../services/macro.service';
+import { MacroService, Macro, MacroResponse, MacroTemplate, GenerateMacroResponse } from '../services/macro.service';
 import { IconService } from '../../icons/services/icon.service';
 import { Icon } from '../../icons/services/icon.service';
 import { fullClasses } from 'app/core/data/classes';
@@ -53,8 +53,8 @@ interface ExpandableMacro extends Macro {
         MatSelectModule,
         MatChipsModule,
         MatProgressSpinnerModule,
-        MatSlideToggleModule,
         MatCheckboxModule,
+        MatStepperModule,
         IconPickerComponent,
         AbilityPickerComponent,
         MacroValidatorComponent
@@ -70,6 +70,8 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     @Output() macroSelectedChange = new EventEmitter<Macro>();
     @Output() macroDeleted = new EventEmitter<Macro>();
     @Output() macroCreated = new EventEmitter<Macro>();
+
+    @ViewChild('stepper') stepper!: MatStepper;
 
     // Component state
     macros: ExpandableMacro[] = [];
@@ -88,6 +90,93 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     createSelectedIcon: Icon | null = null;
     createSelectedAbility: AbilitySelection | null = null;
     createAddTooltip: boolean = false;
+    createMacroValidationPassed: boolean = true; // Track validation status
+
+    // Integrated macro builder properties
+    useMacroBuilder: boolean = false;
+    useManualMode: boolean = false;
+    macroBuilderTemplates: MacroTemplate[] = [];
+    selectedMacroBuilderTemplate: MacroTemplate | null = null;
+    macroBuilderSpellName: string = '';
+    macroBuilderClass: string = '';
+    macroBuilderSpec: string = '';
+    macroBuilderHeroTalent: string = '';
+    macroBuilderModifierKey: string = '';
+    macroBuilderTargetModifier: string = '';
+    macroBuilderKeyModifiers: string[] = [];
+    macroBuilderAvailableSpecs: string[] = [];
+    macroBuilderAvailableHeroTalents: string[] = [];
+    macroBuilderConditionals: string[] = [];
+    macroBuilderIncludeTooltip: boolean = true;
+    isGeneratingMacro: boolean = false;
+    showManualValidation: boolean = false; // For manual mode validation step
+
+    // Target modifiers for macro builder
+    availableTargetModifiers = [
+        { value: 'player', label: 'Player (@player)', description: 'Targets yourself' },
+        { value: 'target', label: 'Target (@target)', description: 'Targets your current target' },
+        { value: 'mouseover', label: 'Mouseover (@mouseover)', description: 'Targets the unit your mouse is over' },
+        { value: 'focus', label: 'Focus (@focus)', description: 'Targets your focus target' },
+        { value: 'pet', label: 'Pet (@pet)', description: 'Targets your pet' },
+        { value: 'targettarget', label: 'Target\'s Target (@targettarget)', description: 'Targets your target\'s target' },
+        { value: 'cursor', label: 'Cursor (@cursor)', description: 'Targets the terrain at cursor (for ground-target spells)' },
+        { value: 'arena1', label: 'Arena 1 (@arena1)', description: 'Targets arena enemy 1 (PvP)' },
+        { value: 'arena2', label: 'Arena 2 (@arena2)', description: 'Targets arena enemy 2 (PvP)' },
+        { value: 'arena3', label: 'Arena 3 (@arena3)', description: 'Targets arena enemy 3 (PvP)' },
+        { value: 'boss1', label: 'Boss 1 (@boss1)', description: 'Targets boss 1 (PvE)' },
+        { value: 'boss2', label: 'Boss 2 (@boss2)', description: 'Targets boss 2 (PvE)' },
+        { value: 'boss3', label: 'Boss 3 (@boss3)', description: 'Targets boss 3 (PvE)' }
+    ];
+
+    // Conditionals for macro builder
+    availableConditionals = [
+        { value: 'combat', label: 'In Combat', description: 'True if you\'re in combat' },
+        { value: 'nocombat', label: 'Not In Combat', description: 'True if you\'re not in combat' },
+        { value: 'harm', label: 'Enemy Target', description: 'True if target is an enemy' },
+        { value: 'help', label: 'Friendly Target', description: 'True if you can aid the target' },
+        { value: 'dead', label: 'Dead Target', description: 'True if target is dead' },
+        { value: 'nodead', label: 'Alive Target', description: 'True if target is alive' },
+        { value: 'exists', label: 'Target Exists', description: 'True if target exists' },
+        { value: 'mounted', label: 'Mounted', description: 'True if you are mounted' },
+        { value: 'flying', label: 'Flying', description: 'True if you are flying' },
+        { value: 'flyable', label: 'Flyable Area', description: 'True if you can fly here' },
+        { value: 'advflyable', label: 'Skyride Area', description: 'True if you can skyride here' },
+        { value: 'swimming', label: 'Swimming', description: 'True if you are swimming' },
+        { value: 'indoors', label: 'Indoors', description: 'True if you are indoors' },
+        { value: 'outdoors', label: 'Outdoors', description: 'True if you are outdoors' },
+        { value: 'channeling', label: 'Channeling', description: 'True if channeling a spell' },
+        { value: 'resting', label: 'Resting', description: 'True if in a rested area' },
+        { value: 'pet', label: 'Has Pet', description: 'True if you have a pet' },
+        { value: 'group', label: 'In Group', description: 'True if in a party or raid' },
+        { value: 'group:party', label: 'In Party', description: 'True if in a party' },
+        { value: 'group:raid', label: 'In Raid', description: 'True if in a raid' },
+        { value: 'pvpcombat', label: 'PvP Combat', description: 'True if you can use PvP talents' },
+        { value: 'petbattle', label: 'Pet Battle', description: 'True if in a pet battle' }
+    ];
+
+    // Key modifiers for macro builder
+    availableKeyModifiers = [
+        { value: 'shift', label: 'Shift Key', description: 'Hold Shift when pressing the macro' },
+        { value: 'alt', label: 'Alt Key', description: 'Hold Alt when pressing the macro' },
+        { value: 'ctrl', label: 'Ctrl Key', description: 'Hold Ctrl when pressing the macro' }
+    ];
+
+    // Classes for macro builder
+    classes = [
+        { value: 'deathknight', label: 'Death Knight' },
+        { value: 'demonhunter', label: 'Demon Hunter' },
+        { value: 'druid', label: 'Druid' },
+        { value: 'evoker', label: 'Evoker' },
+        { value: 'hunter', label: 'Hunter' },
+        { value: 'mage', label: 'Mage' },
+        { value: 'monk', label: 'Monk' },
+        { value: 'paladin', label: 'Paladin' },
+        { value: 'priest', label: 'Priest' },
+        { value: 'rogue', label: 'Rogue' },
+        { value: 'shaman', label: 'Shaman' },
+        { value: 'warlock', label: 'Warlock' },
+        { value: 'warrior', label: 'Warrior' }
+    ];
 
     // Edit macro form properties
     editSelectedAbility: AbilitySelection | null = null;
@@ -130,6 +219,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             this.isAuthenticated = authenticated;
             if (authenticated) {
                 this.loadMacros();
+                this.loadMacroBuilderTemplates();
 
                 // Check if we have a macro ID in the route parameters for editing
                 this.route.params.pipe(
@@ -694,18 +784,32 @@ export class MyMacrosComponent implements OnInit, OnChanges {
                 this.isLoading = false;
                 this.isCreating = false;
                 this.resetCreateForm();
-                this.loadMacros(); // Reload the list
 
                 // Emit event to notify parent components (like macro drawer) to refresh
                 this.macroCreated.emit(createdMacro);
 
-                // Auto-select the newly created macro
-                if (createdMacro) {
-                    const newMacro = this.macros.find(m => m.id === createdMacro.id);
-                    if (newMacro) {
-                        this.selectMacro(newMacro);
+                // Reload the list and then auto-select the newly created macro
+                this.macroService.getMyMacros().subscribe({
+                    next: (macrosResponse) => {
+                        this.macros = (macrosResponse.macros || []).map(macro => ({
+                            ...macro,
+                            isExpanded: false,
+                            isEditing: false,
+                            selectedIcon: this.getIconFromMacro(macro)
+                        }));
+
+                        // Auto-select the newly created macro
+                        if (createdMacro) {
+                            const newMacro = this.macros.find(m => m.id === createdMacro.id);
+                            if (newMacro) {
+                                this.selectMacro(newMacro);
+                            }
+                        }
+                    },
+                    error: (error) => {
+                        console.error('Error reloading macros after create:', error);
                     }
-                }
+                });
             },
             error: (error) => {
                 console.error('Error creating macro:', error);
@@ -794,6 +898,241 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.createSelectedIcon = null;
         this.createSelectedAbility = null;
         this.createAddTooltip = false;
+        this.createMacroValidationPassed = true;
+
+        // Reset macro builder state
+        this.useMacroBuilder = false;
+        this.useManualMode = false;
+        this.selectedMacroBuilderTemplate = null;
+        this.macroBuilderSpellName = '';
+        this.macroBuilderClass = '';
+        this.macroBuilderSpec = '';
+        this.macroBuilderHeroTalent = '';
+        this.macroBuilderModifierKey = '';
+        this.macroBuilderTargetModifier = '';
+        this.macroBuilderKeyModifiers = [];
+        this.macroBuilderConditionals = [];
+        this.macroBuilderIncludeTooltip = true;
+        this.macroBuilderAvailableSpecs = [];
+        this.macroBuilderAvailableHeroTalents = [];
+        this.isGeneratingMacro = false;
+        this.showManualValidation = false;
+    }
+
+    selectManualMode(): void {
+        this.useManualMode = true;
+        this.useMacroBuilder = false;
+    }
+
+    selectGenerateMode(): void {
+        this.useMacroBuilder = true;
+        this.useManualMode = false;
+        // Clear any existing macro text from previous attempts
+        this.createForm.patchValue({ macro_text: '' });
+    }
+
+    getConditionalLabel(value: string): string {
+        return this.availableConditionals.find(c => c.value === value)?.label || value;
+    }
+
+    getKeyModifierLabel(value: string): string {
+        return this.availableKeyModifiers.find(m => m.value === value)?.label || value;
+    }
+
+    getTargetModifierLabel(value: string): string {
+        return this.availableTargetModifiers.find(t => t.value === value)?.label || value;
+    }
+
+    onCreateValidationChange(validation: { isValid: boolean; hasErrors: boolean }): void {
+        this.createMacroValidationPassed = validation.isValid;
+    }
+
+    // Macro builder methods
+    loadMacroBuilderTemplates(): void {
+        this.macroService.getTemplates().subscribe({
+            next: (response) => {
+                this.macroBuilderTemplates = response.templates;
+            },
+            error: (error) => {
+                console.error('Error loading macro builder templates:', error);
+            }
+        });
+    }
+
+    selectMacroBuilderTemplate(template: MacroTemplate): void {
+        this.selectedMacroBuilderTemplate = template;
+
+        // Automatically advance to the next step
+        if (this.stepper) {
+            setTimeout(() => {
+                this.stepper.next();
+            }, 300); // Small delay for visual feedback
+        }
+    }
+
+    onMacroBuilderClassChange(): void {
+        // Clear spec and hero talent when class changes
+        this.macroBuilderSpec = '';
+        this.macroBuilderHeroTalent = '';
+
+        if (this.macroBuilderClass) {
+            const classData = fullClasses[this.macroBuilderClass];
+            if (classData && classData.specs) {
+                this.macroBuilderAvailableSpecs = Object.keys(classData.specs);
+            } else {
+                this.macroBuilderAvailableSpecs = [];
+            }
+        } else {
+            this.macroBuilderAvailableSpecs = [];
+        }
+        this.macroBuilderAvailableHeroTalents = [];
+    }
+
+    onMacroBuilderSpecChange(): void {
+        // Clear hero talent when spec changes
+        this.macroBuilderHeroTalent = '';
+
+        if (this.macroBuilderClass && this.macroBuilderSpec) {
+            const classData = fullClasses[this.macroBuilderClass];
+            if (classData && classData.specs && classData.specs[this.macroBuilderSpec]) {
+                this.macroBuilderAvailableHeroTalents = classData.specs[this.macroBuilderSpec];
+            } else {
+                this.macroBuilderAvailableHeroTalents = [];
+            }
+        } else {
+            this.macroBuilderAvailableHeroTalents = [];
+        }
+    }
+
+    generateMacroFromBuilder(): void {
+        if (!this.createSelectedAbility?.ability) {
+            return;
+        }
+
+        this.isGeneratingMacro = true;
+
+        const customOptions: any = {
+            includeTooltip: this.macroBuilderIncludeTooltip
+        };
+
+        if (this.macroBuilderTargetModifier) {
+            customOptions.targetModifier = this.macroBuilderTargetModifier;
+        }
+
+        if (this.macroBuilderConditionals && this.macroBuilderConditionals.length > 0) {
+            customOptions.conditionals = this.macroBuilderConditionals;
+        }
+
+        if (this.macroBuilderKeyModifiers && this.macroBuilderKeyModifiers.length > 0) {
+            customOptions.keyModifiers = this.macroBuilderKeyModifiers;
+        }
+
+        const ability = this.createSelectedAbility.ability;
+        const request = {
+            spell_name: ability.name,
+            template_type: 'custom', // Use custom template since we're building from scratch
+            wow_class: this.createSelectedAbility.class || undefined,
+            spec: this.createSelectedAbility.spec || undefined,
+            hero_talent: this.createSelectedAbility.heroTalent || undefined,
+            custom_options: customOptions
+        };
+
+        console.log('Sending macro generation request:', request);
+
+        this.macroService.generateMacro(request).subscribe({
+            next: (response) => {
+                // Generate a title based on the spell name
+                let generatedTitle = ability.name;
+
+                // Add target modifier context if selected
+                if (this.macroBuilderTargetModifier) {
+                    const targetLabel = this.availableTargetModifiers.find(t => t.value === this.macroBuilderTargetModifier)?.label || this.macroBuilderTargetModifier;
+                    generatedTitle += ` ${targetLabel}`;
+                }
+
+                // Add class/spec if available
+                if (this.createSelectedAbility.spec && this.createSelectedAbility.class) {
+                    const classLabel = this.classes.find(c => c.value === this.createSelectedAbility.class)?.label || this.createSelectedAbility.class;
+                    generatedTitle += ` (${classLabel} - ${this.createSelectedAbility.spec})`;
+                } else if (this.createSelectedAbility.class) {
+                    const classLabel = this.classes.find(c => c.value === this.createSelectedAbility.class)?.label || this.createSelectedAbility.class;
+                    generatedTitle += ` (${classLabel})`;
+                }
+
+                // Update the form with generated macro data
+                this.createForm.patchValue({
+                    name: generatedTitle,
+                    macro_text: response.macro_text
+                });
+
+                // Add suggested tags if none exist
+                const currentTags = this.createForm.get('tags')?.value || [];
+                if (currentTags.length === 0 && response.suggested_tags) {
+                    this.createForm.patchValue({
+                        tags: response.suggested_tags
+                    });
+                }
+
+                this.isGeneratingMacro = false;
+                this.snackBar.open('Macro generated successfully!', 'Close', { duration: 3000 });
+
+                // Automatically advance to the next step
+                if (this.stepper) {
+                    this.stepper.next();
+                }
+            },
+            error: (error) => {
+                console.error('Error generating macro:', error);
+                this.snackBar.open('Failed to generate macro', 'Close', { duration: 3000 });
+                this.isGeneratingMacro = false;
+            }
+        });
+    }
+
+    private generateMacroTitle(spellName: string, templateType: string, wowClass?: string, spec?: string): string {
+        // Start with the spell name
+        let title = spellName;
+
+        // Add template type context
+        const templateContext = this.getTemplateContext(templateType);
+        if (templateContext) {
+            title += ` ${templateContext}`;
+        }
+
+        // Add class/spec context if available
+        if (spec && wowClass) {
+            const classLabel = this.classes.find(c => c.value === wowClass)?.label || wowClass;
+            title += ` (${classLabel} - ${spec})`;
+        } else if (wowClass) {
+            const classLabel = this.classes.find(c => c.value === wowClass)?.label || wowClass;
+            title += ` (${classLabel})`;
+        }
+
+        return title;
+    }
+
+    private getTemplateContext(templateType: string): string {
+        const templateContexts: { [key: string]: string } = {
+            'mouseover': 'Mouseover',
+            'focus': 'Focus',
+            'target': 'Target',
+            'self': 'Self',
+            'party': 'Party',
+            'raid': 'Raid',
+            'arena': 'Arena',
+            'pvp': 'PvP',
+            'pve': 'PvE',
+            'dps': 'DPS',
+            'heal': 'Heal',
+            'tank': 'Tank',
+            'utility': 'Utility',
+            'interrupt': 'Interrupt',
+            'cc': 'CC',
+            'buff': 'Buff',
+            'debuff': 'Debuff'
+        };
+
+        return templateContexts[templateType] || '';
     }
 
     private loadMacroForEdit(macroId: string): void {
@@ -823,37 +1162,6 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         }
     }
 
-    /**
-     * Open the Macro Builder dialog (for create mode)
-     */
-    openMacroBuilderForCreate(): void {
-        const dialogRef = this.dialog.open(MacroBuilderComponent, {
-            width: '900px',
-            data: {
-                class: this.createForm.get('class')?.value,
-                selectedAbility: this.createSelectedAbility
-            }
-        });
-
-        dialogRef.afterClosed().subscribe(result => {
-            if (result) {
-                // Update the form with generated macro
-                this.createForm.patchValue({
-                    macro_text: result.macroText
-                });
-
-                // Add suggested tags if none exist
-                const currentTags = this.createForm.get('tags')?.value || [];
-                if (currentTags.length === 0 && result.tags) {
-                    this.createForm.patchValue({
-                        tags: result.tags
-                    });
-                }
-
-                this.snackBar.open('Macro generated successfully!', 'Close', { duration: 3000 });
-            }
-        });
-    }
 
     /**
      * Open the Macro Builder dialog (for edit mode)
