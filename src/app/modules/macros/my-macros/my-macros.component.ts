@@ -208,7 +208,8 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.createForm = this.fb.group({
             name: ['', [Validators.required, Validators.maxLength(100)]],
             description: ['', [Validators.maxLength(500)]],
-            macro_text: ['', [Validators.required, Validators.maxLength(255)]]
+            macro_text: ['', [Validators.required, Validators.maxLength(255)]],
+            tags: [[]]
         });
     }
 
@@ -441,7 +442,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             show_tooltip: this.editAddTooltip,
             tags: formData.tags,
             is_public: macro.is_public,
-            icon: macro.selectedIcon?._id || null
+            icon: macro.selectedIcon?._id || undefined
         };
 
         this.macroService.updateMacro(macro.id, updateData).subscribe({
@@ -596,6 +597,22 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         const updatedTags = currentTags.filter((tag: string) => tag !== tagToRemove);
         this.editForm.patchValue({ tags: updatedTags });
         this.checkForChanges();
+    }
+
+    addCreateTag(tagValue: string): void {
+        if (!tagValue.trim()) return;
+
+        const currentTags = this.createForm.get('tags')?.value || [];
+        if (!currentTags.includes(tagValue.trim().toLowerCase())) {
+            const updatedTags = [...currentTags, tagValue.trim().toLowerCase()];
+            this.createForm.patchValue({ tags: updatedTags });
+        }
+    }
+
+    removeCreateTag(tagToRemove: string): void {
+        const currentTags = this.createForm.get('tags')?.value || [];
+        const updatedTags = currentTags.filter((tag: string) => tag !== tagToRemove);
+        this.createForm.patchValue({ tags: updatedTags });
     }
 
     setupChangeDetection(): void {
@@ -780,6 +797,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             ability: this.createSelectedAbility?.ability?.id || undefined,
             show_tooltip: this.createAddTooltip,
             icon: this.createSelectedIcon?._id || undefined,
+            tags: formData.tags || [],
             is_public: false
         };
 

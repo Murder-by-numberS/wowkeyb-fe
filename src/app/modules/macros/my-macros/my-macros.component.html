@@ -219,6 +219,24 @@
                                     <mat-error *ngIf="createForm.get('description')?.hasError('maxlength')">Description
                                         is too long</mat-error>
                                 </mat-form-field>
+
+                                <!-- Tags -->
+                                <div class="space-y-3">
+                                    <label class="text-sm font-medium text-gray-700">Tags (Optional)</label>
+                                    <div class="flex flex-wrap gap-2">
+                                        <mat-chip *ngFor="let tag of createForm.get('tags')?.value" [removable]="true"
+                                            (removed)="removeCreateTag(tag)">
+                                            {{ tag }}
+                                            <mat-icon matChipRemove>cancel</mat-icon>
+                                        </mat-chip>
+                                    </div>
+                                    <mat-form-field appearance="outline" class="w-full">
+                                        <mat-label>Add Tag</mat-label>
+                                        <input matInput #createTagInput placeholder="Type a tag and press Enter"
+                                            (keyup.enter)="addCreateTag(createTagInput.value); createTagInput.value=''">
+                                        <mat-hint>Press Enter to add a tag</mat-hint>
+                                    </mat-form-field>
+                                </div>
                             </div>
 
                             <!-- Action Buttons -->
@@ -522,6 +540,25 @@
                                                 *ngIf="createForm.get('description')?.hasError('maxlength')">Description
                                                 is too long</mat-error>
                                         </mat-form-field>
+
+                                        <!-- Tags -->
+                                        <div class="space-y-3">
+                                            <label class="text-sm font-medium text-gray-700">Tags (Optional)</label>
+                                            <div class="flex flex-wrap gap-2">
+                                                <mat-chip *ngFor="let tag of createForm.get('tags')?.value"
+                                                    [removable]="true" (removed)="removeCreateTag(tag)">
+                                                    {{ tag }}
+                                                    <mat-icon matChipRemove>cancel</mat-icon>
+                                                </mat-chip>
+                                            </div>
+                                            <mat-form-field appearance="outline" class="w-full">
+                                                <mat-label>Add Tag</mat-label>
+                                                <input matInput #stepperCreateTagInput
+                                                    placeholder="Type a tag and press Enter"
+                                                    (keyup.enter)="addCreateTag(stepperCreateTagInput.value); stepperCreateTagInput.value=''">
+                                                <mat-hint>Press Enter to add a tag</mat-hint>
+                                            </mat-form-field>
+                                        </div>
 
                                         <!-- Summary Note -->
                                         <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
