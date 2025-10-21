@@ -1,7 +1,7 @@
 //Angular
-import { Component, ViewEncapsulation, OnInit, OnDestroy, signal, ViewChild, EventEmitter, Output, Input, SimpleChanges, inject } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, OnDestroy, EventEmitter, Output, Input, SimpleChanges, inject, ViewChild } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NgClass, TitleCasePipe } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 
 //Angular Material
 import { MatButtonModule } from '@angular/material/button';
@@ -34,8 +34,8 @@ import { classes } from 'app/core/data/classes';
     encapsulation: ViewEncapsulation.None,
     standalone: true,
     imports: [
+        CommonModule,
         NgClass,
-        TitleCasePipe,
         FormsModule,
         ReactiveFormsModule,
         MatButtonModule,
@@ -54,15 +54,14 @@ import { classes } from 'app/core/data/classes';
 export class MacrosDrawerComponent implements OnInit, OnDestroy {
     @ViewChild(MatAccordion) accordion: MatAccordion;
 
-    readonly panelOpenState = signal(false);
-
     @Input() refreshMacros: boolean = false;
     @Input() isAuthenticated: boolean = false;
+    @Input() macros: Macro[] = [];
 
-    macros: Macro[] = [];
     filteredMacros: Macro[] = [];
     selectedMacroId: string | null = null; // To keep track of the selected macro
     @Output() macroSelected = new EventEmitter<any>();
+    @Output() createNewMacro = new EventEmitter<void>();
     MAX_SIZE = 100;
 
     selectedClasses = new FormControl<any[]>([]);
@@ -83,8 +82,6 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
     ) { }
 
     ngOnInit(): void {
-        // Force refresh macros from server on component initialization
-        this.forceRefreshMacros();
         this.filteredMacros = this.macros;
 
         this.selectedClasses.valueChanges.subscribe(() => {
@@ -93,9 +90,9 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        // Refresh macros when refreshMacros input changes to true
-        if (changes['refreshMacros'] && changes['refreshMacros'].currentValue === true) {
-            this.forceRefreshMacros();
+        // Update filtered macros when macros input changes
+        if (changes['macros'] && changes['macros'].currentValue) {
+            this.applyFilter();
         }
     }
 
@@ -103,50 +100,6 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
         this.destroy$.next();
         this.destroy$.complete();
     }
-
-    forceRefreshMacros() {
-        console.log('MacrosDrawerComponent - forceRefreshMacros');
-        console.log('Authentication status:', this.isAuthenticated);
-        this.isLoading = true;
-
-        // Only load macros if user is authenticated
-        if (!this.isAuthenticated) {
-            console.log('User not authenticated, skipping macro load');
-            this.isLoading = false;
-            return;
-        }
-
-        // Load user's macros from the backend
-        this.macroService.getMyMacros(1, 100) // Get first 100 macros
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (response) => {
-                    console.log('Loaded user macros:', response);
-                    console.log('Number of macros:', response.macros?.length || 0);
-                    this.macros = response.macros || [];
-                    this.applyFilter();
-                    this.isLoading = false;
-
-                    // Auto-select first macro if none selected and macros exist
-                    if (this.macros.length > 0 && !this.selectedMacroId && !this.preventAutoSelection) {
-                        this.selectMacro(this.macros[0]);
-                    }
-                },
-                error: (error) => {
-                    console.error('Error loading user macros:', error);
-                    console.error('Error details:', error.error);
-                    this.macros = [];
-                    this.applyFilter();
-                    this.isLoading = false;
-
-                    this.snackBar.open('Failed to load your macros. Please try again.', 'Close', {
-                        duration: 3000,
-                        panelClass: ['error-snackbar']
-                    });
-                }
-            });
-    }
-
 
     filterMacros(): void {
         const selected = this.selectedClasses.value;
@@ -228,6 +181,7 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
         }
     }
 
+
     isSelected(macroId: string): boolean {
         return this.selectedMacroId === macroId;
     }
@@ -282,10 +236,28 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
     }
 
     getClassDisplayName(className: string): string {
-        const classInfo = this.classList.find(c => c.name === className);
-        return classInfo ? classInfo.name : className;
+        const classNames: { [key: string]: string } = {
+            'deathknight': 'Death Knight',
+            'demonhunter': 'Demon Hunter',
+            'druid': 'Druid',
+            'evoker': 'Evoker',
+            'hunter': 'Hunter',
+            'mage': 'Mage',
+            'monk': 'Monk',
+            'paladin': 'Paladin',
+            'priest': 'Priest',
+            'rogue': 'Rogue',
+            'shaman': 'Shaman',
+            'warlock': 'Warlock',
+            'warrior': 'Warrior',
+            'miscellaneous': 'Miscellaneous'
+        };
+        return classNames[className] || className;
     }
 
+    onCreateNewMacro(): void {
+        this.createNewMacro.emit();
+    }
 
     trackByMacroId(index: number, macro: Macro): string {
         return `${index}-${macro.id}`;

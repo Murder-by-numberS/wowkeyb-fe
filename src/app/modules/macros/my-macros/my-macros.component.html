@@ -3,69 +3,9 @@
     <div class="flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden border-r border-gray-200"
         [class.w-0]="!drawerOpen" [class.w-80]="drawerOpen" [class.border-r-0]="!drawerOpen">
         @if (drawerOpen) {
-        <div class="h-full bg-white flex flex-col overflow-hidden">
-            <!-- Drawer Header -->
-            <div class="flex-shrink-0 p-4 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-gray-900">My Macros</h2>
-                </div>
-            </div>
-
-            <!-- Macros List -->
-            <div class="flex-1 overflow-y-auto">
-                @if (macros && macros.length > 0) {
-                <div class="p-2">
-                    @for (macro of macros; track macro.id) {
-                    <div class="flex items-center p-3 cursor-pointer rounded-lg mb-1 hover:bg-gray-50 transition-colors"
-                        [class.bg-blue-100]="currentSelectedMacro?.id === macro.id"
-                        [class.border-blue-500]="currentSelectedMacro?.id === macro.id" (click)="selectMacro(macro)">
-                        <div class="flex-1 flex items-center gap-3">
-                            <!-- Macro Icon -->
-                            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <img *ngIf="getMacroIconUrl(macro)" [src]="getMacroIconUrl(macro)" [alt]="macro.name"
-                                    class="w-6 h-6 rounded">
-                                <mat-icon *ngIf="!getMacroIconUrl(macro)" class="text-gray-400 text-sm">code</mat-icon>
-                            </div>
-                            <!-- Macro Info -->
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <h3 class="text-sm font-medium text-gray-900 truncate">{{ macro.name }}</h3>
-                                    <mat-icon *ngIf="macro.is_public" class="text-green-500 text-sm"
-                                        matTooltip="Public">public</mat-icon>
-                                    <mat-icon *ngIf="!macro.is_public" class="text-gray-400 text-sm"
-                                        matTooltip="Private">lock</mat-icon>
-                                </div>
-                                <p class="text-xs text-gray-600 truncate">
-                                    {{ getClassDisplayName(macro.class) }}
-                                    <span *ngIf="macro.spec"> - {{ macro.spec | titlecase }}</span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    }
-                    <!-- Create New Macro Button -->
-                    <div class="p-2">
-                        <button mat-flat-button color="primary" (click)="onCreateNewMacro()" class="w-full">
-                            <mat-icon class="mr-2">add</mat-icon>
-                            Create New Macro
-                        </button>
-                    </div>
-                </div>
-                } @else {
-                <!-- No Macros State -->
-                <div class="text-center py-8 px-4">
-                    <mat-icon class="text-4xl text-gray-300 mb-4">code</mat-icon>
-                    <h3 class="text-sm font-medium text-gray-600 mb-2">No Macros Found</h3>
-                    <p class="text-xs text-gray-500 mb-4">Create your first macro to get started.</p>
-                    <button mat-flat-button color="primary" (click)="onCreateNewMacro()" class="text-xs">
-                        <mat-icon class="mr-1 text-sm">add</mat-icon>
-                        Create Macro
-                    </button>
-                </div>
-                }
-            </div>
-
-        </div>
+        <macros-drawer [macros]="macros" [isAuthenticated]="isAuthenticated"
+            (macroSelected)="onMacroSelectedFromDrawer($event)" (createNewMacro)="onCreateNewMacro()">
+        </macros-drawer>
         }
     </div>
 

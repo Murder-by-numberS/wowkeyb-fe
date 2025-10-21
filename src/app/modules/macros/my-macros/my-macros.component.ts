@@ -15,6 +15,7 @@ import { IconPickerComponent } from '../../icons/components/icon-picker/icon-pic
 import { AbilityPickerComponent, AbilitySelection } from '../components/ability-picker/ability-picker.component';
 import { MacroBuilderComponent } from '../components/macro-builder/macro-builder.component';
 import { MacroValidatorComponent } from '../components/macro-validator/macro-validator.component';
+import { MacrosDrawerComponent } from '../components/macros-drawer/macros-drawer.component';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -57,7 +58,8 @@ interface ExpandableMacro extends Macro {
         MatStepperModule,
         IconPickerComponent,
         AbilityPickerComponent,
-        MacroValidatorComponent
+        MacroValidatorComponent,
+        MacrosDrawerComponent
     ]
 })
 export class MyMacrosComponent implements OnInit, OnChanges {
@@ -311,6 +313,10 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         }
 
         this.macroSelectedChange.emit(macro);
+    }
+
+    onMacroSelectedFromDrawer(macro: ExpandableMacro): void {
+        this.selectMacro(macro);
     }
 
     closePanel(): void {
