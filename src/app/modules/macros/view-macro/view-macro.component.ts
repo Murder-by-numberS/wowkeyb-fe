@@ -248,8 +248,7 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
             next: () => {
                 // Update local usage count
                 if (this.macro) {
-                    this.macro.usage_count = (this.macro.usage_count || 0) + 1;
-                    this.macro.usageCount = this.macro.usage_count;
+                    this.macro.usageCount = (this.macro.usageCount || 0) + 1;
                 }
             },
             error: (error) => {

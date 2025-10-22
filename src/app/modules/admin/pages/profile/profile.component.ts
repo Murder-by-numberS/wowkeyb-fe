@@ -1,10 +1,14 @@
 import { TextFieldModule } from '@angular/cdk/text-field';
-import { NgClass } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
+    OnDestroy,
+    OnInit,
     ViewEncapsulation,
 } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,8 +16,21 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSelectModule } from '@angular/material/select';
+import { Router } from '@angular/router';
 import { FuseCardComponent } from '@fuse/components/card';
+import { MacroService } from 'app/modules/macros/services/macro.service';
+import { KeybindingService } from 'app/core/services/keybinding.service';
+import { AuthService } from 'app/core/auth/auth.service';
+import { UserService } from 'app/core/user/user.service';
+import { SettingsService } from 'app/core/services/user/settings.service';
+import { User } from 'app/core/user/user.types';
+import { Settings } from 'app/core/settings/settings.types';
+import { classes } from 'app/core/data/classes';
+import { Subject, forkJoin } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'profile',
@@ -22,22 +39,205 @@ import { FuseCardComponent } from '@fuse/components/card';
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
-        RouterLink,
+        CommonModule,
+        ReactiveFormsModule,
         FuseCardComponent,
         MatIconModule,
         MatButtonModule,
         MatMenuModule,
         MatFormFieldModule,
         MatInputModule,
+        MatSelectModule,
         TextFieldModule,
         MatDividerModule,
         MatTooltipModule,
-        NgClass,
+        MatProgressSpinnerModule,
+        MatSnackBarModule,
     ],
 })
-export class ProfileComponent {
+export class ProfileComponent implements OnInit, OnDestroy {
+    user: User | null = null;
+    macroCount: number = 0;
+    keybindingCount: number = 0;
+    isLoading: boolean = true;
+
+    passwordForm: FormGroup;
+    isChangingPassword: boolean = false;
+    showPasswordForm: boolean = false;
+
+    classes = classes;
+    favoriteClass: string | null = null;
+    isSavingClass: boolean = false;
+
+    private destroy$ = new Subject<void>();
+
     /**
      * Constructor
      */
-    constructor() {}
+    constructor(
+        private macroService: MacroService,
+        private keybindingService: KeybindingService,
+        private authService: AuthService,
+        private userService: UserService,
+        private settingsService: SettingsService,
+        private router: Router,
+        private cdr: ChangeDetectorRef,
+        private fb: FormBuilder,
+        private snackBar: MatSnackBar
+    ) {
+        this.passwordForm = this.fb.group({
+            currentPassword: ['', Validators.required],
+            newPassword: ['', [Validators.required, Validators.minLength(8)]],
+            confirmPassword: ['', Validators.required]
+        }, { validators: this.passwordMatchValidator });
+    }
+
+    ngOnInit(): void {
+        this.loadData();
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    passwordMatchValidator(form: FormGroup) {
+        const newPassword = form.get('newPassword')?.value;
+        const confirmPassword = form.get('confirmPassword')?.value;
+        return newPassword === confirmPassword ? null : { passwordMismatch: true };
+    }
+
+    loadData(): void {
+        console.log('Profile - loadData called');
+        this.isLoading = true;
+        this.cdr.markForCheck();
+
+        // Get user data immediately from the service
+        this.userService.user$.pipe(takeUntil(this.destroy$)).subscribe({
+            next: (user) => {
+                console.log('Profile - user data:', user);
+                this.user = user;
+                this.cdr.markForCheck();
+            },
+            error: (error) => {
+                console.error('Profile - Error loading user:', error);
+                this.cdr.markForCheck();
+            }
+        });
+
+        // Load user settings to get favorite class
+        try {
+            const settings = localStorage.getItem('settings');
+            if (settings) {
+                const parsedSettings = JSON.parse(settings);
+                this.favoriteClass = parsedSettings.favoriteClass || null;
+            }
+        } catch (error) {
+            console.error('Profile - Error loading settings:', error);
+        }
+
+        // Load counts (non-blocking)
+        forkJoin({
+            macros: this.macroService.getMyMacros(),
+            keybindings: this.keybindingService.getKeybindings()
+        })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (result) => {
+                    console.log('Profile - loaded counts:', result);
+                    this.macroCount = result.macros.total || 0;
+                    this.keybindingCount = result.keybindings.length || 0;
+                    this.isLoading = false;
+                    this.cdr.markForCheck();
+                },
+                error: (error) => {
+                    console.error('Profile - Error loading counts:', error);
+                    this.macroCount = 0;
+                    this.keybindingCount = 0;
+                    this.isLoading = false;
+                    this.cdr.markForCheck();
+                }
+            });
+    }
+
+    goToMyMacros(): void {
+        this.router.navigate(['/macros/my-macros']);
+    }
+
+    goToMyKeybindings(): void {
+        this.router.navigate(['/keybinds/my-keybindings']);
+    }
+
+    togglePasswordForm(): void {
+        this.showPasswordForm = !this.showPasswordForm;
+        if (!this.showPasswordForm) {
+            this.passwordForm.reset();
+        }
+        this.cdr.markForCheck();
+    }
+
+    changePassword(): void {
+        if (this.passwordForm.invalid) {
+            this.snackBar.open('Please fill in all fields correctly', 'Close', { duration: 3000 });
+            return;
+        }
+
+        this.isChangingPassword = true;
+        const formValue = this.passwordForm.value;
+
+        this.authService.changePassword({
+            currentPassword: formValue.currentPassword,
+            newPassword: formValue.newPassword
+        })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.snackBar.open('Password changed successfully', 'Close', { duration: 3000 });
+                    this.passwordForm.reset();
+                    this.showPasswordForm = false;
+                    this.isChangingPassword = false;
+                    this.cdr.markForCheck();
+                },
+                error: (error) => {
+                    console.error('Error changing password:', error);
+                    this.snackBar.open(
+                        error.error?.message || 'Failed to change password. Please check your current password.',
+                        'Close',
+                        { duration: 5000 }
+                    );
+                    this.isChangingPassword = false;
+                    this.cdr.markForCheck();
+                }
+            });
+    }
+
+    onFavoriteClassChange(className: string): void {
+        this.isSavingClass = true;
+
+        const settings: Settings = {
+            favoriteClass: className
+        };
+
+        this.settingsService.saveSettings(settings)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.favoriteClass = className;
+                    // Update localStorage
+                    const currentSettings = JSON.parse(localStorage.getItem('settings') || '{}');
+                    currentSettings.favoriteClass = className;
+                    localStorage.setItem('settings', JSON.stringify(currentSettings));
+
+                    this.snackBar.open(`Favorite class set to ${className}`, 'Close', { duration: 3000 });
+                    this.isSavingClass = false;
+                    this.cdr.markForCheck();
+                },
+                error: (error) => {
+                    console.error('Error saving favorite class:', error);
+                    this.snackBar.open('Failed to save favorite class', 'Close', { duration: 3000 });
+                    this.isSavingClass = false;
+                    this.cdr.markForCheck();
+                }
+            });
+    }
 }

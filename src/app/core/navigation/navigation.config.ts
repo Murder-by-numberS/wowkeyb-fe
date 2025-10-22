@@ -12,8 +12,8 @@ export const navigationConfig: NavigationItemWithAuth[] = [
         type: 'group',
         children: [
             {
-                id: 'keybinds.home',
-                title: 'Home',
+                id: 'keybinds.view-all',
+                title: 'View All',
                 type: 'basic',
                 link: '/keybinds'
             },
@@ -49,8 +49,15 @@ export const navigationConfig: NavigationItemWithAuth[] = [
     {
         id: 'abilities',
         title: 'Abilities',
-        type: 'basic',
-        link: '/abilities'
+        type: 'group',
+        children: [
+            {
+                id: 'abilities.view-all',
+                title: 'View All',
+                type: 'basic',
+                link: '/abilities'
+            }
+        ]
     }
 ];
 

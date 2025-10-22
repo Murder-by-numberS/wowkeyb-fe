@@ -25,13 +25,10 @@ export interface Macro {
     isPublic?: boolean; // For compatibility
     created_by?: string; // Backend field name
     createdBy?: string; // For compatibility
-    usage_count?: number; // Backend field name
-    usageCount?: number; // For compatibility
-    created_at?: string; // Backend field name
-    updated_at?: string; // Backend field name
-    createdAt?: Date; // For compatibility
-    updatedAt?: Date; // For compatibility
-    user_id?: string;
+    usageCount?: number;
+    createdAt?: Date;
+    updatedAt?: Date;
+    userId?: string;
 }
 
 export interface CreateMacroRequest {

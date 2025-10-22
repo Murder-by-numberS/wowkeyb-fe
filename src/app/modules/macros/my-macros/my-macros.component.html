@@ -650,18 +650,18 @@
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistics</h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                             <div class="text-center">
-                                <div class="text-3xl font-bold text-blue-600">{{ currentSelectedMacro.usage_count ||
-                                    currentSelectedMacro.usageCount || 0 }}</div>
+                                <div class="text-3xl font-bold text-blue-600">{{ currentSelectedMacro.usageCount || 0 }}
+                                </div>
                                 <div class="text-sm text-gray-600">Usage Count</div>
                             </div>
                             <div class="text-center">
                                 <div class="text-sm font-medium text-gray-600">Created</div>
-                                <div class="text-sm text-gray-500">{{ currentSelectedMacro.created_at | date:'short' }}
+                                <div class="text-sm text-gray-500">{{ currentSelectedMacro.createdAt | date:'short' }}
                                 </div>
                             </div>
                             <div class="text-center">
                                 <div class="text-sm font-medium text-gray-600">Updated</div>
-                                <div class="text-sm text-gray-500">{{ currentSelectedMacro.updated_at | date:'short' }}
+                                <div class="text-sm text-gray-500">{{ currentSelectedMacro.updatedAt | date:'short' }}
                                 </div>
                             </div>
                         </div>

@@ -68,6 +68,20 @@ export const appRoutes: Route[] = [
             { path: 'home', loadChildren: () => import('app/modules/landing/home/home.routes') },
         ]
     },
+
+    // Profile route (without initialDataResolver to avoid hanging)
+    {
+        path: '',
+        canActivate: [AuthGuard],
+        canActivateChild: [AuthGuard],
+        component: LayoutComponent,
+        data: {
+            layout: 'modern'
+        },
+        children: [
+            { path: 'profile', loadChildren: () => import('app/modules/admin/pages/profile/profile.routes') },
+        ]
+    },
     // Maintenance
     { path: 'maintenance', loadChildren: () => import('app/modules/admin/pages/maintenance/maintenance.routes') },
 
@@ -184,9 +198,6 @@ export const appRoutes: Route[] = [
                     //TODO: fix these pages
                     // Welcome
                     { path: 'welcome', loadChildren: () => import('app/modules/admin/pages/welcome/welcome.routes') },
-
-                    // Profile
-                    { path: 'profile', loadChildren: () => import('app/modules/admin/pages/profile/profile.routes') },
 
                     // Settings
                     { path: 'settings', loadChildren: () => import('app/modules/admin/pages/settings/settings.routes') },

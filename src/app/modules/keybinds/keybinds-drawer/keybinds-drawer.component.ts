@@ -73,6 +73,7 @@ export class KeybindsDrawerComponent implements OnInit, OnDestroy {
     filterApplied: boolean = false;
     preventAutoSelection: boolean = false; // Flag to prevent auto-selection
     isLoading: boolean = false;
+    favoriteClass: string | null = null;
     private destroy$ = new Subject<void>();
 
     keybindingService = inject(KeybindingService);
@@ -86,6 +87,13 @@ export class KeybindsDrawerComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        // Load favorite class from settings
+        const settings = localStorage.getItem('settings');
+        if (settings) {
+            const parsedSettings = JSON.parse(settings);
+            this.favoriteClass = parsedSettings.favoriteClass || null;
+        }
+
         // Force refresh keybindings from server on component initialization
         this.forceRefreshKeybindings();
         this.filteredKeybindings = this.keybindings;
@@ -230,7 +238,7 @@ export class KeybindsDrawerComponent implements OnInit, OnDestroy {
         }
         else {
             this.filterApplied = false;
-            this.filteredKeybindings = this.keybindings;
+            this.filteredKeybindings = this.sortKeybindings(this.keybindings);
         }
     }
 
@@ -259,6 +267,22 @@ export class KeybindsDrawerComponent implements OnInit, OnDestroy {
         });
     }
 
+    sortKeybindings(keybindings: Keybinding[]): Keybinding[] {
+        if (!this.favoriteClass) {
+            return keybindings;
+        }
+
+        // Sort keybindings with favorite class first
+        return [...keybindings].sort((a, b) => {
+            const aIsFavorite = a.class === this.favoriteClass;
+            const bIsFavorite = b.class === this.favoriteClass;
+
+            if (aIsFavorite && !bIsFavorite) return -1;
+            if (!aIsFavorite && bIsFavorite) return 1;
+            return 0;
+        });
+    }
+
     applyFilter() {
         console.log('KeybindsDrawerComponent - applyFilter called');
         console.log('KeybindsDrawerComponent - filterApplied:', this.filterApplied);
@@ -266,16 +290,17 @@ export class KeybindsDrawerComponent implements OnInit, OnDestroy {
         console.log('KeybindsDrawerComponent - keybindings length:', this.keybindings.length);
 
         if (this.filterApplied && this.selectedClasses.value?.length > 0) {
-            this.filteredKeybindings = this.keybindings.filter(keybinding =>
+            const filtered = this.keybindings.filter(keybinding =>
                 this.selectedClasses.value.some(selectedClass => selectedClass.name === keybinding.class)
             );
+            this.filteredKeybindings = this.sortKeybindings(filtered);
             console.log('KeybindsDrawerComponent - filtered keybindings length:', this.filteredKeybindings.length);
             if (!this.filteredKeybindings.some(keybinding => keybinding.keybindingId === this.selectedKeybindingId)) {
                 this.selectedKeybindingId = null;
                 this.keybindingSelected.emit(null);
             }
         } else {
-            this.filteredKeybindings = this.keybindings;
+            this.filteredKeybindings = this.sortKeybindings(this.keybindings);
             console.log('KeybindsDrawerComponent - no filter applied, filtered keybindings length:', this.filteredKeybindings.length);
         }
     }
@@ -283,14 +308,15 @@ export class KeybindsDrawerComponent implements OnInit, OnDestroy {
     filterKeybindings(): void {
         const selected = this.selectedClasses.value;
         if (!selected || selected.length === 0) {
-            this.filteredKeybindings = this.keybindings;
+            this.filteredKeybindings = this.sortKeybindings(this.keybindings);
             this.filterApplied = false;
             return;
         }
         this.filterApplied = true;
-        this.filteredKeybindings = this.keybindings.filter(k =>
+        const filtered = this.keybindings.filter(k =>
             selected.some(selectedClass => selectedClass.name === k.class)
         );
+        this.filteredKeybindings = this.sortKeybindings(filtered);
     }
 
     togglePublic(keybinding: Keybinding): void {

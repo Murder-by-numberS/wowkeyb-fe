@@ -1,4 +1,5 @@
 export interface Settings {
     scheme?: string; //dark | light
-    theme?: string
+    theme?: string;
+    favoriteClass?: string;
 }

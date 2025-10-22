@@ -72,6 +72,7 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
     filterApplied: boolean = false;
     preventAutoSelection: boolean = false;
     isLoading: boolean = false;
+    favoriteClass: string | null = null;
     private destroy$ = new Subject<void>();
 
     snackBar = inject(MatSnackBar);
@@ -82,7 +83,14 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
     ) { }
 
     ngOnInit(): void {
-        this.filteredMacros = this.macros;
+        // Load favorite class from settings
+        const settings = localStorage.getItem('settings');
+        if (settings) {
+            const parsedSettings = JSON.parse(settings);
+            this.favoriteClass = parsedSettings.favoriteClass || null;
+        }
+
+        this.filteredMacros = this.sortMacros(this.macros);
 
         this.selectedClasses.valueChanges.subscribe(() => {
             this.filterMacros();
@@ -101,17 +109,34 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
+    sortMacros(macros: Macro[]): Macro[] {
+        if (!this.favoriteClass) {
+            return macros;
+        }
+
+        // Sort macros with favorite class first
+        return [...macros].sort((a, b) => {
+            const aIsFavorite = a.class === this.favoriteClass;
+            const bIsFavorite = b.class === this.favoriteClass;
+
+            if (aIsFavorite && !bIsFavorite) return -1;
+            if (!aIsFavorite && bIsFavorite) return 1;
+            return 0;
+        });
+    }
+
     filterMacros(): void {
         const selected = this.selectedClasses.value;
         if (!selected || selected.length === 0) {
-            this.filteredMacros = this.macros;
+            this.filteredMacros = this.sortMacros(this.macros);
             this.filterApplied = false;
             return;
         }
         this.filterApplied = true;
-        this.filteredMacros = this.macros.filter(m =>
+        const filtered = this.macros.filter(m =>
             selected.some(selectedClass => selectedClass.name === m.class)
         );
+        this.filteredMacros = this.sortMacros(filtered);
     }
 
     selectMacro(macro: any): void {
@@ -216,16 +241,17 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
         console.log('MacrosDrawerComponent - macros length:', this.macros.length);
 
         if (this.filterApplied && this.selectedClasses.value?.length > 0) {
-            this.filteredMacros = this.macros.filter(macro =>
+            const filtered = this.macros.filter(macro =>
                 this.selectedClasses.value.some(selectedClass => selectedClass.name === macro.class)
             );
+            this.filteredMacros = this.sortMacros(filtered);
             console.log('MacrosDrawerComponent - filtered macros length:', this.filteredMacros.length);
             if (!this.filteredMacros.some(macro => macro.id === this.selectedMacroId)) {
                 this.selectedMacroId = null;
                 this.macroSelected.emit(null);
             }
         } else {
-            this.filteredMacros = this.macros;
+            this.filteredMacros = this.sortMacros(this.macros);
             console.log('MacrosDrawerComponent - no filter applied, filtered macros length:', this.filteredMacros.length);
         }
     }
