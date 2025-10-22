@@ -49,20 +49,36 @@ export const navigationConfig: NavigationItemWithAuth[] = [
     {
         id: 'abilities',
         title: 'Abilities',
-        type: 'group',
-        children: [
-            {
-                id: 'abilities.view-all',
-                title: 'View All',
-                type: 'basic',
-                link: '/abilities'
-            }
-        ]
+        type: 'basic',
+        link: '/abilities'
     }
 ];
 
-export const getNavigationForAuthState = (isAuthenticated: boolean): FuseNavigationItem[] => {
+export const getNavigationForAuthState = (isAuthenticated: boolean, forHorizontal: boolean = false): FuseNavigationItem[] => {
     return navigationConfig.map(item => {
+        // Special handling for Abilities based on navigation type
+        if (item.id === 'abilities') {
+            if (forHorizontal) {
+                // For horizontal navigation, keep it as basic with link
+                return item as FuseNavigationItem;
+            } else {
+                // For vertical navigation, make it a group title
+                return {
+                    id: 'abilities',
+                    title: 'Abilities',
+                    type: 'group',
+                    children: [
+                        {
+                            id: 'abilities.view-all',
+                            title: 'View All',
+                            type: 'basic',
+                            link: '/abilities'
+                        }
+                    ]
+                } as FuseNavigationItem;
+            }
+        }
+
         if (item.type === 'group' && item.children) {
             const filteredChildren = item.children.filter(child =>
                 !child.requiresAuth || isAuthenticated

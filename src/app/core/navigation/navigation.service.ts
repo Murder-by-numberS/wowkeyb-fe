@@ -24,13 +24,14 @@ export class NavigationService {
     }
 
     private updateNavigation(isAuthenticated: boolean): void {
-        const navigationItems = getNavigationForAuthState(isAuthenticated);
+        const verticalNavigationItems = getNavigationForAuthState(isAuthenticated, false);
+        const horizontalNavigationItems = getNavigationForAuthState(isAuthenticated, true);
 
         const navigation: Navigation = {
-            compact: navigationItems,
-            default: navigationItems,
-            futuristic: navigationItems,
-            horizontal: navigationItems
+            compact: verticalNavigationItems,
+            default: verticalNavigationItems,
+            futuristic: verticalNavigationItems,
+            horizontal: horizontalNavigationItems
         };
 
         this._navigation.next(navigation);
