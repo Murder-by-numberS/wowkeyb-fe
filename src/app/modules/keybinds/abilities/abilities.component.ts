@@ -81,6 +81,15 @@ export class AbilitiesComponent implements OnInit {
         this.keybindingSelected = false;
     }
 
+    /**
+     * Convert display class name to lowercase key for fullClasses access
+     * @param className - Display class name (e.g., "Death Knight", "Hunter")
+     * @returns Lowercase key (e.g., "deathknight", "hunter")
+     */
+    private getClassKey(className: string): string {
+        return className.toLowerCase().replace(/\s+/g, '');
+    }
+
     ngOnInit(): void {
 
     }
@@ -260,18 +269,19 @@ export class AbilitiesComponent implements OnInit {
                     });
 
                     // Check if the converted values exist in fullClasses
+                    const classKey = this.getClassKey(this.selectedKeybindingClass);
                     console.log('Checking fullClasses availability:', {
-                        classExists: !!fullClasses[this.selectedKeybindingClass],
-                        specExists: !!fullClasses[this.selectedKeybindingClass]?.specs[this.selectedKeybindingSpec],
-                        heroTalentExists: !!fullClasses[this.selectedKeybindingClass]?.specs[this.selectedKeybindingSpec]?.includes(this.selectedKeybindingHeroTalent)
+                        classExists: !!fullClasses[classKey],
+                        specExists: !!fullClasses[classKey]?.specs[this.selectedKeybindingSpec],
+                        heroTalentExists: !!fullClasses[classKey]?.specs[this.selectedKeybindingSpec]?.includes(this.selectedKeybindingHeroTalent)
                     });
 
                     // Debug fullClasses structure
-                    if (fullClasses[this.selectedKeybindingClass]) {
+                    if (fullClasses[classKey]) {
                         console.log('fullClasses structure for class:', {
                             class: this.selectedKeybindingClass,
-                            specs: fullClasses[this.selectedKeybindingClass].specs,
-                            allSpecs: Object.keys(fullClasses[this.selectedKeybindingClass].specs)
+                            specs: fullClasses[classKey].specs,
+                            allSpecs: Object.keys(fullClasses[classKey].specs)
                         });
                     }
                 } else {
@@ -284,8 +294,17 @@ export class AbilitiesComponent implements OnInit {
                 // Abilities already cleared above
 
                 if (this.selectedKeybindingClass) {
-                    this.specs = Object.keys(fullClasses[this.selectedKeybindingClass].specs);
-                    console.log('Populated specs:', this.specs);
+                    // Convert display class name to lowercase key for fullClasses access
+                    const classKey = this.getClassKey(this.selectedKeybindingClass);
+                    const classData = fullClasses[classKey];
+
+                    if (classData && classData.specs) {
+                        this.specs = Object.keys(classData.specs);
+                        console.log('Populated specs:', this.specs);
+                    } else {
+                        console.error('Class data not found for:', this.selectedKeybindingClass, 'key:', classKey);
+                        this.specs = [];
+                    }
 
                     // Only set hero talents if spec is selected
                     if (this.selectedKeybindingSpec) {
@@ -293,10 +312,10 @@ export class AbilitiesComponent implements OnInit {
                             class: this.selectedKeybindingClass,
                             spec: this.selectedKeybindingSpec
                         });
-                        console.log('Available specs for class:', Object.keys(fullClasses[this.selectedKeybindingClass].specs));
-                        console.log('Specs object:', fullClasses[this.selectedKeybindingClass].specs);
+                        console.log('Available specs for class:', Object.keys(classData.specs));
+                        console.log('Specs object:', classData.specs);
 
-                        this.heroTalents = fullClasses[this.selectedKeybindingClass].specs[this.selectedKeybindingSpec];
+                        this.heroTalents = classData.specs[this.selectedKeybindingSpec];
                         console.log('Populated hero talents:', this.heroTalents);
                         console.log('Hero talents array length:', this.heroTalents?.length);
                     } else {
@@ -362,7 +381,8 @@ export class AbilitiesComponent implements OnInit {
                         .subscribe({
                             next: (updatedKeybinding) => {
                                 this.selectedKeybinding = updatedKeybinding;
-                                this.specs = Object.keys(fullClasses[this.selectedKeybindingClass].specs);
+                                const classKey = this.getClassKey(this.selectedKeybindingClass);
+                                this.specs = Object.keys(fullClasses[classKey]?.specs || {});
                                 this.selectionClassChanged.emit(null);
                                 this.abilities = [];
                             },
@@ -391,7 +411,8 @@ export class AbilitiesComponent implements OnInit {
                 .subscribe({
                     next: (updatedKeybinding) => {
                         this.selectedKeybinding = updatedKeybinding;
-                        this.specs = Object.keys(fullClasses[this.selectedKeybindingClass].specs);
+                        const classKey = this.getClassKey(this.selectedKeybindingClass);
+                        this.specs = Object.keys(fullClasses[classKey]?.specs || {});
                         console.log('this.specs', this.specs);
                         this.selectionClassChanged.emit(null);
                         this.abilities = [];
@@ -423,7 +444,8 @@ export class AbilitiesComponent implements OnInit {
                                 this.selectedKeybinding = updatedKeybinding;
                                 this.selectedKeybindingSpec = selectedOption;
                                 this.selectedKeybindingHeroTalent = undefined;
-                                this.heroTalents = fullClasses[this.selectedKeybindingClass].specs[this.selectedKeybindingSpec];
+                                const classKey = this.getClassKey(this.selectedKeybindingClass);
+                                this.heroTalents = fullClasses[classKey]?.specs[this.selectedKeybindingSpec] || [];
                                 this.selectionClassChanged.emit(null);
                                 this.abilities = [];
                             },
@@ -445,7 +467,8 @@ export class AbilitiesComponent implements OnInit {
                         this.selectedKeybindingSpec = selectedOption;
                         this.selectedKeybinding.spec = this.selectedKeybindingSpec;
 
-                        this.heroTalents = fullClasses[this.selectedKeybindingClass].specs[this.selectedKeybindingSpec]
+                        const classKey = this.getClassKey(this.selectedKeybindingClass);
+                        this.heroTalents = fullClasses[classKey]?.specs[this.selectedKeybindingSpec] || [];
                         console.log('this.heroTalents', this.heroTalents);
                     },
                     error: (error) => {

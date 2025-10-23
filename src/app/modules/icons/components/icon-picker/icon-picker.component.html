@@ -1,0 +1,67 @@
+<!-- Icon Picker Container -->
+<div class="icon-picker-container">
+    <!-- Selected Icon Display -->
+    <div class="selected-icon-display" *ngIf="selectedIcon">
+        <img [src]="getIconUrl(selectedIcon)" [alt]="selectedIcon.name" class="selected-icon-image"
+            (error)="onImageError($event)" />
+        <span class="selected-icon-name">{{ selectedIcon.name }}</span>
+        <button mat-icon-button (click)="clearSelection()" matTooltip="Clear selection">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+
+    <!-- Icon Picker Button (only visible if no selection) -->
+    <button *ngIf="!selectedIcon" type="button" mat-stroked-button (click)="openIconPicker($event)"
+        class="icon-picker-button">
+        <mat-icon>image</mat-icon>
+        <span>Select Icon</span>
+    </button>
+</div>
+
+<!-- Simple Centered Modal -->
+<div *ngIf="showDialog" class="simple-modal-overlay" (click)="onBackdropClick($event)">
+    <div class="simple-modal-content" (click)="$event.stopPropagation()">
+        <!-- Header -->
+        <div class="modal-header">
+            <h2>Select Icon</h2>
+            <button mat-icon-button (click)="closeDialog()">
+                <mat-icon>close</mat-icon>
+            </button>
+        </div>
+
+        <!-- Search -->
+        <div class="modal-search">
+            <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Search icons</mat-label>
+                <input matInput [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange($event)"
+                    placeholder="Search by name or ID">
+                <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+        </div>
+
+        <!-- Icons Grid -->
+        <div class="modal-icons" style="max-height: 400px; overflow-y: auto;" (scroll)="onScrollEvent($event)">
+            <div *ngIf="isLoading && displayedIcons.length === 0" class="loading">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>Loading icons...</p>
+            </div>
+
+            <div *ngIf="displayedIcons.length > 0" class="icons-grid">
+                <div *ngFor="let icon of displayedIcons; trackBy: trackByIconId" class="icon-item"
+                    [class.selected]="selectedIcon?.id === icon.id" (click)="selectIcon(icon)">
+                    <img [src]="getIconUrl(icon)" [alt]="icon.name" class="icon-image">
+                </div>
+            </div>
+
+            <!-- Loading more indicator -->
+            <div *ngIf="isLoadingMore" class="loading-more">
+                <mat-spinner diameter="30"></mat-spinner>
+                <p>Loading more icons...</p>
+            </div>
+
+            <div *ngIf="!isLoading && displayedIcons.length === 0" class="no-results">
+                <p>No icons found.</p>
+            </div>
+        </div>
+    </div>
+</div>

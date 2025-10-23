@@ -1,0 +1,143 @@
+<div class="flex flex-col w-full h-screen overflow-y-auto">
+    <!-- Header -->
+    <div class="flex flex-col items-center justify-center p-4 sm:p-8">
+        <h1 class="text-2xl sm:text-4xl font-bold mb-4">Macros</h1>
+        <p class="text-base sm:text-xl mb-8 text-center">Browse public macros shared by the community</p>
+        @if (isAuthenticated) {
+        <button mat-raised-button color="primary" routerLink="/macros/my-macros">
+            <mat-icon class="mr-2">add</mat-icon>
+            Create Macro
+        </button>
+        } @else {
+        <button mat-raised-button color="primary" routerLink="/sign-in">
+            <mat-icon class="mr-2">login</mat-icon>
+            Login to Create Macros
+        </button>
+        }
+    </div>
+
+    <!-- Class Navigation -->
+    <div class="flex justify-center w-full">
+        <div class="flex flex-wrap justify-center gap-2 sm:gap-4 px-2 sm:px-4 py-2 mb-4 sm:mb-8">
+            @for (class of classes; track class.name) {
+            <div class="flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                (click)="scrollToClass(class.name)" matTooltip="{{class.displayName}}">
+                <img [src]="class.icon" [alt]="class.name" class="w-8 h-8 sm:w-12 sm:h-12">
+            </div>
+            }
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading) {
+    <div class="flex justify-center items-center py-8">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading macros...</p>
+        </div>
+    </div>
+    }
+
+    <!-- No Macros State -->
+    @if (!isLoading && Object.keys(classMacros).length === 0) {
+    <div class="text-center py-8">
+        <mat-icon class="text-6xl text-gray-300 mb-4">auto_awesome</mat-icon>
+        <h3 class="text-xl font-medium text-gray-600 mb-2">No Macros Available</h3>
+        <p class="text-gray-500 mb-4">No public macros have been created yet.</p>
+        @if (isAuthenticated) {
+        <button mat-flat-button color="primary" routerLink="/macros/my-macros">
+            <mat-icon>add</mat-icon>
+            <span class="ml-2">Create First Macro</span>
+        </button>
+        }
+    </div>
+    }
+
+    <!-- Class Sections -->
+    @if (!isLoading && Object.keys(classMacros).length > 0) {
+    <div class="max-w-[1400px] mx-auto px-2 sm:px-4">
+        @for (class of classes; track class.name) {
+        <div [id]="'class-' + class.name.toLowerCase().replace(' ', '-')" class="mb-8 sm:mb-12">
+            <div class="flex items-center justify-center gap-2 sm:gap-3 mb-4">
+                <img [src]="class.icon" [alt]="class.name" class="w-6 h-6 sm:w-8 sm:h-8">
+                <h2 class="text-xl sm:text-2xl font-bold">{{class.displayName}}</h2>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-12">
+                <!-- Recent Macros -->
+                <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                    <h3 class="text-base sm:text-lg font-semibold mb-4 pb-2 border-b">Recent Macros</h3>
+                    @if ((classMacros[class.name]?.recent || []).length > 0) {
+                    @for (macro of classMacros[class.name]?.recent || []; track macro.id) {
+                    <div class="p-4 hover:bg-gray-50 rounded cursor-pointer" (click)="navigateToMacro(macro)">
+                        <div>
+                            <div class="font-medium">{{macro.name}}</div>
+                            <div class="text-sm text-gray-600">
+                                {{macro.class | titlecase}}
+                            </div>
+                            @if (macro.creatorUsername) {
+                            <div class="text-xs text-gray-500 mt-1">
+                                By <a [routerLink]="['/user', macro.creatorUsername]"
+                                    class="text-blue-600 hover:underline" (click)="$event.stopPropagation()">
+                                    {{macro.creatorUsername}}
+                                </a>
+                            </div>
+                            }
+                            <div class="text-xs text-gray-500 mt-1">
+                                Created: {{macro.createdAt | date:'medium'}}
+                            </div>
+                        </div>
+                    </div>
+                    @if (!$last) {
+                    <div class="border-b my-2"></div>
+                    }
+                    }
+                    } @else {
+                    <div class="text-center py-4 text-gray-500">
+                        <mat-icon class="text-2xl mb-2">inbox</mat-icon>
+                        <p>No recent macros</p>
+                    </div>
+                    }
+                </div>
+
+                <!-- Popular Macros -->
+                <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                    <h3 class="text-base sm:text-lg font-semibold mb-4 pb-2 border-b">Popular Macros</h3>
+                    @if ((classMacros[class.name]?.popular || []).length > 0) {
+                    @for (macro of classMacros[class.name]?.popular || []; track macro.id) {
+                    <div class="p-4 hover:bg-gray-50 rounded cursor-pointer" (click)="navigateToMacro(macro)">
+                        <div>
+                            <div class="font-medium">{{macro.name}}</div>
+                            <div class="text-sm text-gray-600">
+                                {{macro.class | titlecase}}
+                            </div>
+                            @if (macro.creatorUsername) {
+                            <div class="text-xs text-gray-500 mt-1">
+                                By <a [routerLink]="['/user', macro.creatorUsername]"
+                                    class="text-blue-600 hover:underline" (click)="$event.stopPropagation()">
+                                    {{macro.creatorUsername}}
+                                </a>
+                            </div>
+                            }
+                            <div class="text-xs text-gray-500 mt-1">
+                                Created: {{macro.createdAt | date:'medium'}}
+                            </div>
+                        </div>
+                    </div>
+                    @if (!$last) {
+                    <div class="border-b my-2"></div>
+                    }
+                    }
+                    } @else {
+                    <div class="text-center py-4 text-gray-500">
+                        <mat-icon class="text-2xl mb-2">inbox</mat-icon>
+                        <p>No popular macros</p>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+        }
+    </div>
+    }
+</div>

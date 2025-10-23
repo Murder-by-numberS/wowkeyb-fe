@@ -15,7 +15,7 @@ export const navigationConfig: NavigationItemWithAuth[] = [
                 id: 'keybinds.view-all',
                 title: 'View All',
                 type: 'basic',
-                link: '/keybinds/view-all'
+                link: '/keybinds'
             },
             {
                 id: 'keybinds.my-keybindings',
@@ -29,8 +29,22 @@ export const navigationConfig: NavigationItemWithAuth[] = [
     {
         id: 'macros',
         title: 'Macros',
-        type: 'basic',
-        link: '/macros'
+        type: 'group',
+        children: [
+            {
+                id: 'macros.view-all',
+                title: 'View All',
+                type: 'basic',
+                link: '/macros/view-all'
+            },
+            {
+                id: 'macros.my-macros',
+                title: 'My Macros',
+                type: 'basic',
+                link: '/macros/my-macros',
+                requiresAuth: true // This item only shows for authenticated users
+            }
+        ]
     },
     {
         id: 'abilities',
@@ -40,8 +54,31 @@ export const navigationConfig: NavigationItemWithAuth[] = [
     }
 ];
 
-export const getNavigationForAuthState = (isAuthenticated: boolean): FuseNavigationItem[] => {
+export const getNavigationForAuthState = (isAuthenticated: boolean, forHorizontal: boolean = false): FuseNavigationItem[] => {
     return navigationConfig.map(item => {
+        // Special handling for Abilities based on navigation type
+        if (item.id === 'abilities') {
+            if (forHorizontal) {
+                // For horizontal navigation, keep it as basic with link
+                return item as FuseNavigationItem;
+            } else {
+                // For vertical navigation, make it a group title
+                return {
+                    id: 'abilities',
+                    title: 'Abilities',
+                    type: 'group',
+                    children: [
+                        {
+                            id: 'abilities.view-all',
+                            title: 'View All',
+                            type: 'basic',
+                            link: '/abilities'
+                        }
+                    ]
+                } as FuseNavigationItem;
+            }
+        }
+
         if (item.type === 'group' && item.children) {
             const filteredChildren = item.children.filter(child =>
                 !child.requiresAuth || isAuthenticated

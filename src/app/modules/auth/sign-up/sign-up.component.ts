@@ -17,6 +17,7 @@ import { Router, RouterLink } from '@angular/router';
 import { fuseAnimations } from '@fuse/animations';
 import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
 import { AuthService } from 'app/core/auth/auth.service';
+import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
 
 @Component({
     selector: 'auth-sign-up',
@@ -35,6 +36,7 @@ import { AuthService } from 'app/core/auth/auth.service';
         MatIconModule,
         MatCheckboxModule,
         MatProgressSpinnerModule,
+        AuthBackgroundComponent,
     ],
 })
 export class AuthSignUpComponent implements OnInit {

@@ -31,6 +31,13 @@ export class VersionCompareService {
     }
 
     /**
+     * Fetches the latest game version object (with ID) from the backend.
+     */
+    getLatestVersionWithId(): Observable<any> {
+        return this.http.get<any>(`${environment.apiUrl}/versions/latest`);
+    }
+
+    /**
      * Fetches all available game versions from the backend.
      */
     getAllVersions(): Observable<string[]> {

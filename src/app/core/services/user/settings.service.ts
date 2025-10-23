@@ -28,7 +28,7 @@ export class SettingsService {
     getSettingsByUserID(userID: string): Observable<any> {
         this.getBackendURL();
 
-        const urlString = `${this.apiUrl}/settings?user_id=${userID}`;
+        const urlString = `${this.apiUrl}/settings?userId=${userID}`;
 
         return this.http.get(urlString);
     }

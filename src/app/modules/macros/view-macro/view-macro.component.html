@@ -1,0 +1,166 @@
+<div class="flex flex-col w-full h-full">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex justify-center items-center h-64">
+        <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <!-- Macro Not Found -->
+    <div *ngIf="!isLoading && !macro" class="flex flex-col items-center justify-center h-64">
+        <mat-icon class="text-6xl text-gray-300 mb-4">error_outline</mat-icon>
+        <h3 class="text-xl font-medium text-gray-600 mb-2">Macro Not Found</h3>
+        <p class="text-gray-500 mb-4">The macro you're looking for doesn't exist or has been removed.</p>
+        <button mat-flat-button color="primary" (click)="onBackToMacros()">
+            <mat-icon class="mr-2">arrow_back</mat-icon>
+            Back to Macros
+        </button>
+    </div>
+
+    <!-- Macro Content -->
+    <div *ngIf="!isLoading && macro" class="flex flex-col w-full h-full">
+        <!-- Header -->
+        <div class="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button mat-icon-button (click)="onBackToMacros()" matTooltip="Back to Macros">
+                        <mat-icon>arrow_back</mat-icon>
+                    </button>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <img *ngIf="iconUrl" [src]="iconUrl" [alt]="macro.name" class="w-10 h-10 rounded">
+                            <mat-icon *ngIf="!iconUrl" class="text-gray-400">code</mat-icon>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900">{{ macro.name }}</h1>
+                            <div class="flex items-center gap-2 text-sm text-gray-600">
+                                <span>{{ getClassDisplayName(macro.class) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons - Hidden on mobile/small screens -->
+                <div class="hidden md:flex items-center gap-2">
+                    <button *ngIf="isOwner" mat-stroked-button (click)="onEditMacro()">
+                        <mat-icon class="mr-2">edit</mat-icon>
+                        Edit
+                    </button>
+                    <button mat-stroked-button (click)="onDuplicateMacro()" [disabled]="!isAuthenticated">
+                        <mat-icon class="mr-2">content_copy</mat-icon>
+                        Duplicate
+                    </button>
+                    <button mat-flat-button color="primary" (click)="onShareMacro()">
+                        <mat-icon class="mr-2">share</mat-icon>
+                        Share
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Main Content -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Description -->
+                        <mat-card>
+                            <mat-card-header>
+                                <mat-card-title>Description</mat-card-title>
+                            </mat-card-header>
+                            <mat-card-content>
+                                <p class="text-gray-700 leading-relaxed">{{ macro.description }}</p>
+                            </mat-card-content>
+                        </mat-card>
+
+                        <!-- Macro Text -->
+                        <mat-card>
+                            <mat-card-header>
+                                <mat-card-title>Macro Text</mat-card-title>
+                            </mat-card-header>
+                            <mat-card-content>
+                                <div
+                                    class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+                                    <pre>{{ formatMacroText(macro.macroText || macro.text || '') }}</pre>
+                                </div>
+                                <div class="mt-2 flex items-center justify-between text-sm text-gray-500">
+                                    <span>{{ (macro.macroText || macro.text || '').length }} characters</span>
+                                    <button mat-button (click)="copyToClipboard(macro.macroText || macro.text || '')">
+                                        <mat-icon class="mr-1">content_copy</mat-icon>
+                                        Copy
+                                    </button>
+                                </div>
+                            </mat-card-content>
+                        </mat-card>
+
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="space-y-6">
+                        <!-- Stats -->
+                        <mat-card>
+                            <mat-card-header>
+                                <mat-card-title>Statistics</mat-card-title>
+                            </mat-card-header>
+                            <mat-card-content class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Usage Count</span>
+                                    <span class="font-semibold">{{ macro.usageCount | number }}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Created</span>
+                                    <span class="font-semibold">{{ macro.createdAt | date:'short' }}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Updated</span>
+                                    <span class="font-semibold">{{ macro.updatedAt | date:'short' }}</span>
+                                </div>
+                            </mat-card-content>
+                        </mat-card>
+
+                        <!-- Class & Category -->
+                        <mat-card>
+                            <mat-card-header>
+                                <mat-card-title>Details</mat-card-title>
+                            </mat-card-header>
+                            <mat-card-content class="space-y-4">
+                                <div *ngIf="macro.creatorUsername" class="flex items-center justify-between">
+                                    <span class="text-gray-600">Created by</span>
+                                    <a [routerLink]="['/user', macro.creatorUsername]"
+                                        class="font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                                        {{ macro.creatorUsername }}
+                                    </a>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Class</span>
+                                    <span class="font-semibold">{{ getClassDisplayName(macro.class) }}</span>
+                                </div>
+                            </mat-card-content>
+                        </mat-card>
+
+                        <!-- Actions - Only show on mobile/small screens -->
+                        <mat-card class="block md:hidden">
+                            <mat-card-header>
+                                <mat-card-title>Actions</mat-card-title>
+                            </mat-card-header>
+                            <mat-card-content class="space-y-2">
+                                <button mat-flat-button color="primary" class="w-full" (click)="onShareMacro()">
+                                    <mat-icon class="mr-2">share</mat-icon>
+                                    Share Macro
+                                </button>
+                                <button mat-stroked-button class="w-full" (click)="onDuplicateMacro()"
+                                    [disabled]="!isAuthenticated">
+                                    <mat-icon class="mr-2">content_copy</mat-icon>
+                                    Duplicate
+                                </button>
+                                <button *ngIf="isOwner" mat-stroked-button class="w-full" (click)="onEditMacro()">
+                                    <mat-icon class="mr-2">edit</mat-icon>
+                                    Edit Macro
+                                </button>
+                            </mat-card-content>
+                        </mat-card>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

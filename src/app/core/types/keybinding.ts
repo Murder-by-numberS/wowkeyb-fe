@@ -4,6 +4,7 @@ export interface Keybinding {
     keybindingId: string;
     name: string;
     userId: string;
+    creatorUsername?: string;
     class: string;
     spec?: string;
     heroTalent?: string;

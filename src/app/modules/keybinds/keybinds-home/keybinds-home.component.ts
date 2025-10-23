@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { AuthService } from 'app/core/auth/auth.service';
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -19,6 +20,7 @@ import { HomeKeybindingsResponse } from 'app/core/types/keybinding';
         RouterModule,
         MatButtonModule,
         MatIconModule,
+        MatTooltipModule,
         RouterLink
     ]
 })

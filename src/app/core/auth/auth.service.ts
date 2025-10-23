@@ -77,6 +77,27 @@ export class AuthService {
     }
 
     /**
+     * Refresh access token
+     *
+     * @param token
+     */
+    refreshAccessToken(token: string): Observable<any> {
+        return this._httpClient.post(`${this.apiUrl}/auth/refresh-access-token`, { token }).pipe(
+            switchMap((response: any) => {
+                // Store the new access token
+                this.accessToken = response.token;
+
+                // Update user data if provided
+                if (response.user) {
+                    this._userService.user = response.user;
+                }
+
+                return of(response);
+            })
+        );
+    }
+
+    /**
      * Sign in
      *
      * @param credentials

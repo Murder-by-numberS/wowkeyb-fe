@@ -18,14 +18,11 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 //Components
-import { KeyboardComponent } from './keyboard/keyboard.component';
-import { AbilitiesComponent } from './abilities/abilities.component';
-import { KeybindsDrawerComponent } from './keybinds-drawer/keybinds-drawer.component';
+import { KeyboardComponent } from '../keyboard/keyboard.component';
+import { AbilitiesComponent } from '../abilities/abilities.component';
+import { KeybindsDrawerComponent } from '../keybinds-drawer/keybinds-drawer.component';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
-import { ShareDialogComponent } from './share-dialog/share-dialog.component';
-import { ViewAllKeybindingsComponent } from './view-all-keybindings/view-all-keybindings.component';
-import { ViewKeybindingComponent } from './view-keybinding/view-keybinding.component';
-import { KeybindsHomeComponent } from './keybinds-home/keybinds-home.component';
+import { ShareDialogComponent } from '../share-dialog/share-dialog.component';
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -36,8 +33,8 @@ import { UserService } from 'app/core/user/user.service';
 import { Keybinding } from 'app/core/types/keybinding';
 
 @Component({
-    selector: 'keybinds',
-    templateUrl: './keybinds.component.html',
+    selector: 'my-keybindings',
+    templateUrl: './my-keybindings.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
     imports: [
@@ -56,13 +53,10 @@ import { Keybinding } from 'app/core/types/keybinding';
 
         KeyboardComponent,
         AbilitiesComponent,
-        KeybindsDrawerComponent,
-        ViewAllKeybindingsComponent,
-        ViewKeybindingComponent,
-        KeybindsHomeComponent
+        KeybindsDrawerComponent
     ],
 })
-export class KeybindsComponent implements OnInit {
+export class MyKeybindingsComponent implements OnInit {
     @ViewChild(KeybindsDrawerComponent) keybindsDrawerComponent: KeybindsDrawerComponent;
     @ViewChild(AbilitiesComponent) abilitiesComponent: AbilitiesComponent;
     @ViewChild(KeyboardComponent) keyboard: KeyboardComponent;
@@ -72,7 +66,7 @@ export class KeybindsComponent implements OnInit {
 
     nameForm: FormGroup;
 
-    opened: boolean;
+    opened: boolean = true; // Show drawer by default for my-keybindings
 
     selectedKeybinding: any = null;
     selectedKeybindingName: string;
@@ -80,11 +74,6 @@ export class KeybindsComponent implements OnInit {
     selectedKeybindingClass: string;
     selectedKeybindingSpec: string;
     selectedKeybindingHeroTalent: string;
-    viewKeybinding: any = null;
-    viewKeybindingName: string;
-    viewKeybindingClass: string;
-    viewKeybindingSpec: string;
-    viewKeybindingHeroTalent: string;
 
     refresh: boolean = false;
 
@@ -92,9 +81,6 @@ export class KeybindsComponent implements OnInit {
 
     private _unsubscribeAll: Subject<any> = new Subject<any>();
 
-    isHomeRoute: boolean = false;
-    isMyKeybindingsRoute: boolean = false;
-    isViewKeybindingRoute: boolean = false;
     currentUserId: string | null = null;
     keybindings: any[] = [];  // Initialize as empty array
     MAX_SIZE = 10;
@@ -123,48 +109,27 @@ export class KeybindsComponent implements OnInit {
             .subscribe((authenticated) => {
                 this.isAuthenticated = authenticated;
 
-                // Check current route
-                const url = this.router.url;
-                const path = this.route.snapshot.routeConfig?.path;
-                this.isHomeRoute = path === '' || (path === 'view-all' && authenticated);
-                this.isMyKeybindingsRoute = path === 'my-keybindings';
-                this.isViewKeybindingRoute = path === ':id';
-
-                // If user is not authenticated and tries to access my-keybindings, redirect to home
-                if (!authenticated && this.isMyKeybindingsRoute) {
+                // If user is not authenticated, redirect to home
+                if (!authenticated) {
                     this.router.navigate(['/keybinds']);
                     return;
                 }
 
-                // Only show drawer on my-keybindings route
-                this.opened = this.isMyKeybindingsRoute;
-
-                // If user is not authenticated and on /keybinds, ensure they see the home component
-                if (!authenticated && url === '/keybinds') {
-                    this.isHomeRoute = true;
-                }
-
                 // Force refresh keybindings on page load to ensure we have the latest data
-                if (authenticated) {
-                    // For authenticated users, force refresh from server
-                    this.keybindingService.forceRefreshKeybindings().subscribe({
-                        next: (keybindings) => {
-                            console.log('Keybindings refreshed on page load:', keybindings.length);
+                this.keybindingService.forceRefreshKeybindings().subscribe({
+                    next: (keybindings) => {
+                        console.log('Keybindings refreshed on page load:', keybindings.length);
 
-                            if (this.keybindsDrawerComponent) {
-                                this.keybindsDrawerComponent.loadKeybindings();
-                            }
-                        },
-                        error: (error) => {
-                            console.error('Error refreshing keybindings on page load:', error);
-                            // Fallback to regular getKeybindings if force refresh fails
-                            this.getKeybindings(authenticated);
+                        if (this.keybindsDrawerComponent) {
+                            this.keybindsDrawerComponent.loadKeybindings();
                         }
-                    });
-                } else {
-                    // For non-authenticated users, show empty state
-                    this.keybindingService.clearKeybindings();
-                }
+                    },
+                    error: (error) => {
+                        console.error('Error refreshing keybindings on page load:', error);
+                        // Fallback to regular getKeybindings if force refresh fails
+                        this.getKeybindings(authenticated);
+                    }
+                });
             });
 
         // Subscribe to user service to get current user ID
@@ -194,11 +159,7 @@ export class KeybindsComponent implements OnInit {
                     const id = params['id'];
                     this.keybindingService.getKeybinding(id).subscribe({
                         next: (keybinding) => {
-                            this.viewKeybinding = keybinding;
-                            this.viewKeybindingName = keybinding.name;
-                            this.viewKeybindingClass = keybinding.class;
-                            this.viewKeybindingSpec = keybinding.spec;
-                            this.viewKeybindingHeroTalent = keybinding.heroTalent;
+                            this.onKeybindingSelected(keybinding);
                         },
                         error: (error) => {
                             console.error('Error loading keybinding:', error);
@@ -211,12 +172,9 @@ export class KeybindsComponent implements OnInit {
         this.route.queryParams
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe(params => {
-                if (params['keybindingId'] && this.isMyKeybindingsRoute) {
+                if (params['keybindingId']) {
                     const keybindingId = params['keybindingId'];
                     const shouldDuplicate = params['duplicate'] === 'true';
-
-                    // Ensure drawer is opened
-                    this.opened = true;
 
                     // Load the keybinding
                     this.keybindingService.getKeybinding(keybindingId).subscribe({
@@ -246,36 +204,20 @@ export class KeybindsComponent implements OnInit {
                 }
             });
 
-        // If we're on a view keybinding route, load the keybinding
-        if (this.isViewKeybindingRoute) {
-            const id = this.route.snapshot.paramMap.get('id');
-            if (id) {
-                this.keybindingService.getKeybinding(id).subscribe({
-                    next: (keybinding) => {
-                        this.viewKeybinding = keybinding;
-                        this.viewKeybindingName = keybinding.name;
-                        this.viewKeybindingClass = keybinding.class;
-                        this.viewKeybindingSpec = keybinding.spec;
-                        this.viewKeybindingHeroTalent = keybinding.heroTalent;
-                    },
-                    error: (error) => {
-                        console.error('Error loading keybinding:', error);
-                    }
-                });
-            }
-        }
+        // Subscribe to keybindings to select the last one
+        this.keybindingService.currentKeybindings
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe(keybindings => {
+                if (keybindings.length > 0 && !this.selectedKeybinding && !this.route.snapshot.queryParams['id']) {
+                    const lastKeybinding = keybindings[keybindings.length - 1];
+                    this.onKeybindingSelected(lastKeybinding);
+                }
+            });
+    }
 
-        // If we're on the my-keybindings route, subscribe to keybindings to select the last one
-        if (this.isMyKeybindingsRoute) {
-            this.keybindingService.currentKeybindings
-                .pipe(takeUntil(this._unsubscribeAll))
-                .subscribe(keybindings => {
-                    if (keybindings.length > 0 && !this.selectedKeybinding && !this.route.snapshot.queryParams['id']) {
-                        const lastKeybinding = keybindings[keybindings.length - 1];
-                        this.onKeybindingSelected(lastKeybinding);
-                    }
-                });
-        }
+    ngOnDestroy(): void {
+        this._unsubscribeAll.next(null);
+        this._unsubscribeAll.complete();
     }
 
     getKeybindings(authenticated: boolean = false) {
@@ -298,7 +240,6 @@ export class KeybindsComponent implements OnInit {
             this.keybindingService.clearKeybindings();
         }
     }
-
 
     onKeybindingSelected(keybinding: any) {
         if (keybinding) {
@@ -332,7 +273,6 @@ export class KeybindsComponent implements OnInit {
                             this.selectedKeybinding = { ...this.selectedKeybinding };
                         }
 
-
                         // Update the drawer's selection
                         if (this.keybindsDrawerComponent) {
                             this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
@@ -348,6 +288,11 @@ export class KeybindsComponent implements OnInit {
                         setTimeout(() => {
                             this.cdr.detectChanges();
                         }, 0);
+
+                        // Close drawer on mobile after selecting a keybinding
+                        if (this.isMobile) {
+                            this.opened = false;
+                        }
                     }
                 });
         }
@@ -524,30 +469,6 @@ export class KeybindsComponent implements OnInit {
         });
     }
 
-    refreshChildKeybindingsAfterDeletion() {
-        console.log('refreshChildKeybindingsAfterDeletion - clearing selection and refreshing');
-
-        // Clear state first to ensure no stale data
-        this.keybindingService.clearKeybindings();
-
-        //check if loggedin
-        this._authService.check().subscribe((authenticated) => {
-            if (authenticated) {
-                //refetch the keybindings from server (don't try to maintain selection)
-                this.keybindingService.getKeybindings().subscribe((keybindings) => {
-                    console.log('refreshChildKeybindingsAfterDeletion - keybindings', keybindings);
-
-                    if (this.keybindsDrawerComponent) {
-                        this.keybindsDrawerComponent.loadKeybindings();
-                    }
-                });
-            } else {
-                // Not authenticated - show empty state
-                this.keybindingService.clearKeybindings();
-            }
-        });
-    }
-
     refreshAbilitiesForMigratedKeybinding(migratedKeybinding: Keybinding) {
         console.log('refreshAbilitiesForMigratedKeybinding called with:', migratedKeybinding.keybindingId);
 
@@ -623,7 +544,6 @@ export class KeybindsComponent implements OnInit {
     }
 
     saveName() {
-
         if (this.nameForm.valid) {
             console.log('Form Submitted', this.nameForm.value);
             this.selectedKeybindingName = this.nameForm.value.name;
@@ -642,7 +562,6 @@ export class KeybindsComponent implements OnInit {
         } else {
             console.log('Form is invalid');
         }
-
     }
 
     cancelName() {
@@ -661,7 +580,6 @@ export class KeybindsComponent implements OnInit {
             isPublic: newPublicStatus
         }).subscribe({
             next: (updatedKeybinding) => {
-
                 // Update the selected keybinding
                 this.selectedKeybinding = updatedKeybinding;
                 this.keyboard.updateKeyboardBindings();
@@ -785,6 +703,11 @@ export class KeybindsComponent implements OnInit {
 
     private checkMobile(): void {
         this.isMobile = window.innerWidth < 768; // sm breakpoint
+        // Auto-hide drawer on mobile, show on desktop
+        if (this.isMobile) {
+            this.opened = false;
+        } else {
+            this.opened = true;
+        }
     }
-
 }

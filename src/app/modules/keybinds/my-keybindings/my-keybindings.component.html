@@ -1,0 +1,138 @@
+<div class="flex flex-row w-full h-full relative">
+    <!-- Backdrop for mobile when drawer is open -->
+    <div *ngIf="opened && isMobile" class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+        (click)="opened = !opened"></div>
+
+    <!-- Drawer Container -->
+    <div class="flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden border-r border-gray-200 w-80 bg-white z-50"
+        [class.fixed]="isMobile" [class.inset-y-0]="isMobile" [class.left-0]="isMobile"
+        [class.-translate-x-full]="isMobile && !opened" [class.translate-x-0]="isMobile && opened"
+        [class.hidden]="!isMobile && !opened">
+        <div class="h-full flex flex-col overflow-hidden">
+            <!-- Drawer Content -->
+            <div class="flex-1 overflow-y-auto">
+                <keybinds-drawer [isKeybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
+                    (keybindingSelected)="onKeybindingSelected($event)" (refreshKeybindings)="refreshChildKeybindings()"
+                    (keybindingUpdated)="onKeybindingUpdated($event)">
+                </keybinds-drawer>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden w-full" [class.md:w-auto]="!isMobile && opened">
+        <!-- Header -->
+        <div
+            class="flex flex-col lg:flex-row lg:items-center lg:justify-between p-4 border-b border-gray-200 bg-white gap-4">
+            <!-- Left Section: Toggle + Title + Edit -->
+            <div class="flex items-center gap-4 min-w-0 flex-1">
+                <button mat-icon-button (click)="opened = !opened" class="hidden lg:block">
+                    <mat-icon>{{ opened ? 'menu_open' : 'menu' }}</mat-icon>
+                </button>
+                <button mat-icon-button (click)="opened = !opened" class="lg:hidden">
+                    <mat-icon>{{ opened ? 'menu_open' : 'menu' }}</mat-icon>
+                </button>
+                <h1 class="text-xl font-semibold text-gray-900 truncate">
+                    @if (selectedKeybinding) {
+                    {{ selectedKeybindingName }}
+                    } @else {
+                    My Keybindings
+                    }
+                </h1>
+
+                @if (selectedKeybinding) {
+                <div class="flex items-center gap-2">
+                    @if (!editingName) {
+                    <button mat-stroked-button (click)="editName()" [disabled]="!isAuthenticated">
+                        <mat-icon>edit</mat-icon>
+                        <span class="ml-2">Edit</span>
+                    </button>
+                    } @else {
+                    <form [formGroup]="nameForm" (ngSubmit)="saveName()" class="flex items-center gap-2">
+                        <mat-form-field class="w-64">
+                            <input matInput formControlName="name" placeholder="Enter keybinding name" maxlength="32">
+                        </mat-form-field>
+                        <button type="submit" mat-stroked-button [disabled]="nameForm.invalid">
+                            <mat-icon>save</mat-icon>
+                            <span class="ml-2">Save</span>
+                        </button>
+                        <button type="button" mat-stroked-button (click)="cancelName()">
+                            <mat-icon>cancel</mat-icon>
+                            <span class="ml-2">Cancel</span>
+                        </button>
+                    </form>
+                    }
+                </div>
+                }
+            </div>
+
+            <!-- Action Buttons -->
+            @if (selectedKeybinding) {
+            <div class="flex items-center gap-2 flex-wrap">
+                <button mat-stroked-button (click)="duplicateKeybinding(selectedKeybinding)"
+                    [disabled]="!isAuthenticated || keybindings.length >= MAX_SIZE"
+                    [matTooltip]="!isAuthenticated ? 'Create an account to duplicate keybindings' : keybindings.length >= MAX_SIZE ? 'Maximum number of keybindings reached' : 'Duplicate keybinding'">
+                    <mat-icon>content_copy</mat-icon>
+                    <span class="ml-2">Duplicate</span>
+                </button>
+
+                <button mat-stroked-button (click)="deleteKeybinding(selectedKeybinding)" [disabled]="!isAuthenticated"
+                    [matTooltip]="!isAuthenticated ? 'Create an account to delete keybindings' : 'Delete keybinding'">
+                    <mat-icon>delete</mat-icon>
+                    <span class="ml-2">Delete</span>
+                </button>
+
+                <button mat-flat-button color="primary" (click)="shareKeybinding()" [disabled]="!isAuthenticated"
+                    [matTooltip]="!isAuthenticated ? 'Create an account to share keybindings' : 'Share keybinding'">
+                    <mat-icon>share</mat-icon>
+                    <span class="ml-2">Share</span>
+                </button>
+
+                @if (selectedKeybinding.isPublic) {
+                <button mat-stroked-button color="primary" (click)="togglePublic()" [disabled]="!isAuthenticated"
+                    [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Private'">
+                    <mat-icon>public</mat-icon>
+                    <span class="ml-2">Public</span>
+                </button>
+                } @else {
+                <button mat-stroked-button (click)="togglePublic()" [disabled]="!isAuthenticated"
+                    [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Public'">
+                    <mat-icon>public_off</mat-icon>
+                    <span class="ml-2">Private</span>
+                </button>
+                }
+            </div>
+            }
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto pb-5">
+            @if (selectedKeybinding) {
+            <!-- Abilities Section -->
+            <div class="w-full bg-gray-300 min-h-[120px] sm:min-h-[150px] lg:min-h-[100px] flex-shrink-0">
+                <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
+                    (selectionClassChanged)="onSelectionClassChanged($event)"
+                    (keybindingUpdated)="updateKeybinding($event)">
+                </abilities>
+            </div>
+
+            <!-- Keyboard Section -->
+            <div class="w-full relative h-[600px] sm:h-[700px] lg:h-[800px]">
+                <keyboard (refreshKeybindings)="refreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding"
+                    [keybindingSelected]="keybindingSelected" [drawerOpened]="opened">
+                </keyboard>
+            </div>
+            } @else {
+            <!-- Empty State -->
+            <div class="flex flex-col items-center justify-center h-full text-center p-8">
+                <mat-icon class="text-6xl text-gray-300 mb-4">keyboard</mat-icon>
+                <h3 class="text-xl font-medium text-gray-600 mb-2">No Keybinding Selected</h3>
+                <p class="text-gray-500 mb-4">Select a keybinding from the sidebar to view and edit it.</p>
+                @if (keybindings.length === 0) {
+                <p class="text-gray-500">You don't have any keybindings yet. Create your first one!</p>
+                }
+            </div>
+            }
+        </div>
+    </div>
+</div>

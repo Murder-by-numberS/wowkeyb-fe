@@ -1,4 +1,4 @@
-<div class="flex w-full flex-col p-3 sm:p-6">
+<div class="flex w-full flex-col p-3 sm:p-6 pb-20 min-h-screen">
     <!-- Header -->
     <div class="mb-2 sm:mb-6">
         <h1 class="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2">Abilities Database</h1>
@@ -15,12 +15,13 @@
         <mat-card-header class="!pb-4">
             <mat-card-title class="flex items-center justify-between w-full">
                 <span class="text-lg font-medium">Filters</span>
-                <button mat-icon-button (click)="toggleFilters()" class="lg:hidden ml-2">
+                <button mat-icon-button (click)="toggleFilters()" class="ml-2">
                     <mat-icon>{{ filtersExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
                 </button>
             </mat-card-title>
         </mat-card-header>
-        <mat-card-content class="hidden lg:block">
+        <mat-card-content class="hidden lg:block" [class.lg:!block]="filtersExpanded"
+            [class.lg:!hidden]="!filtersExpanded">
             <!-- Desktop: Horizontal layout -->
             <div class="flex flex-row gap-4 items-center justify-start">
                 <!-- Class Filter -->
@@ -28,7 +29,7 @@
                     <mat-label>Class</mat-label>
                     <mat-select #classSelect [(value)]="selectedClass" (selectionChange)="onClassChange($event)">
                         @for (class of classes; track $index) {
-                        <mat-option [value]="class.name">{{class.name}}</mat-option>
+                        <mat-option [value]="class.value">{{class.label}}</mat-option>
                         }
                     </mat-select>
                     @if (selectedClass) {
@@ -126,7 +127,7 @@
                     <mat-label>Class</mat-label>
                     <mat-select #classSelect [(value)]="selectedClass" (selectionChange)="onClassChange($event)">
                         @for (class of classes; track $index) {
-                        <mat-option [value]="class.name">{{class.name}}</mat-option>
+                        <mat-option [value]="class.value">{{class.label}}</mat-option>
                         }
                     </mat-select>
                     @if (selectedClass) {
@@ -290,28 +291,38 @@
     <!-- Results Info (Desktop Only) -->
     <div class="mb-4 hidden lg:block">
         @if (filteredAbilities?.length > 0) {
-        <div class="flex items-center justify-between">
-            <p class="text-lg font-medium">Abilities</p>
-            <p class="text-gray-600 text-sm">
-                Page {{ currentPage }} of {{ maxPage() }} |
-                Showing {{ getStartIndex() + 1 }} - {{ getEndIndex() }} of {{ filteredAbilities.length }}
+        <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <p class="text-lg font-medium">Abilities</p>
                 @if (hasActiveColumnFilters()) {
-                <span class="text-orange-600 font-medium">(filtered)</span>
+                <span class="text-orange-600 font-medium text-sm">(filtered)</span>
                 }
-            </p>
-            @if (selectedClass && selectedSpec && selectedHeroTalent) {
-            <p class="text-sm text-blue-600">
-                {{ selectedClass }} {{ selectedSpec }} {{ selectedHeroTalent }}
-            </p>
-            } @else if (selectedClass && selectedSpec) {
-            <p class="text-sm text-blue-600">
-                {{ selectedClass }} {{ selectedSpec }}
-            </p>
-            } @else if (selectedClass) {
-            <p class="text-sm text-blue-600">
-                {{ selectedClass }}
-            </p>
-            }
+                @if (selectedClass && selectedSpec && selectedHeroTalent) {
+                <span class="text-sm text-blue-600">
+                    {{ formatClassName(selectedClass) }} {{ selectedSpec }} {{ selectedHeroTalent }}
+                </span>
+                } @else if (selectedClass && selectedSpec) {
+                <span class="text-sm text-blue-600">
+                    {{ formatClassName(selectedClass) }} {{ selectedSpec }}
+                </span>
+                } @else if (selectedClass) {
+                <span class="text-sm text-blue-600">
+                    {{ formatClassName(selectedClass) }}
+                </span>
+                }
+            </div>
+            <!-- Inline Pagination -->
+            <div class="flex items-center gap-2">
+                <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPreviousPage()">
+                    <mat-icon>arrow_back</mat-icon>
+                </button>
+                <span class="text-sm font-medium">
+                    Page {{ currentPage }} of {{ maxPage() }}
+                </span>
+                <button mat-icon-button [disabled]="currentPage >= maxPage()" (click)="goToNextPage()">
+                    <mat-icon>arrow_forward</mat-icon>
+                </button>
+            </div>
         </div>
         } @else if (selectedGameVersion && (selectedClass || selectedSpec || selectedHeroTalent)) {
         <p class="text-gray-600 text-base">No abilities available for the selected combination in version {{
@@ -323,6 +334,7 @@
         }
     </div>
 
+
     <!-- Mobile Results Info (Simplified) -->
     <div class="mb-2 lg:hidden">
         @if (filteredAbilities?.length > 0) {
@@ -330,15 +342,15 @@
             <p class="text-lg font-medium">Abilities</p>
             @if (selectedClass && selectedSpec && selectedHeroTalent) {
             <p class="text-sm text-blue-600">
-                {{ selectedClass }} {{ selectedSpec }} {{ selectedHeroTalent }}
+                {{ formatClassName(selectedClass) }} {{ selectedSpec }} {{ selectedHeroTalent }}
             </p>
             } @else if (selectedClass && selectedSpec) {
             <p class="text-sm text-blue-600">
-                {{ selectedClass }} {{ selectedSpec }}
+                {{ formatClassName(selectedClass) }} {{ selectedSpec }}
             </p>
             } @else if (selectedClass) {
             <p class="text-sm text-blue-600">
-                {{ selectedClass }}
+                {{ formatClassName(selectedClass) }}
             </p>
             }
         </div>
@@ -359,19 +371,19 @@
 
             <!-- Mobile: Card Layout with Infinite Scroll -->
             <div class="lg:hidden">
-                <div class="max-h-[400px] sm:max-h-[550px] overflow-y-auto" (scroll)="onScroll($event)">
+                <div class="max-h-[60vh] sm:max-h-[70vh] overflow-y-auto" (scroll)="onScroll($event)">
                     @for (ability of (displayedAbilities.length > 0 ? displayedAbilities :
-                    getAbilitiesForCurrentPage()); track $index) {
-                    <mat-card class="mb-2 sm:mb-4">
+                    dataSource); track $index) {
+                    <mat-card class="mb-1 sm:mb-2">
                         <mat-card-content class="p-3 sm:p-4">
-                            <div class="flex items-start gap-2 sm:gap-3">
+                            <div class="flex items-start gap-1 sm:gap-2">
                                 <img [src]="ability.icon" [alt]="ability.name + ' icon'"
                                     class="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0" />
                                 <div class="flex-1 min-w-0">
                                     <h3 class="font-semibold text-sm sm:text-base mb-1 sm:mb-2">{{ability.name}}</h3>
                                     <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-3">
                                         {{ability.description}}</p>
-                                    <div class="flex flex-wrap gap-1 sm:gap-2">
+                                    <div class="flex flex-wrap gap-0.5 sm:gap-1">
                                         <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                                             {{formatClassName(ability.class)}}
                                         </span>
@@ -410,7 +422,7 @@
 
             <!-- Desktop: Table Layout -->
             <div class="hidden lg:block overflow-x-auto">
-                <table mat-table [dataSource]="getAbilitiesForCurrentPage()" class="w-full">
+                <table mat-table [dataSource]="dataSource" class="w-full">
                     <!-- Icon Column -->
                     <ng-container matColumnDef="icon">
                         <th mat-header-cell *matHeaderCellDef>
@@ -627,26 +639,9 @@
                 </button>
             </div>
             }
-
-            <!-- Pagination (Desktop Only) -->
-            <div class="hidden lg:flex items-center justify-center gap-4 mt-4">
-                <div class="flex items-center gap-2">
-                    <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPreviousPage()">
-                        <mat-icon>arrow_back</mat-icon>
-                    </button>
-                    <span class="text-base">
-                        Page {{ currentPage }} of {{ maxPage() }}
-                    </span>
-                    <button mat-icon-button [disabled]="currentPage >= maxPage()" (click)="goToNextPage()">
-                        <mat-icon>arrow_forward</mat-icon>
-                    </button>
-                </div>
-                <span class="text-sm text-gray-600 text-center">
-                    Showing {{ getStartIndex() + 1 }}-{{ getEndIndex() }} of {{ totalAbilities }} abilities
-                </span>
-            </div>
         </mat-card-content>
     </mat-card>
+
     } @else {
     <!-- Empty State -->
     <mat-card>

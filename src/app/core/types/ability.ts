@@ -1,5 +1,5 @@
 export interface Ability {
-    id: number;
+    id: string;
     spellId: string;
     name: string;
     description: string;

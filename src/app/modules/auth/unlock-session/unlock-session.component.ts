@@ -17,6 +17,7 @@ import { fuseAnimations } from '@fuse/animations';
 import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
 import { AuthService } from 'app/core/auth/auth.service';
 import { UserService } from 'app/core/user/user.service';
+import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
 
 @Component({
     selector: 'auth-unlock-session',
@@ -34,6 +35,7 @@ import { UserService } from 'app/core/user/user.service';
         MatIconModule,
         MatProgressSpinnerModule,
         RouterLink,
+        AuthBackgroundComponent,
     ],
 })
 export class AuthUnlockSessionComponent implements OnInit {
@@ -57,7 +59,7 @@ export class AuthUnlockSessionComponent implements OnInit {
         private _formBuilder: UntypedFormBuilder,
         private _router: Router,
         private _userService: UserService
-    ) {}
+    ) { }
 
     // -----------------------------------------------------------------------------------------------------
     // @ Lifecycle hooks
