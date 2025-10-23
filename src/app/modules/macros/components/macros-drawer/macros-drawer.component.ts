@@ -115,9 +115,11 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
         }
 
         // Sort macros with favorite class first
+        // Case-insensitive comparison for class names (e.g., 'Paladin' vs 'paladin')
+        const favoriteClassLower = this.favoriteClass.toLowerCase().replace(/\s+/g, '');
         return [...macros].sort((a, b) => {
-            const aIsFavorite = a.class === this.favoriteClass;
-            const bIsFavorite = b.class === this.favoriteClass;
+            const aIsFavorite = a.class && a.class.toLowerCase().replace(/\s+/g, '') === favoriteClassLower;
+            const bIsFavorite = b.class && b.class.toLowerCase().replace(/\s+/g, '') === favoriteClassLower;
 
             if (aIsFavorite && !bIsFavorite) return -1;
             if (!aIsFavorite && bIsFavorite) return 1;
@@ -134,7 +136,9 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
         }
         this.filterApplied = true;
         const filtered = this.macros.filter(m =>
-            selected.some(selectedClass => selectedClass.name === m.class)
+            m.class && selected.some(selectedClass =>
+                selectedClass.name && selectedClass.name.toLowerCase().replace(/\s+/g, '') === m.class.toLowerCase().replace(/\s+/g, '')
+            )
         );
         this.filteredMacros = this.sortMacros(filtered);
     }
@@ -242,7 +246,9 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
 
         if (this.filterApplied && this.selectedClasses.value?.length > 0) {
             const filtered = this.macros.filter(macro =>
-                this.selectedClasses.value.some(selectedClass => selectedClass.name === macro.class)
+                macro.class && this.selectedClasses.value.some(selectedClass =>
+                    selectedClass.name && selectedClass.name.toLowerCase().replace(/\s+/g, '') === macro.class.toLowerCase().replace(/\s+/g, '')
+                )
             );
             this.filteredMacros = this.sortMacros(filtered);
             console.log('MacrosDrawerComponent - filtered macros length:', this.filteredMacros.length);

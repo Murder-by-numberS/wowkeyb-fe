@@ -74,6 +74,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     @Output() macroCreated = new EventEmitter<Macro>();
 
     @ViewChild('stepper') stepper!: MatStepper;
+    @ViewChild(MacrosDrawerComponent) macrosDrawerComponent!: MacrosDrawerComponent;
 
     // Component state
     macros: ExpandableMacro[] = [];
@@ -86,6 +87,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     isEditing: boolean = false;
     isCreating: boolean = false; // New state for create mode
     drawerOpen: boolean = true; // Drawer is open by default
+    isMobile: boolean = false;
 
     // Create macro form properties
     createForm: FormGroup;
@@ -214,6 +216,9 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     }
 
     ngOnInit(): void {
+        // Check if device is mobile
+        this.checkMobile();
+
         // Check authentication status first, then load macros
         this.authService.check().pipe(
             takeUntil(this.destroy$)
@@ -280,6 +285,26 @@ export class MyMacrosComponent implements OnInit, OnChanges {
                 }));
                 console.log('MyMacrosComponent - Final macros array:', this.macros);
                 this.isLoading = false;
+
+                // Auto-select first macro if none is selected and not in create mode
+                if (this.macros.length > 0 && !this.currentSelectedMacro && !this.isCreating) {
+                    // Check if there's a route parameter with macro ID
+                    this.route.params.pipe(
+                        takeUntil(this.destroy$)
+                    ).subscribe(params => {
+                        if (!params['id']) {
+                            // No specific macro in route, select the first one
+                            this.selectMacro(this.macros[0]);
+
+                            // Update drawer selection after a short delay to ensure ViewChild is initialized
+                            setTimeout(() => {
+                                if (this.macrosDrawerComponent) {
+                                    this.macrosDrawerComponent.setSelectedMacro(this.macros[0]);
+                                }
+                            }, 0);
+                        }
+                    });
+                }
             },
             error: (error) => {
                 console.error('MyMacrosComponent - Error loading macros:', error);
@@ -313,11 +338,29 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             this.loadIconForMacro(macro);
         }
 
+        // Update drawer selection
+        if (this.macrosDrawerComponent) {
+            this.macrosDrawerComponent.setSelectedMacro(macro);
+        }
+
         this.macroSelectedChange.emit(macro);
     }
 
     onMacroSelectedFromDrawer(macro: ExpandableMacro): void {
+        // Handle null case when macro is cleared due to filtering
+        if (!macro) {
+            this.currentSelectedMacro = null;
+            this.isEditing = false;
+            this.isCreating = false;
+            return;
+        }
+
         this.selectMacro(macro);
+
+        // Close drawer on mobile after selecting a macro
+        if (this.isMobile) {
+            this.drawerOpen = false;
+        }
     }
 
     closePanel(): void {
@@ -774,6 +817,11 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.isEditing = false;
         this.currentSelectedMacro = null;
         this.resetCreateForm();
+
+        // Close drawer on mobile after creating new macro
+        if (this.isMobile) {
+            this.drawerOpen = false;
+        }
     }
 
     onCancelCreate(): void {
@@ -1215,5 +1263,15 @@ export class MyMacrosComponent implements OnInit, OnChanges {
                 this.snackBar.open('Macro generated successfully!', 'Close', { duration: 3000 });
             }
         });
+    }
+
+    private checkMobile(): void {
+        this.isMobile = window.innerWidth < 768; // sm breakpoint
+        // Auto-hide drawer on mobile, show on desktop
+        if (this.isMobile) {
+            this.drawerOpen = false;
+        } else {
+            this.drawerOpen = true;
+        }
     }
 }
