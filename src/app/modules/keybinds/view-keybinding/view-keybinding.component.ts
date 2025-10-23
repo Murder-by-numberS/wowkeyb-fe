@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -18,6 +18,7 @@ import { ExpandedKeyboardComponent } from '../expanded-keyboard/expanded-keyboar
     standalone: true,
     imports: [
         CommonModule,
+        RouterModule,
         MatButtonModule,
         MatIconModule,
         ViewKeyboardComponent,

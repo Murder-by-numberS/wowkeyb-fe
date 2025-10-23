@@ -75,7 +75,15 @@
                             <div class="text-sm text-gray-600">
                                 {{keybinding.class | titlecase}}
                             </div>
-                            <div class="text-xs text-gray-500 mt-2">
+                            @if (keybinding.creatorUsername) {
+                            <div class="text-xs text-gray-500 mt-1">
+                                By <a [routerLink]="['/user', keybinding.creatorUsername]"
+                                    class="text-blue-600 hover:underline" (click)="$event.stopPropagation()">
+                                    {{keybinding.creatorUsername}}
+                                </a>
+                            </div>
+                            }
+                            <div class="text-xs text-gray-500 mt-1">
                                 Created: {{keybinding.createdAt | date:'medium'}}
                             </div>
                         </div>
@@ -103,7 +111,15 @@
                             <div class="text-sm text-gray-600">
                                 {{keybinding.class | titlecase}}
                             </div>
-                            <div class="text-xs text-gray-500 mt-2">
+                            @if (keybinding.creatorUsername) {
+                            <div class="text-xs text-gray-500 mt-1">
+                                By <a [routerLink]="['/user', keybinding.creatorUsername]"
+                                    class="text-blue-600 hover:underline" (click)="$event.stopPropagation()">
+                                    {{keybinding.creatorUsername}}
+                                </a>
+                            </div>
+                            }
+                            <div class="text-xs text-gray-500 mt-1">
                                 Created: {{keybinding.createdAt | date:'medium'}}
                             </div>
                         </div>

@@ -1,0 +1,180 @@
+<div class="flex flex-col w-full h-screen overflow-y-auto bg-gray-50">
+    <!-- Loading State -->
+    @if (isLoading) {
+    <div class="flex justify-center items-center h-screen">
+        <mat-spinner></mat-spinner>
+    </div>
+    }
+
+    <!-- Error State -->
+    @if (error && !isLoading) {
+    <div class="flex flex-col items-center justify-center h-screen">
+        <mat-icon class="text-6xl text-red-500 mb-4">error_outline</mat-icon>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ error }}</h2>
+        <button mat-raised-button color="primary" (click)="goBack()">
+            <mat-icon>arrow_back</mat-icon>
+            Go Back
+        </button>
+    </div>
+    }
+
+    <!-- Profile Content -->
+    @if (profile && !isLoading) {
+    <div class="max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8">
+        <!-- Back Button -->
+        <div class="mb-4">
+            <button mat-button (click)="goBack()">
+                <mat-icon>arrow_back</mat-icon>
+                Back
+            </button>
+        </div>
+
+        <!-- Profile Header -->
+        <mat-card class="mb-6">
+            <div class="p-6">
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                    <!-- Avatar -->
+                    <div class="flex-shrink-0">
+                        <div
+                            class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                            {{ profile.username.charAt(0).toUpperCase() }}
+                        </div>
+                    </div>
+
+                    <!-- Profile Info -->
+                    <div class="flex-1 text-center sm:text-left">
+                        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ profile.username }}</h1>
+
+                        @if (profile.description) {
+                        <p class="text-gray-600 mb-4">{{ profile.description }}</p>
+                        }
+
+                        <div class="flex flex-col sm:flex-row items-center sm:items-center gap-4 mb-4">
+                            @if (profile.favorite_class) {
+                            <div class="flex items-center gap-2">
+                                <img [src]="getClassIcon(getFavoriteClassDisplayName(profile.favorite_class))"
+                                    [alt]="profile.favorite_class" class="w-8 h-8 rounded">
+                                <span class="text-sm font-medium text-gray-700">
+                                    Favorite: {{ getFavoriteClassDisplayName(profile.favorite_class) }}
+                                </span>
+                            </div>
+                            }
+
+                            <div class="flex items-center gap-2 text-sm text-gray-500">
+                                <mat-icon class="text-base">calendar_today</mat-icon>
+                                <span>Joined {{ formatDate(profile.created_at) }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Stats -->
+                        <div class="flex gap-6 justify-center sm:justify-start">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600">{{ profile.stats.total_keybindings }}
+                                </div>
+                                <div class="text-sm text-gray-600">Keybindings</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-purple-600">{{ profile.stats.total_macros }}</div>
+                                <div class="text-sm text-gray-600">Macros</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </mat-card>
+
+        <!-- Keybindings Section -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="px-6 py-4 border-b">
+                <h2 class="text-2xl font-semibold">Keybindings ({{ profile.keybindings.length }})</h2>
+            </div>
+            <div class="p-6">
+                @if (profile.keybindings.length === 0) {
+                <div class="text-center py-8 text-gray-500">
+                    <mat-icon class="text-6xl mb-2">keyboard</mat-icon>
+                    <p>No public keybindings yet</p>
+                </div>
+                } @else {
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @for (keybinding of profile.keybindings; track keybinding.keybindingId) {
+                    <mat-card class="cursor-pointer hover:shadow-lg transition-shadow"
+                        (click)="onViewKeybinding(keybinding)">
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold mb-2 text-gray-900">{{ keybinding.name }}</h3>
+
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm text-gray-600">{{ keybinding.class }}</span>
+                                @if (keybinding.spec) {
+                                <span class="text-sm text-gray-400">•</span>
+                                <span class="text-sm text-gray-600">{{ keybinding.spec }}</span>
+                                }
+                            </div>
+
+                            @if (keybinding.version) {
+                            <div class="text-xs text-gray-500 mb-2">
+                                Version: {{ keybinding.version.game_version }}
+                            </div>
+                            }
+
+                            <div class="text-xs text-gray-400">
+                                {{ formatDate(keybinding.createdAt) }}
+                            </div>
+                        </div>
+                    </mat-card>
+                    }
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Macros Section -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+                <h2 class="text-2xl font-semibold">Macros ({{ profile.macros.length }})</h2>
+            </div>
+            <div class="p-6">
+                @if (profile.macros.length === 0) {
+                <div class="text-center py-8 text-gray-500">
+                    <mat-icon class="text-6xl mb-2">code</mat-icon>
+                    <p>No public macros yet</p>
+                </div>
+                } @else {
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @for (macro of profile.macros; track macro.id) {
+                    <mat-card class="cursor-pointer hover:shadow-lg transition-shadow" (click)="onViewMacro(macro)">
+                        <div class="p-4">
+                            <div class="flex items-start gap-3">
+                                @if (macro.icon?.cloudfrontUrl) {
+                                <img [src]="macro.icon.cloudfrontUrl" [alt]="macro.name" class="w-12 h-12 rounded">
+                                }
+
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-semibold mb-2 text-gray-900">{{ macro.name }}</h3>
+
+                                    @if (macro.description) {
+                                    <p class="text-sm text-gray-600 mb-2 line-clamp-2">{{ macro.description }}</p>
+                                    }
+
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-sm text-gray-600">{{ macro.class }}</span>
+                                        @if (macro.spec) {
+                                        <span class="text-sm text-gray-400">•</span>
+                                        <span class="text-sm text-gray-600">{{ macro.spec }}</span>
+                                        }
+                                    </div>
+
+                                    <div class="text-xs text-gray-400">
+                                        {{ formatDate(macro.created_at) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </mat-card>
+                    }
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+    }
+</div>

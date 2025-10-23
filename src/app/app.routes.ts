@@ -82,6 +82,17 @@ export const appRoutes: Route[] = [
             { path: 'profile', loadChildren: () => import('app/modules/admin/pages/profile/profile.routes') },
         ]
     },
+    // View user profile (public)
+    {
+        path: '',
+        component: LayoutComponent,
+        data: {
+            layout: 'modern'
+        },
+        children: [
+            { path: 'user', loadChildren: () => import('app/modules/profile/profile.routes') },
+        ]
+    },
     // Maintenance
     { path: 'maintenance', loadChildren: () => import('app/modules/admin/pages/maintenance/maintenance.routes') },
 

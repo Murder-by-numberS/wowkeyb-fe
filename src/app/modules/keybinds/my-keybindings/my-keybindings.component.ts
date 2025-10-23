@@ -288,6 +288,11 @@ export class MyKeybindingsComponent implements OnInit {
                         setTimeout(() => {
                             this.cdr.detectChanges();
                         }, 0);
+
+                        // Close drawer on mobile after selecting a keybinding
+                        if (this.isMobile) {
+                            this.opened = false;
+                        }
                     }
                 });
         }

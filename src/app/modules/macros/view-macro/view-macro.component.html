@@ -123,6 +123,13 @@
                                 <mat-card-title>Details</mat-card-title>
                             </mat-card-header>
                             <mat-card-content class="space-y-4">
+                                <div *ngIf="macro.creatorUsername" class="flex items-center justify-between">
+                                    <span class="text-gray-600">Created by</span>
+                                    <a [routerLink]="['/user', macro.creatorUsername]"
+                                        class="font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                                        {{ macro.creatorUsername }}
+                                    </a>
+                                </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-gray-600">Class</span>
                                     <span class="font-semibold">{{ getClassDisplayName(macro.class) }}</span>

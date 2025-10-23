@@ -75,7 +75,15 @@
                             <div class="text-sm text-gray-600">
                                 {{macro.class | titlecase}}
                             </div>
-                            <div class="text-xs text-gray-500 mt-2">
+                            @if (macro.creatorUsername) {
+                            <div class="text-xs text-gray-500 mt-1">
+                                By <a [routerLink]="['/user', macro.creatorUsername]"
+                                    class="text-blue-600 hover:underline" (click)="$event.stopPropagation()">
+                                    {{macro.creatorUsername}}
+                                </a>
+                            </div>
+                            }
+                            <div class="text-xs text-gray-500 mt-1">
                                 Created: {{macro.createdAt | date:'medium'}}
                             </div>
                         </div>
@@ -103,7 +111,15 @@
                             <div class="text-sm text-gray-600">
                                 {{macro.class | titlecase}}
                             </div>
-                            <div class="text-xs text-gray-500 mt-2">
+                            @if (macro.creatorUsername) {
+                            <div class="text-xs text-gray-500 mt-1">
+                                By <a [routerLink]="['/user', macro.creatorUsername]"
+                                    class="text-blue-600 hover:underline" (click)="$event.stopPropagation()">
+                                    {{macro.creatorUsername}}
+                                </a>
+                            </div>
+                            }
+                            <div class="text-xs text-gray-500 mt-1">
                                 Created: {{macro.createdAt | date:'medium'}}
                             </div>
                         </div>

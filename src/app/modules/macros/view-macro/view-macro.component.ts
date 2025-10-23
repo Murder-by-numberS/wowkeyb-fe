@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -20,6 +20,7 @@ import { IconService } from '../../icons/services/icon.service';
     standalone: true,
     imports: [
         CommonModule,
+        RouterModule,
         MatButtonModule,
         MatIconModule,
         MatCardModule,

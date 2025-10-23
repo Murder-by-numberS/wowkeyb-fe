@@ -25,6 +25,7 @@ export interface Macro {
     isPublic?: boolean; // For compatibility
     created_by?: string; // Backend field name
     createdBy?: string; // For compatibility
+    creatorUsername?: string; // Creator's username
     usageCount?: number;
     createdAt?: Date;
     updatedAt?: Date;
