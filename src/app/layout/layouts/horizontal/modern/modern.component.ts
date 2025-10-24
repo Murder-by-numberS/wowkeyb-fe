@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 import { FuseFullscreenComponent } from '@fuse/components/fullscreen';
@@ -36,6 +37,7 @@ import packageJson from '../../../../../../package.json'
         FuseHorizontalNavigationComponent,
         MatButtonModule,
         MatIconModule,
+        MatTooltipModule,
         RouterModule,
         LanguagesComponent,
         FuseFullscreenComponent,
