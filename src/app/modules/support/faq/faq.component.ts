@@ -61,11 +61,11 @@ export class FaqComponent {
             question: 'How do I filter keybinds by class?',
             answer: 'Use the filter dropdown on the keybinds page to select your class and spec. This will show you optimized setups specifically designed for your character.'
         },
-        {
-            category: 'Keybinds',
-            question: 'Can I customize existing keybind setups?',
-            answer: 'Absolutely! You can clone any existing setup and modify it to fit your preferences. Your customized version will be saved to your account.'
-        },
+        // {
+        //     category: 'Keybinds',
+        //     question: 'Can I customize existing keybind setups?',
+        //     answer: 'Absolutely! You can clone any existing setup and modify it to fit your preferences. Your customized version will be saved to your account.'
+        // },
 
         // Macros
         {
@@ -83,11 +83,11 @@ export class FaqComponent {
             question: 'Can I test my macros before exporting?',
             answer: 'Yes, the macro validator will check your macro for common errors and syntax issues before you save or export it.'
         },
-        {
-            category: 'Macros',
-            question: 'How do I import macros into WoW?',
-            answer: 'Copy the macro text from WowKeyb, then in WoW, open the macro panel (press Esc > Macros), click "New", paste the text, and save.'
-        },
+        // {
+        //     category: 'Macros',
+        //     question: 'How do I import macros into WoW?',
+        //     answer: 'Copy the macro text from WowKeyb, then in WoW, open the macro panel (press Esc > Macros), click "New", paste the text, and save.'
+        // },
 
         // Account
         {
@@ -98,7 +98,7 @@ export class FaqComponent {
         {
             category: 'Account',
             question: 'Can I delete my account?',
-            answer: 'Yes, you can delete your account from the Settings page. Please note that this action is permanent and will delete all your saved keybinds and macros.'
+            answer: 'Yes, to delete your account, please submit a support ticket. Please note that this action is permanent and will delete all your saved keybinds and macros.'
         },
         {
             category: 'Account',
