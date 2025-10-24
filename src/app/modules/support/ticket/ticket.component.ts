@@ -108,7 +108,7 @@ export class TicketComponent implements OnInit {
         };
 
         // Call backend API
-        this._http.post(`${environment.apiUrl}/api/support/ticket`, ticketData)
+        this._http.post(`${environment.apiUrl}/support/ticket`, ticketData)
             .subscribe({
                 next: (response: any) => {
                     this.isSubmitting = false;
