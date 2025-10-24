@@ -93,7 +93,7 @@ export class FaqComponent {
         {
             category: 'Account',
             question: 'How do I reset my password?',
-            answer: 'Click on "Forgot Password" on the login page. Enter your email address and we\'ll send you instructions to reset your password.'
+            answer: 'You can change your password from your Profile page when logged in. If you\'ve forgotten your password, click "Forgot Password" on the login page and we\'ll send you instructions to reset it.'
         },
         {
             category: 'Account',
