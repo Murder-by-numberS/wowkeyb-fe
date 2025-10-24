@@ -1,0 +1,141 @@
+<div class="flex w-full flex-auto flex-col">
+    <!-- Header -->
+    <div class="bg-card dark:bg-transparent relative overflow-hidden px-4 py-12 sm:px-16 sm:py-16">
+        <div class="relative z-10 mx-auto flex w-full max-w-6xl flex-col">
+            <button mat-button [routerLink]="['/support']" class="mb-4 self-start">
+                <mat-icon [svgIcon]="'heroicons_outline:arrow-left'" class="mr-2"></mat-icon>
+                Back to Support
+            </button>
+            <h1 class="text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">
+                Submit Support Ticket
+            </h1>
+            <div class="text-secondary mt-3 text-lg tracking-tight">
+                Our team will respond within 24-48 hours
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="mx-auto w-full max-w-4xl px-4 py-10 sm:px-16 sm:py-14">
+        @if (!submitted) {
+        <!-- Info Box -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 mb-8 rounded-lg border border-blue-200 dark:border-blue-800 p-6">
+            <div class="flex items-start">
+                <mat-icon class="text-blue-600 mr-3 mt-1" [svgIcon]="'heroicons_outline:information-circle'"></mat-icon>
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Before submitting a ticket</h3>
+                    <ul class="text-secondary text-sm space-y-1 list-disc list-inside">
+                        <li>Check our <a [routerLink]="['/support/faq']" class="text-blue-600 hover:underline">FAQ
+                                page</a> for quick answers</li>
+                        <li>Provide as much detail as possible to help us resolve your issue faster</li>
+                        <li>Include screenshots or error messages if applicable</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Form -->
+        <form [formGroup]="ticketForm" (ngSubmit)="submitTicket()" class="space-y-6">
+            <!-- Contact Information -->
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold">Contact Information</h2>
+
+                <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Email Address</mat-label>
+                    <input matInput type="email" formControlName="email" placeholder="your.email@example.com">
+                    @if (ticketForm.get('email')?.invalid && ticketForm.get('email')?.touched) {
+                    <mat-error>{{ getErrorMessage('email') }}</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+
+            <!-- Ticket Details -->
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold">Ticket Details</h2>
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Category</mat-label>
+                        <mat-select formControlName="category">
+                            @for (category of categories; track category.value) {
+                            <mat-option [value]="category.value">
+                                {{ category.label }}
+                            </mat-option>
+                            }
+                        </mat-select>
+                        @if (ticketForm.get('category')?.invalid && ticketForm.get('category')?.touched) {
+                        <mat-error>{{ getErrorMessage('category') }}</mat-error>
+                        }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                        <mat-label>Priority</mat-label>
+                        <mat-select formControlName="priority">
+                            @for (priority of priorities; track priority.value) {
+                            <mat-option [value]="priority.value">
+                                {{ priority.label }}
+                            </mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+
+                <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Subject</mat-label>
+                    <input matInput formControlName="subject" placeholder="Brief description of your issue">
+                    @if (ticketForm.get('subject')?.invalid && ticketForm.get('subject')?.touched) {
+                    <mat-error>{{ getErrorMessage('subject') }}</mat-error>
+                    }
+                </mat-form-field>
+
+                <mat-form-field class="w-full" appearance="outline">
+                    <mat-label>Description</mat-label>
+                    <textarea matInput formControlName="description" rows="8"
+                        placeholder="Please provide detailed information about your issue, including steps to reproduce, error messages, and what you've already tried...">
+                        </textarea>
+                    <mat-hint>{{ ticketForm.get('description')?.value?.length || 0 }} characters (minimum 20)</mat-hint>
+                    @if (ticketForm.get('description')?.invalid && ticketForm.get('description')?.touched) {
+                    <mat-error>{{ getErrorMessage('description') }}</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex items-center justify-end gap-4 pt-4">
+                <button type="button" mat-stroked-button [routerLink]="['/support']">
+                    Cancel
+                </button>
+                <button type="submit" mat-flat-button color="primary" [disabled]="isSubmitting">
+                    @if (isSubmitting) {
+                    <mat-icon class="mr-2 animate-spin" [svgIcon]="'heroicons_outline:arrow-path'"></mat-icon>
+                    Submitting...
+                    } @else {
+                    <mat-icon class="mr-2" [svgIcon]="'heroicons_outline:paper-airplane'"></mat-icon>
+                    Submit Ticket
+                    }
+                </button>
+            </div>
+        </form>
+        } @else {
+        <!-- Success Message -->
+        <div
+            class="bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 p-8 text-center">
+            <mat-icon class="text-green-600 mx-auto mb-4" [svgIcon]="'heroicons_outline:check-circle'"
+                style="width: 64px; height: 64px;"></mat-icon>
+            <h2 class="text-2xl font-semibold mb-4">Ticket Submitted Successfully!</h2>
+            <p class="text-secondary mb-6">
+                Thank you for reaching out. We've received your support ticket and our team will respond to your email
+                within 24-48 hours.
+            </p>
+            <div class="flex justify-center gap-4">
+                <button mat-stroked-button [routerLink]="['/support']">
+                    Back to Support
+                </button>
+                <button mat-flat-button color="primary" (click)="submitted = false">
+                    Submit Another Ticket
+                </button>
+            </div>
+        </div>
+        }
+    </div>
+</div>

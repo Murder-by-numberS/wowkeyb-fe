@@ -69,6 +69,18 @@ export const appRoutes: Route[] = [
         ]
     },
 
+    // Support routes
+    {
+        path: '',
+        component: LayoutComponent,
+        data: {
+            layout: 'modern'
+        },
+        children: [
+            { path: 'support', loadChildren: () => import('app/modules/support/support.routes') },
+        ]
+    },
+
     // Profile route (without initialDataResolver to avoid hanging)
     {
         path: '',

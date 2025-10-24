@@ -57,11 +57,17 @@
             <button class="lg:hidden" mat-icon-button (click)="quickChat.toggle()">
                 <mat-icon [svgIcon]="'heroicons_outline:chat-bubble-left-right'"></mat-icon>
             </button> -->
+            <button mat-icon-button [routerLink]="['/support']" matTooltip="Support">
+                <mat-icon [svgIcon]="'heroicons_outline:question-mark-circle'"></mat-icon>
+            </button>
             <user></user>
         </div>
         }
         @if(!isAuthenticated) {
         <div class="ml-auto flex items-center space-x-0.5 pl-2 sm:space-x-2">
+            <button mat-icon-button [routerLink]="['/support']" matTooltip="Support">
+                <mat-icon [svgIcon]="'heroicons_outline:question-mark-circle'"></mat-icon>
+            </button>
             <button mat-flat-button (click)="goToLogin()">
                 Login
             </button>
