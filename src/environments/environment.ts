@@ -5,7 +5,7 @@
 export const environment = {
     production: false,
     envName: 'dev',
-    apiUrl: 'http://localhost:1337',
+    apiUrl: 'http://localhost:1337/api',
     debugFlag: 'BASE_ENV_ACTIVE_2024'
 };
 
