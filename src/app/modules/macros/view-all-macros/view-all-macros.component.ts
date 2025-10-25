@@ -7,7 +7,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { AuthService } from 'app/core/auth/auth.service';
 import { MacroService, Macro, MacroResponse } from '../services/macro.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
 
 export interface ClassInfo {
     name: string;
@@ -86,22 +86,31 @@ export class ViewAllMacrosComponent implements OnInit, OnDestroy {
         this.isLoading = true;
         this.classMacros = {};
 
-        // Load popular macros for all classes
-        this.macroService.getPopularMacros(1, 5)
+        // Load both popular and recent macros in parallel
+        forkJoin({
+            popular: this.macroService.getPopularMacros(1, 5),
+            recent: this.macroService.getMacros({
+                page: 1,
+                limit: 5,
+                sortBy: 'createdAt',
+                sortOrder: 'desc',
+                isPublic: true
+            })
+        })
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe({
-                next: (response: MacroResponse) => {
-                    this.processMacrosResponse(response);
+                next: (responses) => {
+                    this.processMacrosResponse(responses.popular, responses.recent);
                     this.isLoading = false;
                 },
                 error: (error) => {
-                    console.error('Error loading popular macros:', error);
+                    console.error('Error loading macros:', error);
                     this.isLoading = false;
                 }
             });
     }
 
-    private processMacrosResponse(response: MacroResponse) {
+    private processMacrosResponse(popularResponse: MacroResponse, recentResponse: MacroResponse) {
         const processedResponse: HomeMacrosResponse = {};
 
         // Initialize all classes with empty arrays
@@ -112,12 +121,19 @@ export class ViewAllMacrosComponent implements OnInit, OnDestroy {
             };
         });
 
-        // Group macros by class
-        response.macros.forEach(macro => {
+        // Group popular macros by class
+        popularResponse.macros.forEach(macro => {
             const className = macro.class || 'miscellaneous';
             if (processedResponse[className]) {
-                // Add to popular macros (since we're using getPopularMacros)
                 processedResponse[className].popular.push(this.transformMacro(macro));
+            }
+        });
+
+        // Group recent macros by class
+        recentResponse.macros.forEach(macro => {
+            const className = macro.class || 'miscellaneous';
+            if (processedResponse[className]) {
+                processedResponse[className].recent.push(this.transformMacro(macro));
             }
         });
 

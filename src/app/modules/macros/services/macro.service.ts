@@ -71,6 +71,7 @@ export interface GetMacrosParams {
     tags?: string[];
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    isPublic?: boolean;
 }
 
 export interface GetMacrosByTagsParams {
@@ -193,6 +194,7 @@ export class MacroService {
             }
             if (params.sortBy) httpParams = httpParams.set('sortBy', params.sortBy);
             if (params.sortOrder) httpParams = httpParams.set('sortOrder', params.sortOrder);
+            if (params.isPublic !== undefined) httpParams = httpParams.set('is_public', params.isPublic.toString());
         }
 
         const url = `${this.apiUrl}/macros`;
