@@ -1,6 +1,13 @@
 import { Component, ViewEncapsulation, Inject, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatDialogActions, MatDialogContent } from '@angular/material/dialog';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { KeybindingService } from 'app/core/services/keybinding.service';
 
 @Component({
@@ -9,8 +16,15 @@ import { KeybindingService } from 'app/core/services/keybinding.service';
     encapsulation: ViewEncapsulation.None,
     standalone: true,
     imports: [
+        CommonModule,
+        FormsModule,
         MatDialogContent,
-        MatDialogActions
+        MatDialogActions,
+        MatCheckboxModule,
+        MatSelectModule,
+        MatFormFieldModule,
+        MatButtonModule,
+        MatIconModule
     ],
 })
 export class AbilityDialogComponent implements OnInit, OnDestroy {
@@ -20,9 +34,43 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
     originalKeybindings: string[] = [];
     newKeybinding: string | null = null;
     isKeybindingActive = false;
+    useManualMode = false; // Toggle between press-keys and manual mode
     errorMessage: string | null = null;
+    warningMessage: string | null = null;
     private readonly ERROR_TIMEOUT = 3000; // 3 seconds
     private keydownHandler: (event: KeyboardEvent) => boolean;
+
+    // Manual keybinding builder state
+    manualCtrl = false;
+    manualShift = false;
+    manualAlt = false;
+    manualKey = '';
+
+    // Common keys for dropdown
+    commonKeys = [
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+        '-', '=', '[', ']', '\\', ';', '\'', ',', '.', '/',
+        'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
+        'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
+        'Z', 'X', 'C', 'V', 'B', 'N', 'M',
+        'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+        'Esc', 'Tab', 'Space', 'Enter', 'Backspace',
+        '~', '◄', '►', '▲', '▼'
+    ];
+
+    // Known protected browser shortcuts
+    private readonly PROTECTED_SHORTCUTS = [
+        'Ctrl+Shift+T', // Reopen closed tab
+        'Ctrl+T', // New tab
+        'Ctrl+N', // New window
+        'Ctrl+W', // Close tab
+        'Ctrl+Shift+N', // New incognito window
+        'Ctrl+Tab', // Next tab
+        'Ctrl+Shift+Tab', // Previous tab
+        'Ctrl+L', // Focus address bar
+        'Alt+F4', // Close window
+        'F11', // Fullscreen
+    ];
 
     constructor(
         @Inject(MAT_DIALOG_DATA) public data: AbilityDialogData,
@@ -103,10 +151,72 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
                 }
                 this.keybindings.push(this.newKeybinding);
                 this.errorMessage = null;
+                this.warningMessage = null;
             }
             this.newKeybinding = null;
         }
         this.isKeybindingActive = !this.isKeybindingActive;
+        this.useManualMode = false; // Reset to press-keys mode by default
+    }
+
+    toggleManualMode(): void {
+        this.useManualMode = !this.useManualMode;
+        if (this.useManualMode) {
+            // Reset manual inputs
+            this.manualCtrl = false;
+            this.manualShift = false;
+            this.manualAlt = false;
+            this.manualKey = '';
+            this.updateManualKeybinding();
+        }
+    }
+
+    updateManualKeybinding(): void {
+        if (!this.manualKey) {
+            this.newKeybinding = null;
+            return;
+        }
+
+        const modifiers = [];
+        if (this.manualCtrl) modifiers.push('Ctrl');
+        if (this.manualShift) modifiers.push('Shift');
+        if (this.manualAlt) modifiers.push('Alt');
+
+        this.newKeybinding = [...modifiers, this.manualKey].join('+');
+
+        // Check if this is a protected shortcut
+        if (this.isProtectedShortcut(this.newKeybinding)) {
+            this.warningMessage = `Warning: "${this.newKeybinding}" is a browser shortcut and may not work as expected. Using manual mode is recommended for this combination.`;
+        } else {
+            this.warningMessage = null;
+        }
+    }
+
+    isProtectedShortcut(keybinding: string): boolean {
+        return this.PROTECTED_SHORTCUTS.includes(keybinding);
+    }
+
+    confirmManualKeybinding(): void {
+        if (this.newKeybinding) {
+            if (this.keybindingService.hasKeybindKey(this.data.keybinding.keybindingId, this.newKeybinding)) {
+                this.errorMessage = `The key "${this.newKeybinding}" is already in use`;
+                setTimeout(() => {
+                    this.errorMessage = null;
+                }, this.ERROR_TIMEOUT);
+                return;
+            }
+            this.keybindings.push(this.newKeybinding);
+            this.errorMessage = null;
+            this.warningMessage = null;
+            this.newKeybinding = null;
+            this.isKeybindingActive = false;
+            this.useManualMode = false;
+            // Reset manual inputs
+            this.manualCtrl = false;
+            this.manualShift = false;
+            this.manualAlt = false;
+            this.manualKey = '';
+        }
     }
 
     removeKeybinding(binding: string): void {
@@ -116,6 +226,14 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
     cancelKeybinding(): void {
         this.newKeybinding = null;
         this.isKeybindingActive = false;
+        this.useManualMode = false;
+        this.errorMessage = null;
+        this.warningMessage = null;
+        // Reset manual inputs
+        this.manualCtrl = false;
+        this.manualShift = false;
+        this.manualAlt = false;
+        this.manualKey = '';
     }
 
     private onKeyDown(event: KeyboardEvent): boolean {
@@ -164,6 +282,14 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
         }
 
         this.newKeybinding = [...modifiers, keyString].join('+');
+
+        // Check if this is a protected shortcut
+        if (this.isProtectedShortcut(this.newKeybinding)) {
+            this.warningMessage = `Warning: "${this.newKeybinding}" is a browser shortcut. Please use Manual Mode if this keybind doesn't work.`;
+        } else {
+            this.warningMessage = null;
+        }
+
         return false; // Always return false to prevent default
     }
 
