@@ -1,13 +1,13 @@
 <div class="flex w-full h-full max-h-screen overflow-hidden relative">
     <!-- Backdrop for mobile when drawer is open -->
-    <div *ngIf="drawerOpen && isMobile" class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-        (click)="toggleDrawer()"></div>
+    <div *ngIf="drawerOpen && isMobile" class="fixed inset-0 bg-black bg-opacity-50 z-40" (click)="toggleDrawer()">
+    </div>
 
     <!-- Drawer - Fixed width sidebar -->
-    <div class="flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden border-r border-gray-200 w-80 bg-white z-50"
-        [class.fixed]="isMobile" [class.inset-y-0]="isMobile" [class.left-0]="isMobile"
-        [class.-translate-x-full]="isMobile && !drawerOpen" [class.translate-x-0]="isMobile && drawerOpen"
-        [class.hidden]="!isMobile && !drawerOpen">
+    <div class="transition-all duration-300 ease-in-out overflow-hidden border-r border-gray-200 w-80 bg-white z-50"
+        [class.flex-shrink-0]="!isMobile && drawerOpen" [class.fixed]="isMobile" [class.inset-y-0]="isMobile"
+        [class.left-0]="isMobile" [class.-translate-x-full]="isMobile && !drawerOpen"
+        [class.translate-x-0]="isMobile && drawerOpen" [class.hidden]="!isMobile && !drawerOpen">
         <div class="h-full flex flex-col overflow-hidden">
             <!-- Drawer Content -->
             <div class="flex-1 overflow-y-auto">
@@ -19,7 +19,7 @@
     </div>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden w-full" [class.md:w-auto]="!isMobile && drawerOpen">
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden w-full">
         <!-- Header -->
         <div class="flex-shrink-0 px-6 py-4 border-b bg-white">
             <div class="flex items-center justify-between">
@@ -659,18 +659,41 @@
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistics</h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                             <div class="text-center">
-                                <div class="text-3xl font-bold text-blue-600">{{ currentSelectedMacro.usageCount || 0 }}
+                                <div class="text-3xl font-bold text-blue-600">{{ currentSelectedMacro.usageCount ||
+                                    currentSelectedMacro.usage_count || 0 }}
                                 </div>
                                 <div class="text-sm text-gray-600">Usage Count</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-sm font-medium text-gray-600">Created</div>
-                                <div class="text-sm text-gray-500">{{ currentSelectedMacro.createdAt | date:'short' }}
+                                <div class="text-sm font-medium text-gray-600 mb-1">Visibility</div>
+                                <div class="flex items-center justify-center gap-2">
+                                    <mat-icon *ngIf="currentSelectedMacro.is_public"
+                                        class="text-green-500 text-xl">public</mat-icon>
+                                    <mat-icon *ngIf="!currentSelectedMacro.is_public"
+                                        class="text-gray-400 text-xl">lock</mat-icon>
+                                    <span class="text-sm font-medium"
+                                        [class.text-green-600]="currentSelectedMacro.is_public"
+                                        [class.text-gray-600]="!currentSelectedMacro.is_public">
+                                        {{ currentSelectedMacro.is_public ? 'Public' : 'Private' }}
+                                    </span>
                                 </div>
                             </div>
                             <div class="text-center">
-                                <div class="text-sm font-medium text-gray-600">Updated</div>
-                                <div class="text-sm text-gray-500">{{ currentSelectedMacro.updatedAt | date:'short' }}
+                                <div class="text-sm font-medium text-gray-600 mb-1">Created</div>
+                                <div class="text-sm text-gray-500">
+                                    {{ (currentSelectedMacro.createdAt || currentSelectedMacro.created_at) ?
+                                    ((currentSelectedMacro.createdAt || currentSelectedMacro.created_at) |
+                                    date:'medium') :
+                                    'N/A' }}
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-sm font-medium text-gray-600 mb-1">Last Updated</div>
+                                <div class="text-sm text-gray-500">
+                                    {{ (currentSelectedMacro.updatedAt || currentSelectedMacro.updated_at) ?
+                                    ((currentSelectedMacro.updatedAt || currentSelectedMacro.updated_at) |
+                                    date:'medium') :
+                                    'N/A' }}
                                 </div>
                             </div>
                         </div>
@@ -786,8 +809,8 @@
                             <div class="space-y-3">
                                 <label class="text-sm font-medium text-gray-700">Visibility</label>
                                 <div class="flex items-center gap-4">
-                                    <mat-slide-toggle [checked]="currentSelectedMacro.is_public"
-                                        (change)="onTogglePublicInEdit($event, currentSelectedMacro)">
+                                    <mat-slide-toggle [(ngModel)]="currentSelectedMacro.is_public"
+                                        [ngModelOptions]="{standalone: true}" (ngModelChange)="onTogglePublicChange()">
                                         <span class="ml-2">{{ currentSelectedMacro.is_public ? 'Public' : 'Private'
                                             }}</span>
                                     </mat-slide-toggle>

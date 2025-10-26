@@ -48,19 +48,20 @@
 
     <!-- Row -->
     @for (macro of filteredMacros; track macro.id) {
-    <div class="flex items-center p-3 cursor-pointer" [ngClass]="{
+    <div class="flex items-center p-3 cursor-pointer gap-2" [ngClass]="{
             'bg-blue-500 text-white': isSelected(macro.id),
             'bg-gray-200 text-black': !isSelected(macro.id)
          }" (click)="selectMacro(macro)">
-        <div class="flex-1 flex items-center gap-2">
-            <img [src]="getMacroIcon(macro)" [alt]="macro.name" class="w-6 h-6">
-            <p>{{macro.name}} - {{getClassDisplayName(macro.class)}}</p>
+        <img [src]="getMacroIcon(macro)" [alt]="macro.name" class="w-6 h-6 flex-shrink-0">
+        <div class="flex-1 min-w-0">
+            <p class="truncate">{{macro.name}} - {{getClassDisplayName(macro.class)}}</p>
         </div>
-        <div class="flex items-center">
+        <div class="flex items-center flex-shrink-0">
             @if (macro.is_public) {
-            <mat-icon class="text-green-500">public</mat-icon>
+            <mat-icon class="text-green-500 text-xl">public</mat-icon>
             } @else {
-            <mat-icon class="text-gray-500">public_off</mat-icon>
+            <mat-icon [ngClass]="{'text-gray-400': !isSelected(macro.id), 'text-gray-200': isSelected(macro.id)}"
+                class="text-xl">lock</mat-icon>
             }
         </div>
     </div>

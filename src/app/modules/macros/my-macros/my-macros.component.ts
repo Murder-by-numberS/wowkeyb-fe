@@ -11,6 +11,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatStepperModule, MatStepper } from '@angular/material/stepper';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { IconPickerComponent } from '../../icons/components/icon-picker/icon-picker.component';
 import { AbilityPickerComponent, AbilitySelection } from '../components/ability-picker/ability-picker.component';
 import { MacroBuilderComponent } from '../components/macro-builder/macro-builder.component';
@@ -56,6 +57,7 @@ interface ExpandableMacro extends Macro {
         MatProgressSpinnerModule,
         MatCheckboxModule,
         MatStepperModule,
+        MatSlideToggleModule,
         IconPickerComponent,
         AbilityPickerComponent,
         MacroValidatorComponent,
@@ -219,6 +221,9 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         // Check if device is mobile
         this.checkMobile();
 
+        // Add resize listener for responsive behavior
+        window.addEventListener('resize', () => this.checkMobile());
+
         // Check authentication status first, then load macros
         this.authService.check().pipe(
             takeUntil(this.destroy$)
@@ -259,6 +264,8 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     }
 
     ngOnDestroy(): void {
+        // Remove resize listener
+        window.removeEventListener('resize', () => this.checkMobile());
         this.destroy$.next();
         this.destroy$.complete();
     }
@@ -438,8 +445,10 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
         const macroText = macro.macro_text || macro.text || '';
 
-        // Load tooltip preference from macro model
-        this.editAddTooltip = macro.show_tooltip || false;
+        // Load tooltip preference - check both the model and the macro text
+        // This handles cases where show_tooltip might not be set in the DB but exists in the text
+        const hasTooltipInText = macroText.includes('#showtooltip');
+        this.editAddTooltip = macro.show_tooltip || hasTooltipInText;
 
         // Populate form with macro data
         this.editForm.patchValue({
@@ -571,39 +580,35 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
         const abilityName = this.editSelectedAbility.ability.name;
         const tooltipCommand = `#showtooltip ${abilityName}`;
-        const castCommand = `/cast ${abilityName}`;
         const currentText = this.editForm.get('macro_text')?.value || '';
 
-        // Remove existing tooltip and cast commands for this ability
-        let newText = currentText
-            .replace(new RegExp(`\\n?${this.escapeRegExp(tooltipCommand)}\\n?`, 'g'), '')
-            .replace(new RegExp(`\\n?${this.escapeRegExp(castCommand)}\\n?`, 'g'), '')
-            .trim();
+        // In edit mode, only manage the #showtooltip line
+        // Don't touch /cast commands as they might have modifiers/conditionals
+        let lines = currentText.split('\n');
 
-        // Add the commands based on tooltip checkbox
+        // Remove any existing #showtooltip lines
+        lines = lines.filter(line => !line.trim().startsWith('#showtooltip'));
+
+        // Add #showtooltip at the beginning if checkbox is checked
         if (this.editAddTooltip) {
-            const commands = `${tooltipCommand}\n${castCommand}`;
-            newText = newText ? `${newText}\n${commands}` : commands;
-        } else {
-            newText = newText ? `${newText}\n${castCommand}` : castCommand;
+            lines.unshift(tooltipCommand);
         }
 
+        const newText = lines.join('\n').trim();
         this.editForm.get('macro_text')?.setValue(newText);
     }
 
     onEditAbilityCleared(): void {
-        // Remove tooltip and cast commands from macro text if ability was previously selected
+        // Remove tooltip command from macro text if ability was previously selected
+        // Don't touch /cast commands as users might have complex macros with modifiers
         if (this.editSelectedAbility?.ability) {
-            const abilityName = this.editSelectedAbility.ability.name;
-            const tooltipCommand = `#showtooltip ${abilityName}`;
-            const castCommand = `/cast ${abilityName}`;
             const currentText = this.editForm.get('macro_text')?.value || '';
+            let lines = currentText.split('\n');
 
-            // Remove both tooltip and cast commands if they exist
-            const newText = currentText
-                .replace(new RegExp(`\\n?${this.escapeRegExp(tooltipCommand)}\\n?`, 'g'), '')
-                .replace(new RegExp(`\\n?${this.escapeRegExp(castCommand)}\\n?`, 'g'), '')
-                .trim();
+            // Remove any existing #showtooltip lines
+            lines = lines.filter(line => !line.trim().startsWith('#showtooltip'));
+
+            const newText = lines.join('\n').trim();
             this.editForm.get('macro_text')?.setValue(newText);
         }
 
@@ -619,8 +624,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    onTogglePublicInEdit(event: any, macro: ExpandableMacro): void {
-        macro.is_public = event.checked;
+    onTogglePublicChange(): void {
         this.checkForChanges();
     }
 
@@ -1266,12 +1270,16 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     }
 
     private checkMobile(): void {
-        this.isMobile = window.innerWidth < 768; // sm breakpoint
-        // Auto-hide drawer on mobile, show on desktop
-        if (this.isMobile) {
-            this.drawerOpen = false;
-        } else {
-            this.drawerOpen = true;
+        const wasMobile = this.isMobile;
+        this.isMobile = window.innerWidth < 1024; // md breakpoint (tablets and below should overlay)
+
+        // Only change drawer state if the mobile status changed
+        if (wasMobile !== this.isMobile) {
+            if (this.isMobile) {
+                this.drawerOpen = false;
+            } else {
+                this.drawerOpen = true;
+            }
         }
     }
 }

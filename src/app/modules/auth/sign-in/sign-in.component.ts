@@ -177,4 +177,11 @@ export class AuthSignInComponent implements OnInit {
     setScheme(scheme: Scheme): void {
         this._fuseConfigService.config = { scheme };
     }
+
+    /**
+     * Navigate back to home
+     */
+    goBackToHome(): void {
+        this._router.navigate(['/']);
+    }
 }

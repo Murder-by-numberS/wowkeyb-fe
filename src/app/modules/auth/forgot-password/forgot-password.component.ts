@@ -11,7 +11,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { RouterLink } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { Router, RouterLink } from '@angular/router';
 import { fuseAnimations } from '@fuse/animations';
 import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
 import { AuthService } from 'app/core/auth/auth.service';
@@ -31,6 +32,7 @@ import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-backgro
         MatFormFieldModule,
         MatInputModule,
         MatButtonModule,
+        MatIconModule,
         MatProgressSpinnerModule,
         RouterLink,
         AuthBackgroundComponent,
@@ -51,7 +53,8 @@ export class AuthForgotPasswordComponent implements OnInit {
      */
     constructor(
         private _authService: AuthService,
-        private _formBuilder: UntypedFormBuilder
+        private _formBuilder: UntypedFormBuilder,
+        private _router: Router
     ) { }
 
     // -----------------------------------------------------------------------------------------------------
@@ -120,5 +123,12 @@ export class AuthForgotPasswordComponent implements OnInit {
                     };
                 }
             );
+    }
+
+    /**
+     * Navigate back to home
+     */
+    goBackToHome(): void {
+        this._router.navigate(['/']);
     }
 }

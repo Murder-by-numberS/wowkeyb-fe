@@ -121,4 +121,11 @@ export class AuthSignUpComponent implements OnInit {
             }
         );
     }
+
+    /**
+     * Navigate back to home
+     */
+    goBackToHome(): void {
+        this._router.navigate(['/']);
+    }
 }
