@@ -22,7 +22,7 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
     isKeybindingActive = false;
     errorMessage: string | null = null;
     private readonly ERROR_TIMEOUT = 3000; // 3 seconds
-    private keydownHandler: (event: KeyboardEvent) => void;
+    private keydownHandler: (event: KeyboardEvent) => boolean;
 
     constructor(
         @Inject(MAT_DIALOG_DATA) public data: AbilityDialogData,
@@ -38,29 +38,56 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        // Add event listener in capture phase to prevent browser shortcuts
-        // This ensures we intercept events before the browser processes them
-        document.addEventListener('keydown', this.keydownHandler, { capture: true, passive: false });
-        // Also prevent on keypress and keyup for extra safety
-        document.addEventListener('keypress', this.preventDefaultEvent, { capture: true, passive: false });
-        document.addEventListener('keyup', this.preventDefaultEvent, { capture: true, passive: false });
+        // Multi-layered approach to prevent browser shortcuts
+        // Add listeners to both window and document with capture phase
 
-        console.log('AbilityDialog: Event listeners attached in capture phase');
+        const options = { capture: true, passive: false };
+
+        // Window level (first line of defense)
+        window.addEventListener('keydown', this.keydownHandler, options);
+        window.addEventListener('keypress', this.preventDefaultEvent, options);
+        window.addEventListener('keyup', this.preventDefaultEvent, options);
+
+        // Document level (second line of defense)
+        document.addEventListener('keydown', this.keydownHandler, options);
+        document.addEventListener('keypress', this.preventDefaultEvent, options);
+        document.addEventListener('keyup', this.preventDefaultEvent, options);
+
+        // Body level (third line of defense)
+        document.body.addEventListener('keydown', this.keydownHandler, options);
+        document.body.addEventListener('keypress', this.preventDefaultEvent, options);
+        document.body.addEventListener('keyup', this.preventDefaultEvent, options);
+
+        console.log('AbilityDialog: Multi-layered event listeners attached');
     }
 
     ngOnDestroy(): void {
-        // Clean up event listeners when component is destroyed
-        document.removeEventListener('keydown', this.keydownHandler, true);
-        document.removeEventListener('keypress', this.preventDefaultEvent, true);
-        document.removeEventListener('keyup', this.preventDefaultEvent, true);
+        // Clean up all event listeners
+        const removeOptions = { capture: true };
 
-        console.log('AbilityDialog: Event listeners removed');
+        // Remove from window
+        window.removeEventListener('keydown', this.keydownHandler, removeOptions as any);
+        window.removeEventListener('keypress', this.preventDefaultEvent, removeOptions as any);
+        window.removeEventListener('keyup', this.preventDefaultEvent, removeOptions as any);
+
+        // Remove from document
+        document.removeEventListener('keydown', this.keydownHandler, removeOptions as any);
+        document.removeEventListener('keypress', this.preventDefaultEvent, removeOptions as any);
+        document.removeEventListener('keyup', this.preventDefaultEvent, removeOptions as any);
+
+        // Remove from body
+        document.body.removeEventListener('keydown', this.keydownHandler, removeOptions as any);
+        document.body.removeEventListener('keypress', this.preventDefaultEvent, removeOptions as any);
+        document.body.removeEventListener('keyup', this.preventDefaultEvent, removeOptions as any);
+
+        console.log('AbilityDialog: All event listeners removed');
     }
 
-    private preventDefaultEvent = (event: KeyboardEvent): void => {
+    private preventDefaultEvent = (event: KeyboardEvent): boolean => {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
+        return false;
     }
 
     toggleKeybinding(): void {
@@ -91,7 +118,7 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
         this.isKeybindingActive = false;
     }
 
-    private onKeyDown(event: KeyboardEvent): void {
+    private onKeyDown(event: KeyboardEvent): boolean {
         console.log('AbilityDialog: Keydown captured:', {
             key: event.key,
             code: event.code,
@@ -101,21 +128,21 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
             isKeybindingActive: this.isKeybindingActive
         });
 
-        // Always prevent default behavior when dialog is open to avoid browser shortcuts
-        // Using capture phase (set in ngOnInit) ensures we intercept before browser shortcuts
+        // CRITICAL: Always prevent default behavior when dialog is open
+        // This is our primary defense against browser shortcuts
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
 
         if (!this.isKeybindingActive) {
             console.log('AbilityDialog: Ignoring keydown - keybinding mode not active');
-            return;
+            return false; // Still prevent default even when not actively capturing
         }
 
         const key = event.key.toLowerCase();
         if (key === 'escape') {
             this.cancelKeybinding();
-            return;
+            return false;
         }
 
         // Create keybinding string
@@ -131,12 +158,13 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
         } else {
             // Don't use the key directly if it's a modifier key
             if (['shift', 'control', 'alt'].includes(key)) {
-                return; // Skip if it's just a modifier key press
+                return false; // Skip if it's just a modifier key press
             }
             keyString = key === ' ' ? 'Space' : event.key;
         }
 
         this.newKeybinding = [...modifiers, keyString].join('+');
+        return false; // Always return false to prevent default
     }
 
     hasKeybindingChanged(): boolean {
