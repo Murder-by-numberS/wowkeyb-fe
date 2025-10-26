@@ -40,12 +40,27 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         // Add event listener in capture phase to prevent browser shortcuts
         // This ensures we intercept events before the browser processes them
-        document.addEventListener('keydown', this.keydownHandler, true);
+        document.addEventListener('keydown', this.keydownHandler, { capture: true, passive: false });
+        // Also prevent on keypress and keyup for extra safety
+        document.addEventListener('keypress', this.preventDefaultEvent, { capture: true, passive: false });
+        document.addEventListener('keyup', this.preventDefaultEvent, { capture: true, passive: false });
+
+        console.log('AbilityDialog: Event listeners attached in capture phase');
     }
 
     ngOnDestroy(): void {
-        // Clean up event listener when component is destroyed
+        // Clean up event listeners when component is destroyed
         document.removeEventListener('keydown', this.keydownHandler, true);
+        document.removeEventListener('keypress', this.preventDefaultEvent, true);
+        document.removeEventListener('keyup', this.preventDefaultEvent, true);
+
+        console.log('AbilityDialog: Event listeners removed');
+    }
+
+    private preventDefaultEvent = (event: KeyboardEvent): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
     }
 
     toggleKeybinding(): void {
@@ -77,12 +92,25 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
     }
 
     private onKeyDown(event: KeyboardEvent): void {
+        console.log('AbilityDialog: Keydown captured:', {
+            key: event.key,
+            code: event.code,
+            ctrlKey: event.ctrlKey,
+            shiftKey: event.shiftKey,
+            altKey: event.altKey,
+            isKeybindingActive: this.isKeybindingActive
+        });
+
         // Always prevent default behavior when dialog is open to avoid browser shortcuts
         // Using capture phase (set in ngOnInit) ensures we intercept before browser shortcuts
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation();
 
-        if (!this.isKeybindingActive) return;
+        if (!this.isKeybindingActive) {
+            console.log('AbilityDialog: Ignoring keydown - keybinding mode not active');
+            return;
+        }
 
         const key = event.key.toLowerCase();
         if (key === 'escape') {
