@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, Inject, HostListener } from '@angular/core';
+import { Component, ViewEncapsulation, Inject, OnInit, OnDestroy } from '@angular/core';
 import { MatDialogActions, MatDialogContent } from '@angular/material/dialog';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -13,7 +13,7 @@ import { KeybindingService } from 'app/core/services/keybinding.service';
         MatDialogActions
     ],
 })
-export class AbilityDialogComponent {
+export class AbilityDialogComponent implements OnInit, OnDestroy {
     isOpen = false;
 
     keybindings: string[] = [];
@@ -22,6 +22,7 @@ export class AbilityDialogComponent {
     isKeybindingActive = false;
     errorMessage: string | null = null;
     private readonly ERROR_TIMEOUT = 3000; // 3 seconds
+    private keydownHandler: (event: KeyboardEvent) => void;
 
     constructor(
         @Inject(MAT_DIALOG_DATA) public data: AbilityDialogData,
@@ -31,6 +32,20 @@ export class AbilityDialogComponent {
         // Initialize keybindings from data with deep copies
         this.originalKeybindings = [...(data.ability.keybindings || [])];
         this.keybindings = [...(data.ability.keybindings || [])];
+
+        // Bind the event handler to maintain proper 'this' context
+        this.keydownHandler = this.onKeyDown.bind(this);
+    }
+
+    ngOnInit(): void {
+        // Add event listener in capture phase to prevent browser shortcuts
+        // This ensures we intercept events before the browser processes them
+        document.addEventListener('keydown', this.keydownHandler, true);
+    }
+
+    ngOnDestroy(): void {
+        // Clean up event listener when component is destroyed
+        document.removeEventListener('keydown', this.keydownHandler, true);
     }
 
     toggleKeybinding(): void {
@@ -61,9 +76,9 @@ export class AbilityDialogComponent {
         this.isKeybindingActive = false;
     }
 
-    @HostListener('window:keydown', ['$event'])
-    onKeyDown(event: KeyboardEvent): void {
+    private onKeyDown(event: KeyboardEvent): void {
         // Always prevent default behavior when dialog is open to avoid browser shortcuts
+        // Using capture phase (set in ngOnInit) ensures we intercept before browser shortcuts
         event.preventDefault();
         event.stopPropagation();
 
