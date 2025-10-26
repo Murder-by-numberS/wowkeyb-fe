@@ -65,6 +65,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     isChangingPassword: boolean = false;
     showPasswordForm: boolean = false;
 
+    usernameForm: FormGroup;
+    isChangingUsername: boolean = false;
+    showUsernameForm: boolean = false;
+
     classes = classes;
     favoriteClass: string | null = null;
     isSavingClass: boolean = false;
@@ -90,6 +94,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
             newPassword: ['', [Validators.required, Validators.minLength(8)]],
             confirmPassword: ['', Validators.required]
         }, { validators: this.passwordMatchValidator });
+
+        this.usernameForm = this.fb.group({
+            newUsername: ['', [Validators.required, Validators.minLength(3)]],
+        });
     }
 
     ngOnInit(): void {
@@ -145,7 +153,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (result) => {
                     console.log('Profile - loaded counts:', result);
-                    this.macroCount = result.macros.total || 0;
+                    this.macroCount = result.macros.macros?.length || 0;
                     this.keybindingCount = result.keybindings.length || 0;
                     this.isLoading = false;
                     this.cdr.markForCheck();
@@ -236,6 +244,61 @@ export class ProfileComponent implements OnInit, OnDestroy {
                     console.error('Error saving favorite class:', error);
                     this.snackBar.open('Failed to save favorite class', 'Close', { duration: 3000 });
                     this.isSavingClass = false;
+                    this.cdr.markForCheck();
+                }
+            });
+    }
+
+    toggleUsernameForm(): void {
+        this.showUsernameForm = !this.showUsernameForm;
+        if (!this.showUsernameForm) {
+            this.usernameForm.reset();
+        }
+        this.cdr.markForCheck();
+    }
+
+    changeUsername(): void {
+        if (this.usernameForm.invalid) {
+            this.snackBar.open('Please enter a valid username', 'Close', { duration: 3000 });
+            return;
+        }
+
+        this.isChangingUsername = true;
+        const newUsername = this.usernameForm.get('newUsername')?.value;
+
+        this.authService.updateProfile({ username: newUsername })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (response) => {
+                    this.snackBar.open('Username changed successfully', 'Close', { duration: 3000 });
+
+                    // Update the user object with new username
+                    if (this.user && response.user) {
+                        this.user = { ...this.user, ...response.user };
+
+                        // Update the user in the service and localStorage
+                        this.userService.user = this.user;
+                        const currentUser = localStorage.getItem('currentUser');
+                        if (currentUser) {
+                            const userData = JSON.parse(currentUser);
+                            userData.username = response.user.username;
+                            localStorage.setItem('currentUser', JSON.stringify(userData));
+                        }
+                    }
+
+                    this.usernameForm.reset();
+                    this.showUsernameForm = false;
+                    this.isChangingUsername = false;
+                    this.cdr.markForCheck();
+                },
+                error: (error) => {
+                    console.error('Error changing username:', error);
+                    this.snackBar.open(
+                        error.error?.message || 'Failed to change username. It may already be taken.',
+                        'Close',
+                        { duration: 5000 }
+                    );
+                    this.isChangingUsername = false;
                     this.cdr.markForCheck();
                 }
             });

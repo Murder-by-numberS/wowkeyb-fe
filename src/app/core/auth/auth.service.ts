@@ -77,6 +77,15 @@ export class AuthService {
     }
 
     /**
+     * Update profile
+     *
+     * @param profilePayload
+     */
+    updateProfile(profilePayload: any): Observable<any> {
+        return this._httpClient.post(`${this.apiUrl}/user/update-profile`, profilePayload);
+    }
+
+    /**
      * Refresh access token
      *
      * @param token

@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
-import { ProfileSimpleComponent } from 'app/modules/admin/pages/profile/profile-simple.component';
+import { ProfileComponent } from 'app/modules/admin/pages/profile/profile.component';
 
 export default [
     {
         path: '',
-        component: ProfileSimpleComponent,
+        component: ProfileComponent,
     },
 ] as Routes;
