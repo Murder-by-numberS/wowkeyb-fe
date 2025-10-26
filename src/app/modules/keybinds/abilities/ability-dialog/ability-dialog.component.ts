@@ -63,10 +63,11 @@ export class AbilityDialogComponent {
 
     @HostListener('window:keydown', ['$event'])
     onKeyDown(event: KeyboardEvent): void {
-        if (!this.isKeybindingActive) return;
-
+        // Always prevent default behavior when dialog is open to avoid browser shortcuts
         event.preventDefault();
         event.stopPropagation();
+
+        if (!this.isKeybindingActive) return;
 
         const key = event.key.toLowerCase();
         if (key === 'escape') {
