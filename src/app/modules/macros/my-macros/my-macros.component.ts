@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges, ViewChild, ViewEncapsulation } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule, FormControl } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -8,6 +8,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatAccordion } from '@angular/material/expansion';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatStepperModule, MatStepper } from '@angular/material/stepper';
@@ -17,6 +19,9 @@ import { AbilityPickerComponent, AbilitySelection } from '../components/ability-
 import { MacroBuilderComponent } from '../components/macro-builder/macro-builder.component';
 import { MacroValidatorComponent } from '../components/macro-validator/macro-validator.component';
 import { MacrosDrawerComponent } from '../components/macros-drawer/macros-drawer.component';
+import { UploadMacroFileDialogComponent } from '../components/upload-macro-file-dialog/upload-macro-file-dialog.component';
+import { ExportMacroFileDialogComponent } from '../components/export-macro-file-dialog/export-macro-file-dialog.component';
+import { DownloadHistoryDialogComponent } from '../components/download-history-dialog/download-history-dialog.component';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -25,11 +30,14 @@ import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.compo
 import { takeUntil, map } from 'rxjs/operators';
 import { UserService } from 'app/core/user/user.service';
 import { AuthService } from 'app/core/auth/auth.service';
-import { Subject, Observable, of } from 'rxjs';
+import { Subject, Observable, of, forkJoin } from 'rxjs';
 import { MacroService, Macro, MacroResponse, MacroTemplate, GenerateMacroResponse } from '../services/macro.service';
 import { IconService } from '../../icons/services/icon.service';
 import { Icon } from '../../icons/services/icon.service';
-import { fullClasses } from 'app/core/data/classes';
+import { classes, fullClasses, classNames } from 'app/core/data/classes';
+import { AbilitiesService } from 'app/core/services/abilities.service';
+import { VersionCompareService } from 'app/core/services/version-compare.service';
+import { Ability } from 'app/core/types/ability';
 
 // Extended Macro interface to support expandable list functionality
 interface ExpandableMacro extends Macro {
@@ -41,6 +49,7 @@ interface ExpandableMacro extends Macro {
 @Component({
     selector: 'my-macros',
     templateUrl: './my-macros.component.html',
+    encapsulation: ViewEncapsulation.None,
     standalone: true,
     imports: [
         CommonModule,
@@ -54,6 +63,8 @@ interface ExpandableMacro extends Macro {
         MatCardModule,
         MatSelectModule,
         MatChipsModule,
+        MatExpansionModule,
+        MatAccordion,
         MatProgressSpinnerModule,
         MatCheckboxModule,
         MatStepperModule,
@@ -80,7 +91,25 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
     // Component state
     macros: ExpandableMacro[] = [];
+    filteredMacros: ExpandableMacro[] = [];
     isLoading: boolean = false;
+    currentUserId: string | null = null;
+    
+    // Filtering and Sorting
+    classList = classes;
+    selectedClasses = new FormControl<any[]>([]);
+    selectedSpecs = new FormControl<string[]>([]);
+    selectedHeroTalents = new FormControl<string[]>([]);
+    availableSpecs: string[] = [];
+    availableHeroTalents: string[] = [];
+    selectedAbilities = new FormControl<Ability[]>([]);
+    availableAbilities: Ability[] = [];
+    sortOrderControl = new FormControl<'asc' | 'desc'>('desc');
+    latestGameVersion: string = '11.2.0'; // Default fallback
+    
+    // Sorting state
+    sortBy: string = 'created_at';
+    sortOrder: 'asc' | 'desc' = 'desc'; // Latest first by default
     editForm: FormGroup;
     hasChanges: boolean = false;
     originalMacroData: any = null;
@@ -193,6 +222,8 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     constructor(
         private macroService: MacroService,
         private iconService: IconService,
+        private abilitiesService: AbilitiesService,
+        private versionCompareService: VersionCompareService,
         private fb: FormBuilder,
         private router: Router,
         private route: ActivatedRoute,
@@ -223,6 +254,50 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
         // Add resize listener for responsive behavior
         window.addEventListener('resize', () => this.checkMobile());
+
+        // Fetch the latest game version
+        this.versionCompareService.getLatestVersion().pipe(
+            takeUntil(this.destroy$)
+        ).subscribe({
+            next: (version) => {
+                this.latestGameVersion = version;
+            },
+            error: (err) => {
+                console.error('Error fetching latest version, using fallback:', err);
+                // Keep the default fallback value
+            }
+        });
+
+        // Set up filter and sort listeners
+        this.selectedClasses.valueChanges.subscribe(() => {
+            this.updateAvailableSpecsAndHeroTalents();
+            this.loadAbilitiesForSelectedClasses();
+            this.applyFilter();
+        });
+
+        this.selectedSpecs.valueChanges.subscribe(() => {
+            this.updateAvailableHeroTalents();
+            this.applyFilter();
+        });
+
+        this.selectedHeroTalents.valueChanges.subscribe(() => {
+            this.applyFilter();
+        });
+
+        this.selectedAbilities.valueChanges.subscribe(() => {
+            this.applyFilter();
+        });
+
+        this.sortOrderControl.valueChanges.subscribe(() => {
+            this.applyFilter();
+        });
+
+        // Subscribe to user service to get current user ID
+        this.userService.user$.pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(user => {
+            this.currentUserId = user?._id || null;
+        });
 
         // Check authentication status first, then load macros
         this.authService.check().pipe(
@@ -270,7 +345,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.destroy$.complete();
     }
 
-    loadMacros(): void {
+    loadMacros(selectMacroId?: string, sortBy?: string, sortOrder?: 'asc' | 'desc'): void {
         console.log('MyMacrosComponent - loadMacros called');
         console.log('Authentication status:', this.isAuthenticated);
 
@@ -279,19 +354,46 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             return;
         }
 
+        // Update sorting state if provided
+        if (sortBy !== undefined) this.sortBy = sortBy;
+        if (sortOrder !== undefined) this.sortOrder = sortOrder;
+
         this.isLoading = true;
-        this.macroService.getMyMacros().subscribe({
+        // Load all macros - use limit of 1000 to get everything
+        this.macroService.getMyMacros(1, 1000, this.sortBy, this.sortOrder).subscribe({
             next: (response) => {
                 console.log('MyMacrosComponent - Loaded macros response:', response);
                 console.log('Number of macros:', response.macros?.length || 0);
-                this.macros = (response.macros || []).map(macro => ({
-                    ...macro,
-                    isExpanded: false,
-                    isEditing: false,
-                    selectedIcon: this.getIconFromMacro(macro)
-                }));
+                    this.macros = (response.macros || []).map(macro => ({
+                        ...macro,
+                        isExpanded: false,
+                        isEditing: false,
+                        selectedIcon: this.getIconFromMacro(macro)
+                    }));
+                    this.applyFilter();
+                
                 console.log('MyMacrosComponent - Final macros array:', this.macros);
                 this.isLoading = false;
+
+                // Keep current selection reference in sync after reload
+                if (this.currentSelectedMacro) {
+                    const updatedMacro = this.macros.find(m => m.id === this.currentSelectedMacro?.id);
+                    if (updatedMacro) {
+                        this.currentSelectedMacro = updatedMacro;
+                    } else {
+                        this.currentSelectedMacro = null;
+                        this.isEditing = false;
+                    }
+                }
+
+                // Auto-select a specific macro if requested (e.g., after uploads)
+                if (selectMacroId) {
+                    const macroToSelect = this.macros.find(m => m.id === selectMacroId);
+                    if (macroToSelect) {
+                        this.selectMacro(macroToSelect);
+                        return;
+                    }
+                }
 
                 // Auto-select first macro if none is selected and not in create mode
                 if (this.macros.length > 0 && !this.currentSelectedMacro && !this.isCreating) {
@@ -321,6 +423,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             }
         });
     }
+
 
     selectMacro(macro: ExpandableMacro): void {
         this.currentSelectedMacro = macro;
@@ -700,6 +803,200 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     }
 
 
+    updateAvailableSpecsAndHeroTalents(): void {
+        const selectedClasses = this.selectedClasses.value || [];
+        if (selectedClasses.length === 0) {
+            this.availableSpecs = [];
+            this.availableHeroTalents = [];
+            this.selectedSpecs.setValue([], { emitEvent: false });
+            this.selectedHeroTalents.setValue([], { emitEvent: false });
+            return;
+        }
+
+        const allSpecs = new Set<string>();
+        const allHeroTalents = new Set<string>();
+
+        selectedClasses.forEach((selectedClass: any) => {
+            const className = selectedClass.name?.toLowerCase().replace(/\s+/g, '');
+            const classData = fullClasses[className as keyof typeof fullClasses];
+            if (classData && classData.specs) {
+                Object.keys(classData.specs).forEach(spec => {
+                    allSpecs.add(spec);
+                    const specKey = spec as keyof typeof classData.specs;
+                    const heroTalents = classData.specs[specKey] as string[] | undefined;
+                    if (heroTalents && Array.isArray(heroTalents)) {
+                        heroTalents.forEach((ht: string) => allHeroTalents.add(ht));
+                    }
+                });
+            }
+        });
+
+        this.availableSpecs = Array.from(allSpecs).sort();
+        this.availableHeroTalents = Array.from(allHeroTalents).sort();
+    }
+
+    updateAvailableHeroTalents(): void {
+        const selectedClasses = this.selectedClasses.value || [];
+        const selectedSpecs = this.selectedSpecs.value || [];
+        
+        if (selectedClasses.length === 0) {
+            this.availableHeroTalents = [];
+            this.selectedHeroTalents.setValue([], { emitEvent: false });
+            return;
+        }
+
+        const allHeroTalents = new Set<string>();
+
+        selectedClasses.forEach((selectedClass: any) => {
+            const className = selectedClass.name?.toLowerCase().replace(/\s+/g, '');
+            const classData = fullClasses[className as keyof typeof fullClasses];
+            if (classData && classData.specs) {
+                // If specs are selected, only include hero talents from those specs
+                const specsToCheck = selectedSpecs.length > 0 ? selectedSpecs : Object.keys(classData.specs);
+                specsToCheck.forEach(spec => {
+                    const specKey = spec as keyof typeof classData.specs;
+                    const heroTalents = classData.specs[specKey] as string[] | undefined;
+                    if (heroTalents && Array.isArray(heroTalents)) {
+                        heroTalents.forEach((ht: string) => allHeroTalents.add(ht));
+                    }
+                });
+            }
+        });
+
+        this.availableHeroTalents = Array.from(allHeroTalents).sort();
+        
+        // Remove selected hero talents that are no longer available
+        const currentSelected = this.selectedHeroTalents.value || [];
+        const validSelected = currentSelected.filter(ht => allHeroTalents.has(ht));
+        if (validSelected.length !== currentSelected.length) {
+            this.selectedHeroTalents.setValue(validSelected, { emitEvent: false });
+        }
+    }
+
+    loadAbilitiesForSelectedClasses(): void {
+        const selectedClasses = this.selectedClasses.value || [];
+        if (selectedClasses.length === 0) {
+            this.availableAbilities = [];
+            this.selectedAbilities.setValue([], { emitEvent: false });
+            return;
+        }
+
+        // Fetch abilities for all selected classes
+        const classNames = selectedClasses.map((c: any) => c.name?.toLowerCase().replace(/\s+/g, '')).filter(Boolean);
+        if (classNames.length === 0) {
+            this.availableAbilities = [];
+            return;
+        }
+
+        // Fetch abilities for each class and combine
+        const abilityObservables = classNames.map((className: string) => {
+            const filters: any = {
+                class: className,
+                gameVersion: this.latestGameVersion,
+                filterMode: 'inclusion',
+                limit: 100
+            };
+            return this.abilitiesService.getAbilitiesWithFilters(filters);
+        });
+
+        forkJoin(abilityObservables).subscribe({
+            next: (results) => {
+                const allAbilities: Ability[] = [];
+                results.forEach(result => {
+                    let abilities = result;
+                    if (result && typeof result === 'object' && !Array.isArray(result)) {
+                        abilities = result.abilities || result.data || [];
+                    }
+                    if (Array.isArray(abilities)) {
+                        allAbilities.push(...abilities);
+                    }
+                });
+
+                // Remove duplicates by ID
+                const uniqueAbilities = Array.from(new Map(allAbilities.map(a => [a.id, a])).values());
+                this.availableAbilities = uniqueAbilities.sort((a, b) => a.name.localeCompare(b.name));
+            },
+            error: (error) => {
+                console.error('Error loading abilities for filter:', error);
+                this.availableAbilities = [];
+            }
+        });
+    }
+
+    applyFilter(): void {
+        let filtered = [...this.macros];
+
+        // Filter by selected classes (inclusion mode)
+        if (this.selectedClasses.value && this.selectedClasses.value.length > 0) {
+            filtered = filtered.filter(macro =>
+                macro.class && this.selectedClasses.value.some((selectedClass: any) => {
+                    const selectedClassName = selectedClass.name?.toLowerCase().replace(/\s+/g, '');
+                    const macroClass = macro.class.toLowerCase().replace(/\s+/g, '');
+                    return selectedClassName === macroClass;
+                })
+            );
+        }
+
+        // Filter by selected specs (inclusion mode)
+        if (this.selectedSpecs.value && this.selectedSpecs.value.length > 0) {
+            filtered = filtered.filter(macro =>
+                macro.spec && this.selectedSpecs.value.includes(macro.spec)
+            );
+        }
+
+        // Filter by selected hero talents (inclusion mode)
+        if (this.selectedHeroTalents.value && this.selectedHeroTalents.value.length > 0) {
+            filtered = filtered.filter(macro => {
+                const macroHeroTalent = macro.hero_talent || macro.heroTalent;
+                return macroHeroTalent && this.selectedHeroTalents.value.includes(macroHeroTalent);
+            });
+        }
+
+        // Filter by selected abilities
+        if (this.selectedAbilities.value && this.selectedAbilities.value.length > 0) {
+            const selectedAbilityIds = this.selectedAbilities.value.map(a => a.id);
+            filtered = filtered.filter(macro => {
+                if (!macro.ability) return false;
+                const macroAbilityId = typeof macro.ability === 'string' ? macro.ability : (macro.ability as any).id;
+                return selectedAbilityIds.includes(macroAbilityId);
+            });
+        }
+
+        // Sort by creation date
+        const sortOrder = this.sortOrderControl.value || 'desc';
+        filtered.sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0).getTime();
+            const dateB = new Date(b.createdAt || 0).getTime();
+            return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+        });
+
+        this.filteredMacros = filtered;
+    }
+
+    getMacroIcon(macro: ExpandableMacro): string | null {
+        // Check if macro has selectedIcon with cloudfrontUrl
+        if (macro.selectedIcon?.cloudfrontUrl) {
+            return macro.selectedIcon.cloudfrontUrl;
+        }
+        // Try icon from macro.icon object
+        if (macro.icon && typeof macro.icon === 'object' && macro.icon !== null) {
+            const icon = macro.icon as any;
+            if (icon.cloudfrontUrl) {
+                return icon.cloudfrontUrl;
+            }
+            if (icon.s3Path) {
+                return `https://wowkeyb-dev-images.s3.amazonaws.com/${icon.s3Path}`;
+            }
+        }
+        // Fallback to class icon
+        const classInfo = this.classList.find(c => {
+            const className = c.name?.toLowerCase().replace(/\s+/g, '');
+            const macroClass = macro.class?.toLowerCase().replace(/\s+/g, '');
+            return className === macroClass;
+        });
+        return classInfo?.icon || null;
+    }
+
     getClassDisplayName(className: string): string {
         const classNames: { [key: string]: string } = {
             'deathknight': 'Death Knight',
@@ -722,6 +1019,28 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
     formatMacroText(text: string): string {
         return text || 'No macro text provided';
+    }
+
+    isImportedAndModified(macro: ExpandableMacro): boolean {
+        if (!macro.file) return false;
+        
+        // Check if the macro has been modified
+        // An imported macro is considered modified if:
+        // 1. The description doesn't match the "Imported from..." pattern, OR
+        // 2. The updatedAt timestamp is different from createdAt (indicating it was edited)
+        const isModified = macro.createdAt && macro.updatedAt && 
+            new Date(macro.updatedAt).getTime() > new Date(macro.createdAt).getTime();
+        
+        const descriptionMatchesImportPattern = macro.description && 
+            macro.description.startsWith('Imported from ');
+        
+        return isModified || !descriptionMatchesImportPattern;
+    }
+
+    isMacroCreator(macro: ExpandableMacro): boolean {
+        if (!macro || !this.currentUserId) return false;
+        const macroUserId = macro.userId || (macro as any).user_id;
+        return this.currentUserId === macroUserId;
     }
 
     // Methods for parent component compatibility
@@ -1281,5 +1600,70 @@ export class MyMacrosComponent implements OnInit, OnChanges {
                 this.drawerOpen = true;
             }
         }
+    }
+
+    /**
+     * Open the upload macro file dialog
+     */
+    openUploadDialog(triggeredFromCreate: boolean = false): void {
+        const dialogRef = this.dialog.open(UploadMacroFileDialogComponent, {
+            width: '600px',
+            disableClose: false
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+                const createdMacros = result.created_macros || [];
+                const createdMacroId = createdMacros.length > 0 ? createdMacros[0].id : undefined;
+
+                if (triggeredFromCreate && createdMacros.length > 0) {
+                    this.isCreating = false;
+                    this.resetCreateForm();
+                }
+
+                // Refresh macros after successful upload
+                this.loadMacros(createdMacroId);
+                this.snackBar.open(
+                    `Imported ${result.upload.macros_created} macro(s) successfully!`,
+                    'Close',
+                    { duration: 3000 }
+                );
+            }
+        });
+    }
+
+    /**
+     * Open the export macro file dialog
+     */
+    openExportDialog(): void {
+        if (this.macros.length === 0) {
+            this.snackBar.open('No macros available to export', 'Close', { duration: 3000 });
+            return;
+        }
+
+        const dialogRef = this.dialog.open(ExportMacroFileDialogComponent, {
+            width: '800px',
+            data: {
+                macros: this.macros
+            }
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+                // Export was successful
+                console.log('Export completed:', result);
+            }
+        });
+    }
+
+    /**
+     * Open the download history dialog
+     */
+    openDownloadHistory(): void {
+        this.dialog.open(DownloadHistoryDialogComponent, {
+            width: '900px',
+            maxWidth: '95vw',
+            maxHeight: '90vh'
+        });
     }
 }

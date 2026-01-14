@@ -216,6 +216,10 @@
                                             <mat-icon class="text-sm">visibility</mat-icon>
                                             {{ macro.usageCount }}
                                         </span>
+                                        <span *ngIf="macro.file" class="flex items-center gap-1 text-blue-600" matTooltip="Imported from {{ macro.file.file_name }}">
+                                            <mat-icon class="text-sm">upload_file</mat-icon>
+                                            From File
+                                        </span>
                                     </div>
                                     <span>{{ macro.createdAt | date:'short' }}</span>
                                 </div>
@@ -378,6 +382,10 @@
                                 <span *ngIf="macro.rating" class="flex items-center gap-1">
                                     <mat-icon class="text-sm">star</mat-icon>
                                     {{ macro.rating }}
+                                </span>
+                                <span *ngIf="macro.file" class="flex items-center gap-1 text-blue-600" matTooltip="Imported from {{ macro.file.file_name }}">
+                                    <mat-icon class="text-sm">upload_file</mat-icon>
+                                    From File
                                 </span>
                             </div>
                             <span>{{ macro.createdAt | date:'short' }}</span>

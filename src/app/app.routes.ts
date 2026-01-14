@@ -130,6 +130,19 @@ export const appRoutes: Route[] = [
             { path: 'macros', loadChildren: () => import('app/modules/macros/macros.routes') },
         ]
     },
+    // Files
+    {
+        path: '',
+        canActivate: [AuthGuard],
+        canActivateChild: [AuthGuard],
+        component: LayoutComponent,
+        data: {
+            layout: 'modern'
+        },
+        children: [
+            { path: 'files', loadChildren: () => import('app/modules/files/files.routes') },
+        ]
+    },
     // Abilities
     {
         path: '',

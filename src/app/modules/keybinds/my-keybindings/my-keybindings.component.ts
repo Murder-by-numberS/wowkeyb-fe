@@ -67,6 +67,7 @@ export class MyKeybindingsComponent implements OnInit {
     nameForm: FormGroup;
 
     opened: boolean = true; // Show drawer by default for my-keybindings
+    drawerOpen: boolean = true; // Drawer is open by default (matches my-macros)
 
     selectedKeybinding: any = null;
     selectedKeybindingName: string;
@@ -292,6 +293,7 @@ export class MyKeybindingsComponent implements OnInit {
                         // Close drawer on mobile after selecting a keybinding
                         if (this.isMobile) {
                             this.opened = false;
+                            this.drawerOpen = false;
                         }
                     }
                 });
@@ -701,13 +703,26 @@ export class MyKeybindingsComponent implements OnInit {
         this.router.navigate(['/keybinds', keybinding.keybindingId]);
     }
 
+    toggleDrawer(): void {
+        this.drawerOpen = !this.drawerOpen;
+        this.opened = this.drawerOpen; // Keep opened in sync for backward compatibility
+    }
+
     private checkMobile(): void {
-        this.isMobile = window.innerWidth < 768; // sm breakpoint
-        // Auto-hide drawer on mobile, show on desktop
-        if (this.isMobile) {
-            this.opened = false;
-        } else {
-            this.opened = true;
+        const wasMobile = this.isMobile;
+        this.isMobile = window.innerWidth < 1024; // lg breakpoint
+
+        // Only change drawer state if the mobile status changed
+        if (wasMobile !== this.isMobile) {
+            if (this.isMobile) {
+                // On mobile, start with drawer closed (it will overlay when opened)
+                this.opened = false;
+                this.drawerOpen = false;
+            } else {
+                // On desktop, show drawer by default
+                this.opened = true;
+                this.drawerOpen = true;
+            }
         }
     }
 }

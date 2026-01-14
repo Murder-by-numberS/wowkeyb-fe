@@ -1,111 +1,117 @@
-<div class="flex w-full flex-col p-3 sm:p-6 pb-20 min-h-screen">
-    <!-- Header -->
-    <div class="mb-2 sm:mb-6">
-        <h1 class="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2">Abilities Database</h1>
-        <p class="hidden sm:block text-base sm:text-xl text-gray-600">
-            Browse and explore World of Warcraft abilities by class, specialization, and hero talent
-        </p>
-        <p class="hidden sm:block text-xs sm:text-sm text-gray-500 mt-2">
-            Select a class, spec, and hero talent to see all abilities available to that combination
-        </p>
+<div class="absolute inset-0 flex min-w-0 flex-col overflow-y-auto">
+    <!-- Header and Filters (Sticky Together) -->
+    <div class="sticky top-0 z-20 bg-white">
+        <!-- Header -->
+        <div class="pb-2 pt-3 sm:pt-6 px-3 sm:px-6 mb-2 sm:mb-6">
+            <h1 class="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2">Abilities Database</h1>
+            <p class="hidden sm:block text-base sm:text-xl text-gray-600">
+                Browse and explore World of Warcraft abilities by class, specialization, and hero talent
+            </p>
+            <p class="hidden sm:block text-xs sm:text-sm text-gray-500 mt-2">
+                Select a class, spec, and hero talent to see all abilities available to that combination
+            </p>
+        </div>
+
+        <!-- Filters -->
+        <div class="px-3 sm:px-6 pb-3 sm:pb-6">
+            <mat-card class="mb-3 sm:mb-6">
+                <mat-card-header class="!pb-4">
+                    <mat-card-title class="flex items-center justify-between w-full">
+                        <span class="text-lg font-medium">Filters</span>
+                        <button mat-icon-button (click)="toggleFilters()" class="ml-2">
+                            <mat-icon>{{ filtersExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+                        </button>
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content class="hidden lg:block" [class.lg:!block]="filtersExpanded"
+                    [class.lg:!hidden]="!filtersExpanded">
+                    <!-- Desktop: Horizontal layout -->
+                    <div class="flex flex-row gap-4 items-center justify-start">
+                        <!-- Class Filter -->
+                        <mat-form-field appearance="fill" class="w-full lg:w-48">
+                            <mat-label>Class</mat-label>
+                            <mat-select #classSelect [(value)]="selectedClass"
+                                (selectionChange)="onClassChange($event)">
+                                @for (class of classes; track $index) {
+                                <mat-option [value]="class.value">{{class.label}}</mat-option>
+                                }
+                            </mat-select>
+                            @if (selectedClass) {
+                            <button matSuffix mat-icon-button type="button" (click)="clearClassFilter()"
+                                matTooltip="Clear class filter">
+                                <mat-icon>clear</mat-icon>
+                            </button>
+                            }
+                        </mat-form-field>
+
+                        <!-- Spec Filter -->
+                        <mat-form-field appearance="fill" class="w-full lg:w-48">
+                            <mat-label>Spec</mat-label>
+                            <mat-select #specSelect [(value)]="selectedSpec" [disabled]="!selectedClass"
+                                (selectionChange)="onSpecChange($event)">
+                                @for (spec of specs; track $index) {
+                                <mat-option [value]="spec">{{spec}}</mat-option>
+                                }
+                            </mat-select>
+                            @if (selectedSpec) {
+                            <button matSuffix mat-icon-button type="button" (click)="clearSpecFilter()"
+                                matTooltip="Clear spec filter">
+                                <mat-icon>clear</mat-icon>
+                            </button>
+                            }
+                        </mat-form-field>
+
+                        <!-- Hero Talent Filter -->
+                        <mat-form-field appearance="fill" class="w-full lg:w-48">
+                            <mat-label>Hero Talent</mat-label>
+                            <mat-select #heroTalentSelect [(value)]="selectedHeroTalent" [disabled]="!selectedClass"
+                                (selectionChange)="onHeroTalentChange($event)">
+                                @for (heroTalent of heroTalents; track $index) {
+                                <mat-option [value]="heroTalent">{{heroTalent}}</mat-option>
+                                }
+                            </mat-select>
+                            @if (selectedHeroTalent) {
+                            <button matSuffix mat-icon-button type="button" (click)="clearHeroTalentFilter()"
+                                matTooltip="Clear hero talent filter">
+                                <mat-icon>clear</mat-icon>
+                            </button>
+                            }
+                        </mat-form-field>
+
+                        <!-- Game Version Filter -->
+                        <mat-form-field appearance="fill" class="w-full lg:w-48">
+                            <mat-label>Game Version</mat-label>
+                            <mat-select #gameVersionSelect [(value)]="selectedGameVersion"
+                                (selectionChange)="onGameVersionChange($event)">
+                                @for (version of gameVersions; track $index) {
+                                <mat-option [value]="version">{{version}}</mat-option>
+                                }
+                            </mat-select>
+                            @if (selectedGameVersion) {
+                            <button matSuffix mat-icon-button type="button" (click)="clearGameVersionFilter()"
+                                matTooltip="Clear game version filter">
+                                <mat-icon>clear</mat-icon>
+                            </button>
+                            }
+                        </mat-form-field>
+
+
+                        <!-- Clear Filters Button -->
+                        <div class="flex items-center justify-center lg:justify-start h-8 lg:h-16 gap-2">
+                            @if (hasActiveMainFilters() || hasActiveColumnFilters()) {
+                            <button mat-stroked-button color="warn" (click)="clearAllFilters()"
+                                class="w-full lg:w-auto text-sm">
+                                <mat-icon class="mr-1 lg:mr-2 text-sm">clear</mat-icon>
+                                <span class="hidden lg:inline">Clear All Filters</span>
+                                <span class="lg:hidden">Clear All</span>
+                            </button>
+                            }
+                        </div>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+        </div>
     </div>
-
-    <!-- Filters -->
-    <mat-card class="mb-3 sm:mb-6">
-        <mat-card-header class="!pb-4">
-            <mat-card-title class="flex items-center justify-between w-full">
-                <span class="text-lg font-medium">Filters</span>
-                <button mat-icon-button (click)="toggleFilters()" class="ml-2">
-                    <mat-icon>{{ filtersExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
-                </button>
-            </mat-card-title>
-        </mat-card-header>
-        <mat-card-content class="hidden lg:block" [class.lg:!block]="filtersExpanded"
-            [class.lg:!hidden]="!filtersExpanded">
-            <!-- Desktop: Horizontal layout -->
-            <div class="flex flex-row gap-4 items-center justify-start">
-                <!-- Class Filter -->
-                <mat-form-field appearance="fill" class="w-full lg:w-48">
-                    <mat-label>Class</mat-label>
-                    <mat-select #classSelect [(value)]="selectedClass" (selectionChange)="onClassChange($event)">
-                        @for (class of classes; track $index) {
-                        <mat-option [value]="class.value">{{class.label}}</mat-option>
-                        }
-                    </mat-select>
-                    @if (selectedClass) {
-                    <button matSuffix mat-icon-button type="button" (click)="clearClassFilter()"
-                        matTooltip="Clear class filter">
-                        <mat-icon>clear</mat-icon>
-                    </button>
-                    }
-                </mat-form-field>
-
-                <!-- Spec Filter -->
-                <mat-form-field appearance="fill" class="w-full lg:w-48">
-                    <mat-label>Spec</mat-label>
-                    <mat-select #specSelect [(value)]="selectedSpec" [disabled]="!selectedClass"
-                        (selectionChange)="onSpecChange($event)">
-                        @for (spec of specs; track $index) {
-                        <mat-option [value]="spec">{{spec}}</mat-option>
-                        }
-                    </mat-select>
-                    @if (selectedSpec) {
-                    <button matSuffix mat-icon-button type="button" (click)="clearSpecFilter()"
-                        matTooltip="Clear spec filter">
-                        <mat-icon>clear</mat-icon>
-                    </button>
-                    }
-                </mat-form-field>
-
-                <!-- Hero Talent Filter -->
-                <mat-form-field appearance="fill" class="w-full lg:w-48">
-                    <mat-label>Hero Talent</mat-label>
-                    <mat-select #heroTalentSelect [(value)]="selectedHeroTalent" [disabled]="!selectedClass"
-                        (selectionChange)="onHeroTalentChange($event)">
-                        @for (heroTalent of heroTalents; track $index) {
-                        <mat-option [value]="heroTalent">{{heroTalent}}</mat-option>
-                        }
-                    </mat-select>
-                    @if (selectedHeroTalent) {
-                    <button matSuffix mat-icon-button type="button" (click)="clearHeroTalentFilter()"
-                        matTooltip="Clear hero talent filter">
-                        <mat-icon>clear</mat-icon>
-                    </button>
-                    }
-                </mat-form-field>
-
-                <!-- Game Version Filter -->
-                <mat-form-field appearance="fill" class="w-full lg:w-48">
-                    <mat-label>Game Version</mat-label>
-                    <mat-select #gameVersionSelect [(value)]="selectedGameVersion"
-                        (selectionChange)="onGameVersionChange($event)">
-                        @for (version of gameVersions; track $index) {
-                        <mat-option [value]="version">{{version}}</mat-option>
-                        }
-                    </mat-select>
-                    @if (selectedGameVersion) {
-                    <button matSuffix mat-icon-button type="button" (click)="clearGameVersionFilter()"
-                        matTooltip="Clear game version filter">
-                        <mat-icon>clear</mat-icon>
-                    </button>
-                    }
-                </mat-form-field>
-
-
-                <!-- Clear Filters Button -->
-                <div class="flex items-center justify-center lg:justify-start h-8 lg:h-16 gap-2">
-                    @if (hasActiveMainFilters() || hasActiveColumnFilters()) {
-                    <button mat-stroked-button color="warn" (click)="clearAllFilters()"
-                        class="w-full lg:w-auto text-sm">
-                        <mat-icon class="mr-1 lg:mr-2 text-sm">clear</mat-icon>
-                        <span class="hidden lg:inline">Clear All Filters</span>
-                        <span class="lg:hidden">Clear All</span>
-                    </button>
-                    }
-                </div>
-            </div>
-        </mat-card-content>
-    </mat-card>
 
     <!-- Mobile Filter Modal Overlay -->
     @if (filtersExpanded) {
@@ -289,7 +295,7 @@
     }
 
     <!-- Results Info (Desktop Only) -->
-    <div class="mb-4 hidden lg:block">
+    <div class="mb-4 hidden lg:block px-3 sm:px-6">
         @if (filteredAbilities?.length > 0) {
         <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2">
@@ -336,23 +342,36 @@
 
 
     <!-- Mobile Results Info (Simplified) -->
-    <div class="mb-2 lg:hidden">
+    <div class="mb-2 lg:hidden px-3 sm:px-6">
         @if (filteredAbilities?.length > 0) {
-        <div class="flex items-center justify-between">
-            <p class="text-lg font-medium">Abilities</p>
-            @if (selectedClass && selectedSpec && selectedHeroTalent) {
-            <p class="text-sm text-blue-600">
-                {{ formatClassName(selectedClass) }} {{ selectedSpec }} {{ selectedHeroTalent }}
-            </p>
-            } @else if (selectedClass && selectedSpec) {
-            <p class="text-sm text-blue-600">
-                {{ formatClassName(selectedClass) }} {{ selectedSpec }}
-            </p>
-            } @else if (selectedClass) {
-            <p class="text-sm text-blue-600">
-                {{ formatClassName(selectedClass) }}
-            </p>
-            }
+        <div class="flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+                @if (selectedClass && selectedSpec && selectedHeroTalent) {
+                <p class="text-sm text-blue-600">
+                    {{ formatClassName(selectedClass) }} {{ selectedSpec }} {{ selectedHeroTalent }}
+                </p>
+                } @else if (selectedClass && selectedSpec) {
+                <p class="text-sm text-blue-600">
+                    {{ formatClassName(selectedClass) }} {{ selectedSpec }}
+                </p>
+                } @else if (selectedClass) {
+                <p class="text-sm text-blue-600">
+                    {{ formatClassName(selectedClass) }}
+                </p>
+                }
+            </div>
+            <!-- Mobile Pagination Controls -->
+            <div class="flex items-center justify-center gap-2">
+                <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPreviousPage()">
+                    <mat-icon>arrow_back</mat-icon>
+                </button>
+                <span class="text-sm font-medium">
+                    Page {{ currentPage }} of {{ maxPage() }}
+                </span>
+                <button mat-icon-button [disabled]="currentPage >= maxPage()" (click)="goToNextPage()">
+                    <mat-icon>arrow_forward</mat-icon>
+                </button>
+            </div>
         </div>
         } @else if (selectedGameVersion && (selectedClass || selectedSpec || selectedHeroTalent)) {
         <p class="text-gray-600 text-base">No abilities available for the selected combination in version {{
@@ -366,58 +385,41 @@
 
     <!-- Abilities Display -->
     @if (filteredAbilities?.length > 0) {
-    <mat-card>
+    <mat-card class="mx-3 sm:mx-6 mb-3 sm:mb-6">
         <mat-card-content>
 
-            <!-- Mobile: Card Layout with Infinite Scroll -->
+            <!-- Mobile: Card Layout -->
             <div class="lg:hidden">
-                <div class="max-h-[60vh] sm:max-h-[70vh] overflow-y-auto" (scroll)="onScroll($event)">
-                    @for (ability of (displayedAbilities.length > 0 ? displayedAbilities :
-                    dataSource); track $index) {
-                    <mat-card class="mb-1 sm:mb-2">
-                        <mat-card-content class="p-3 sm:p-4">
-                            <div class="flex items-start gap-1 sm:gap-2">
-                                <img [src]="ability.icon" [alt]="ability.name + ' icon'"
-                                    class="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0" />
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="font-semibold text-sm sm:text-base mb-1 sm:mb-2">{{ability.name}}</h3>
-                                    <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-3">
-                                        {{ability.description}}</p>
-                                    <div class="flex flex-wrap gap-0.5 sm:gap-1">
-                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                            {{formatClassName(ability.class)}}
-                                        </span>
-                                        @if (ability.abilityType === 'spec') {
-                                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                                            {{formatSpecName(ability.spec)}}
-                                        </span>
-                                        }
-                                        @if (ability.abilityType === 'hero_talent') {
-                                        <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                                            {{formatHeroTalentName(ability.heroTalent)}}
-                                        </span>
-                                        }
-                                    </div>
+                @for (ability of dataSource; track $index) {
+                <mat-card class="mb-1 sm:mb-2">
+                    <mat-card-content class="p-3 sm:p-4">
+                        <div class="flex items-start gap-1 sm:gap-2">
+                            <img [src]="ability.icon" [alt]="ability.name + ' icon'"
+                                class="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0" />
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-sm sm:text-base mb-1 sm:mb-2">{{ability.name}}</h3>
+                                <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-3">
+                                    {{ability.description}}</p>
+                                <div class="flex flex-wrap gap-0.5 sm:gap-1">
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                        {{formatClassName(ability.class)}}
+                                    </span>
+                                    @if (ability.abilityType === 'spec') {
+                                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                        {{formatSpecName(ability.spec)}}
+                                    </span>
+                                    }
+                                    @if (ability.abilityType === 'hero_talent') {
+                                    <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                                        {{formatHeroTalentName(ability.heroTalent)}}
+                                    </span>
+                                    }
                                 </div>
                             </div>
-                        </mat-card-content>
-                    </mat-card>
-                    }
-
-                    <!-- Loading indicator -->
-                    @if (isLoadingMore) {
-                    <div class="flex justify-center py-2 sm:py-4">
-                        <mat-spinner diameter="24" class="sm:diameter-30"></mat-spinner>
-                    </div>
-                    }
-
-                    <!-- End of data indicator -->
-                    @if (!hasMoreData && displayedAbilities.length > 0) {
-                    <div class="text-center py-2 sm:py-4 text-gray-500 text-xs sm:text-sm">
-                        No more abilities to load
-                    </div>
-                    }
-                </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+                }
             </div>
 
             <!-- Desktop: Table Layout -->
@@ -644,7 +646,7 @@
 
     } @else {
     <!-- Empty State -->
-    <mat-card>
+    <mat-card class="mx-3 sm:mx-6 mb-3 sm:mb-6">
         <mat-card-content class="text-center py-6 sm:py-12">
             <mat-icon class="text-4xl sm:text-6xl text-gray-300 mb-2 sm:mb-4">auto_awesome</mat-icon>
             <h3 class="text-lg sm:text-xl font-medium text-gray-600 mb-1 sm:mb-2">No Abilities Found</h3>

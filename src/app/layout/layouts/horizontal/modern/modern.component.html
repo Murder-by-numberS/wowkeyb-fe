@@ -20,7 +20,7 @@
 <div class="flex w-full min-w-0 flex-auto flex-col">
     <!-- Header -->
     <div
-        class="bg-card relative z-49 flex h-12 w-full flex-0 items-center px-4 shadow dark:border-b dark:bg-transparent dark:shadow-none sm:h-12 md:px-6 print:hidden">
+        class="bg-card sticky top-0 z-[51] flex h-12 w-full flex-0 items-center px-4 shadow dark:border-b dark:bg-transparent dark:shadow-none sm:h-12 md:px-6 print:hidden">
         @if (!isScreenSmall && navigation?.horizontal) {
         <!-- Logo -->
         <div class="mx-2 flex items-center lg:mr-8">
@@ -76,7 +76,7 @@
     </div>
 
     <!-- Content -->
-    <div class="flex w-full flex-auto flex-col">
+    <div class="flex w-full flex-auto flex-col overflow-hidden min-h-0">
         <!-- *ngIf="true" hack is required here for router-outlet to work correctly.
              Otherwise, layout changes won't be registered and the view won't be updated! -->
         @if (true) {

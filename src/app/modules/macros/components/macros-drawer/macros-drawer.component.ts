@@ -31,6 +31,14 @@ import { classes } from 'app/core/data/classes';
 @Component({
     selector: 'macros-drawer',
     templateUrl: './macros-drawer.component.html',
+    styles: [`
+        :host {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+        }
+    `],
     encapsulation: ViewEncapsulation.None,
     standalone: true,
     imports: [
@@ -57,14 +65,18 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
     @Input() refreshMacros: boolean = false;
     @Input() isAuthenticated: boolean = false;
     @Input() macros: Macro[] = [];
+    @Input() sortBy: string = 'created_at';
+    @Input() sortOrder: 'asc' | 'desc' = 'desc';
 
     filteredMacros: Macro[] = [];
     selectedMacroId: string | null = null; // To keep track of the selected macro
     @Output() macroSelected = new EventEmitter<any>();
     @Output() createNewMacro = new EventEmitter<void>();
+    @Output() sortChange = new EventEmitter<{ sortBy: string; sortOrder: 'asc' | 'desc' }>();
     MAX_SIZE = 100;
 
     selectedClasses = new FormControl<any[]>([]);
+    sortOrderControl = new FormControl<'asc' | 'desc'>('desc');
 
     classList = classes;  // Use the full class data instead of just names
 
@@ -95,12 +107,22 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
         this.selectedClasses.valueChanges.subscribe(() => {
             this.filterMacros();
         });
+
+        this.sortOrderControl.valueChanges.subscribe((sortOrder) => {
+            if (sortOrder) {
+                this.onSortChange('created_at', sortOrder);
+            }
+        });
     }
 
     ngOnChanges(changes: SimpleChanges): void {
         // Update filtered macros when macros input changes
         if (changes['macros'] && changes['macros'].currentValue) {
             this.applyFilter();
+        }
+        // Update sort order control when input changes
+        if (changes['sortOrder'] && changes['sortOrder'].currentValue !== changes['sortOrder'].previousValue) {
+            this.sortOrderControl.setValue(this.sortOrder, { emitEvent: false });
         }
     }
 
@@ -286,6 +308,11 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
         };
         return classNames[className] || className;
     }
+
+    onSortChange(sortBy: string, sortOrder: 'asc' | 'desc'): void {
+        this.sortChange.emit({ sortBy, sortOrder });
+    }
+
 
     onCreateNewMacro(): void {
         this.createNewMacro.emit();

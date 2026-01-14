@@ -51,6 +51,13 @@ export const navigationConfig: NavigationItemWithAuth[] = [
         title: 'Abilities',
         type: 'basic',
         link: '/abilities'
+    },
+    {
+        id: 'files',
+        title: 'Files',
+        type: 'basic',
+        link: '/files',
+        requiresAuth: true // Files section requires authentication
     }
 ];
 
@@ -105,6 +112,12 @@ export const getNavigationForAuthState = (isAuthenticated: boolean, forHorizonta
                 children: filteredChildren
             } as FuseNavigationItem;
         }
+
+        // Filter basic items that require authentication
+        if (item.type === 'basic' && (item as NavigationItemWithAuth).requiresAuth && !isAuthenticated) {
+            return null;
+        }
+
         return item as FuseNavigationItem;
     }).filter(item => item !== null) as FuseNavigationItem[];
 };

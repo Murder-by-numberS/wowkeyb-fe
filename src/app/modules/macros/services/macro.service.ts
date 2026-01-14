@@ -30,6 +30,14 @@ export interface Macro {
     createdAt?: Date;
     updatedAt?: Date;
     userId?: string;
+    fileId?: string;
+    file?: {
+        id: string;
+        file_name: string;
+        file_type: string;
+        character_class?: string;
+        uploaded_at: Date | string;
+    };
 }
 
 export interface CreateMacroRequest {
@@ -88,10 +96,18 @@ export interface GetMacrosByAbilityParams {
 
 export interface MacroResponse {
     macros: Macro[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
+    total?: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+    pagination?: {
+        currentPage: number;
+        totalPages: number;
+        totalCount: number;
+        hasNextPage: boolean;
+        hasPrevPage: boolean;
+        limit: number;
+    };
 }
 
 export interface MacroValidation {
@@ -272,12 +288,14 @@ export class MacroService {
     /**
      * Get user's macros (protected route)
      */
-    getMyMacros(page?: number, limit?: number): Observable<MacroResponse> {
+    getMyMacros(page?: number, limit?: number, sortBy?: string, sortOrder?: 'asc' | 'desc'): Observable<MacroResponse> {
         this.getBackendURL();
         let httpParams = new HttpParams();
 
         if (page) httpParams = httpParams.set('page', page.toString());
         if (limit) httpParams = httpParams.set('limit', limit.toString());
+        if (sortBy) httpParams = httpParams.set('sort_by', sortBy);
+        if (sortOrder) httpParams = httpParams.set('sort_order', sortOrder);
 
         const url = `${this.apiUrl}/macros/my/list`;
         return this.http.get<MacroResponse>(url, { params: httpParams });

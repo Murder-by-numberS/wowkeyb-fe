@@ -19,7 +19,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { Router, RouterLink } from '@angular/router';
 import { FuseCardComponent } from '@fuse/components/card';
 import { MacroService } from 'app/modules/macros/services/macro.service';
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -31,6 +32,7 @@ import { Settings } from 'app/core/settings/settings.types';
 import { classes } from 'app/core/data/classes';
 import { Subject, forkJoin } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { MacroFileService } from 'app/modules/macros/services/macro-file.service';
 
 @Component({
     selector: 'profile',
@@ -53,12 +55,14 @@ import { takeUntil } from 'rxjs/operators';
         MatTooltipModule,
         MatProgressSpinnerModule,
         MatSnackBarModule,
+        RouterLink,
     ],
 })
 export class ProfileComponent implements OnInit, OnDestroy {
     user: User | null = null;
     macroCount: number = 0;
     keybindingCount: number = 0;
+    fileCount: number = 0;
     isLoading: boolean = true;
 
     passwordForm: FormGroup;
@@ -84,6 +88,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         private authService: AuthService,
         private userService: UserService,
         private settingsService: SettingsService,
+        private macroFileService: MacroFileService,
         private router: Router,
         private cdr: ChangeDetectorRef,
         private fb: FormBuilder,
@@ -102,6 +107,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.loadData();
+        this.loadFileCount();
     }
 
     ngOnDestroy(): void {
@@ -125,6 +131,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
             next: (user) => {
                 console.log('Profile - user data:', user);
                 this.user = user;
+                // Load favorite class from user object first, then fallback to localStorage
+                if (user?.favoriteClass) {
+                    this.favoriteClass = user.favoriteClass;
+                }
                 this.cdr.markForCheck();
             },
             error: (error) => {
@@ -133,12 +143,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
             }
         });
 
-        // Load user settings to get favorite class
+        // Load user settings to get favorite class (fallback if not in user object)
         try {
             const settings = localStorage.getItem('settings');
             if (settings) {
                 const parsedSettings = JSON.parse(settings);
-                this.favoriteClass = parsedSettings.favoriteClass || null;
+                if (!this.favoriteClass && parsedSettings.favoriteClass) {
+                    this.favoriteClass = parsedSettings.favoriteClass;
+                }
             }
         } catch (error) {
             console.error('Profile - Error loading settings:', error);
@@ -231,6 +243,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: () => {
                     this.favoriteClass = className;
+                    
+                    // Update user object if it exists
+                    if (this.user) {
+                        this.user = { ...this.user, favoriteClass: className };
+                        this.userService.user = this.user;
+                    }
+                    
                     // Update localStorage
                     const currentSettings = JSON.parse(localStorage.getItem('settings') || '{}');
                     currentSettings.favoriteClass = className;
@@ -299,6 +318,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
                         { duration: 5000 }
                     );
                     this.isChangingUsername = false;
+                    this.cdr.markForCheck();
+                }
+            });
+    }
+
+    loadFileCount(): void {
+        // Get a large number of files to count all uploads (limit of 1000 should be sufficient for most users)
+        this.macroFileService.getDownloadHistory(undefined, undefined, 1000, 1)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (response) => {
+                    // Count only uploaded files (source: 'upload')
+                    this.fileCount = response.downloads.filter((d: any) => d.source === 'upload').length;
+                    this.cdr.markForCheck();
+                },
+                error: (error) => {
+                    console.error('Error loading file count:', error);
+                    this.fileCount = 0;
                     this.cdr.markForCheck();
                 }
             });

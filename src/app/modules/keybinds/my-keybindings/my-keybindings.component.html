@@ -1,111 +1,110 @@
-<div class="flex flex-row w-full h-full relative">
+<div class="flex flex-row w-full relative" style="height: calc(100vh - 96px);">
     <!-- Backdrop for mobile when drawer is open -->
-    <div *ngIf="opened && isMobile" class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-        (click)="opened = !opened"></div>
+    @if (drawerOpen && isMobile) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity" (click)="toggleDrawer()"></div>
+    }
 
-    <!-- Drawer Container -->
-    <div class="flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden border-r border-gray-200 w-80 bg-white z-50"
-        [class.fixed]="isMobile" [class.inset-y-0]="isMobile" [class.left-0]="isMobile"
-        [class.-translate-x-full]="isMobile && !opened" [class.translate-x-0]="isMobile && opened"
-        [class.hidden]="!isMobile && !opened">
-        <div class="h-full flex flex-col overflow-hidden">
-            <!-- Drawer Content -->
-            <div class="flex-1 overflow-y-auto">
-                <keybinds-drawer [isKeybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
-                    (keybindingSelected)="onKeybindingSelected($event)" (refreshKeybindings)="refreshChildKeybindings()"
-                    (keybindingUpdated)="onKeybindingUpdated($event)">
-                </keybinds-drawer>
-            </div>
-        </div>
+    <!-- Left Column: Keybinding List -->
+    <div class="w-80 flex flex-col border-r border-gray-200 bg-white transition-transform duration-300 ease-in-out"
+        [class.fixed]="isMobile" [class.inset-y-0]="isMobile" [class.left-0]="isMobile" [class.z-50]="isMobile"
+        [class.-translate-x-full]="isMobile && !drawerOpen" [class.translate-x-0]="isMobile && drawerOpen"
+        [class.hidden]="!isMobile && !drawerOpen" [class.static]="!isMobile"
+        [style.height]="isMobile ? '100vh' : '100%'">
+        <keybinds-drawer [isKeybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
+            (keybindingSelected)="onKeybindingSelected($event)" (refreshKeybindings)="refreshChildKeybindings()"
+            (keybindingUpdated)="onKeybindingUpdated($event)">
+        </keybinds-drawer>
     </div>
 
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden w-full" [class.md:w-auto]="!isMobile && opened">
-        <!-- Header -->
+    <!-- Right Column: Keybinding Data -->
+    <div class="flex-1 flex flex-col bg-gray-50">
+        <!-- Header with Toggle Button -->
         <div
-            class="flex flex-col lg:flex-row lg:items-center lg:justify-between p-4 border-b border-gray-200 bg-white gap-4">
-            <!-- Left Section: Toggle + Title + Edit -->
-            <div class="flex items-center gap-4 min-w-0 flex-1">
-                <button mat-icon-button (click)="opened = !opened" class="hidden lg:block">
-                    <mat-icon>{{ opened ? 'menu_open' : 'menu' }}</mat-icon>
+            class="flex flex-col lg:flex-row lg:items-start xl:items-center gap-3 lg:gap-4 p-4 border-b bg-white min-w-0">
+            <div class="flex items-center gap-3 lg:gap-4 min-w-0 flex-shrink">
+                <button mat-icon-button (click)="toggleDrawer()" matTooltip="Toggle Keybinding List"
+                    class="flex-shrink-0">
+                    <mat-icon>{{ drawerOpen ? 'chevron_left' : 'menu' }}</mat-icon>
                 </button>
-                <button mat-icon-button (click)="opened = !opened" class="lg:hidden">
-                    <mat-icon>{{ opened ? 'menu_open' : 'menu' }}</mat-icon>
-                </button>
-                <h1 class="text-xl font-semibold text-gray-900 truncate">
+                <h2 class="text-lg font-semibold truncate min-w-0">
                     @if (selectedKeybinding) {
                     {{ selectedKeybindingName }}
                     } @else {
                     My Keybindings
                     }
-                </h1>
-
-                @if (selectedKeybinding) {
-                <div class="flex items-center gap-2">
-                    @if (!editingName) {
-                    <button mat-stroked-button (click)="editName()" [disabled]="!isAuthenticated">
-                        <mat-icon>edit</mat-icon>
-                        <span class="ml-2">Edit</span>
-                    </button>
-                    } @else {
-                    <form [formGroup]="nameForm" (ngSubmit)="saveName()" class="flex items-center gap-2">
-                        <mat-form-field class="w-64">
-                            <input matInput formControlName="name" placeholder="Enter keybinding name" maxlength="32">
-                        </mat-form-field>
-                        <button type="submit" mat-stroked-button [disabled]="nameForm.invalid">
-                            <mat-icon>save</mat-icon>
-                            <span class="ml-2">Save</span>
-                        </button>
-                        <button type="button" mat-stroked-button (click)="cancelName()">
-                            <mat-icon>cancel</mat-icon>
-                            <span class="ml-2">Cancel</span>
-                        </button>
-                    </form>
-                    }
-                </div>
-                }
+                </h2>
             </div>
 
-            <!-- Action Buttons -->
             @if (selectedKeybinding) {
-            <div class="flex items-center gap-2 flex-wrap">
+            <!-- Dynamic Action Buttons -->
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0 w-full lg:w-auto">
+                @if (!editingName) {
+                <button mat-stroked-button (click)="editName()" [disabled]="!isAuthenticated"
+                    class="text-xs sm:text-sm">
+                    <mat-icon class="text-base sm:text-lg">edit</mat-icon>
+                    <span class="ml-1 hidden sm:inline">Edit</span>
+                </button>
+                } @else {
+                <form [formGroup]="nameForm" (ngSubmit)="saveName()"
+                    class="flex items-center gap-1.5 sm:gap-2 w-full flex-wrap">
+                    <mat-form-field class="flex-1 min-w-[180px] max-w-[280px]" appearance="outline">
+                        <input matInput formControlName="name" placeholder="Enter keybinding name" maxlength="32">
+                    </mat-form-field>
+                    <button type="submit" mat-stroked-button [disabled]="nameForm.invalid"
+                        class="text-xs sm:text-sm flex-shrink-0">
+                        <mat-icon class="text-base sm:text-lg">save</mat-icon>
+                        <span class="ml-1 hidden sm:inline">Save</span>
+                    </button>
+                    <button type="button" mat-stroked-button (click)="cancelName()"
+                        class="text-xs sm:text-sm flex-shrink-0">
+                        <mat-icon class="text-base sm:text-lg">cancel</mat-icon>
+                        <span class="ml-1 hidden sm:inline">Cancel</span>
+                    </button>
+                </form>
+                }
+
                 <button mat-stroked-button (click)="duplicateKeybinding(selectedKeybinding)"
                     [disabled]="!isAuthenticated || keybindings.length >= MAX_SIZE"
-                    [matTooltip]="!isAuthenticated ? 'Create an account to duplicate keybindings' : keybindings.length >= MAX_SIZE ? 'Maximum number of keybindings reached' : 'Duplicate keybinding'">
-                    <mat-icon>content_copy</mat-icon>
-                    <span class="ml-2">Duplicate</span>
+                    [matTooltip]="!isAuthenticated ? 'Create an account to duplicate keybindings' : keybindings.length >= MAX_SIZE ? 'Maximum number of keybindings reached' : 'Duplicate keybinding'"
+                    class="text-xs sm:text-sm flex-shrink-0">
+                    <mat-icon class="text-base sm:text-lg">content_copy</mat-icon>
+                    <span class="ml-1 hidden sm:inline">Duplicate</span>
                 </button>
 
                 <button mat-stroked-button (click)="deleteKeybinding(selectedKeybinding)" [disabled]="!isAuthenticated"
-                    [matTooltip]="!isAuthenticated ? 'Create an account to delete keybindings' : 'Delete keybinding'">
-                    <mat-icon>delete</mat-icon>
-                    <span class="ml-2">Delete</span>
+                    [matTooltip]="!isAuthenticated ? 'Create an account to delete keybindings' : 'Delete keybinding'"
+                    class="text-xs sm:text-sm flex-shrink-0">
+                    <mat-icon class="text-base sm:text-lg">delete</mat-icon>
+                    <span class="ml-1 hidden sm:inline">Delete</span>
                 </button>
 
                 <button mat-flat-button color="primary" (click)="shareKeybinding()" [disabled]="!isAuthenticated"
-                    [matTooltip]="!isAuthenticated ? 'Create an account to share keybindings' : 'Share keybinding'">
-                    <mat-icon>share</mat-icon>
-                    <span class="ml-2">Share</span>
+                    [matTooltip]="!isAuthenticated ? 'Create an account to share keybindings' : 'Share keybinding'"
+                    class="text-xs sm:text-sm flex-shrink-0">
+                    <mat-icon class="text-base sm:text-lg">share</mat-icon>
+                    <span class="ml-1 hidden sm:inline">Share</span>
                 </button>
 
                 @if (selectedKeybinding.isPublic) {
                 <button mat-stroked-button color="primary" (click)="togglePublic()" [disabled]="!isAuthenticated"
-                    [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Private'">
-                    <mat-icon>public</mat-icon>
-                    <span class="ml-2">Public</span>
+                    [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Private'"
+                    class="text-xs sm:text-sm flex-shrink-0">
+                    <mat-icon class="text-base sm:text-lg">public</mat-icon>
+                    <span class="ml-1 hidden sm:inline">Public</span>
                 </button>
                 } @else {
                 <button mat-stroked-button (click)="togglePublic()" [disabled]="!isAuthenticated"
-                    [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Public'">
-                    <mat-icon>public_off</mat-icon>
-                    <span class="ml-2">Private</span>
+                    [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Public'"
+                    class="text-xs sm:text-sm flex-shrink-0">
+                    <mat-icon class="text-base sm:text-lg">public_off</mat-icon>
+                    <span class="ml-1 hidden sm:inline">Private</span>
                 </button>
                 }
             </div>
             }
         </div>
 
-        <!-- Content Area -->
+        <!-- Scrollable Content -->
         <div class="flex-1 overflow-y-auto pb-5">
             @if (selectedKeybinding) {
             <!-- Abilities Section -->
@@ -119,7 +118,7 @@
             <!-- Keyboard Section -->
             <div class="w-full relative h-[600px] sm:h-[700px] lg:h-[800px]">
                 <keyboard (refreshKeybindings)="refreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding"
-                    [keybindingSelected]="keybindingSelected" [drawerOpened]="opened">
+                    [keybindingSelected]="keybindingSelected" [drawerOpened]="drawerOpen">
                 </keyboard>
             </div>
             } @else {
