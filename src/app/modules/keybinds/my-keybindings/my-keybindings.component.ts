@@ -37,6 +37,9 @@ import { Keybinding } from 'app/core/types/keybinding';
     templateUrl: './my-keybindings.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
+    host: {
+        class: 'flex flex-col flex-auto w-full h-full'
+    },
     imports: [
         CommonModule,
         FormsModule,

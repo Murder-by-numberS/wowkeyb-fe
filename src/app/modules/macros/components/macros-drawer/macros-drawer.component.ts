@@ -76,6 +76,7 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
     MAX_SIZE = 100;
 
     selectedClasses = new FormControl<any[]>([]);
+    sortByControl = new FormControl<'name' | 'created_at'>('created_at');
     sortOrderControl = new FormControl<'asc' | 'desc'>('desc');
 
     classList = classes;  // Use the full class data instead of just names
@@ -108,9 +109,15 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
             this.filterMacros();
         });
 
+        this.sortByControl.valueChanges.subscribe((sortBy) => {
+            if (sortBy) {
+                this.onSortChange(sortBy, this.sortOrderControl.value || 'desc');
+            }
+        });
+
         this.sortOrderControl.valueChanges.subscribe((sortOrder) => {
             if (sortOrder) {
-                this.onSortChange('created_at', sortOrder);
+                this.onSortChange(this.sortByControl.value || 'created_at', sortOrder);
             }
         });
     }
@@ -132,21 +139,40 @@ export class MacrosDrawerComponent implements OnInit, OnDestroy {
     }
 
     sortMacros(macros: Macro[]): Macro[] {
-        if (!this.favoriteClass) {
-            return macros;
-        }
-
-        // Sort macros with favorite class first
-        // Case-insensitive comparison for class names (e.g., 'Paladin' vs 'paladin')
-        const favoriteClassLower = this.favoriteClass.toLowerCase().replace(/\s+/g, '');
-        return [...macros].sort((a, b) => {
-            const aIsFavorite = a.class && a.class.toLowerCase().replace(/\s+/g, '') === favoriteClassLower;
-            const bIsFavorite = b.class && b.class.toLowerCase().replace(/\s+/g, '') === favoriteClassLower;
-
-            if (aIsFavorite && !bIsFavorite) return -1;
-            if (!aIsFavorite && bIsFavorite) return 1;
-            return 0;
+        const sortBy = this.sortByControl.value || 'created_at';
+        const sortOrder = this.sortOrderControl.value || 'desc';
+        
+        let sorted = [...macros];
+        
+        // First, sort by the selected criteria
+        sorted.sort((a, b) => {
+            if (sortBy === 'name') {
+                const nameA = (a.name || '').toLowerCase();
+                const nameB = (b.name || '').toLowerCase();
+                const comparison = nameA.localeCompare(nameB);
+                return sortOrder === 'asc' ? comparison : -comparison;
+            } else {
+                // Sort by creation date
+                const dateA = new Date((a as any).createdAt || 0).getTime();
+                const dateB = new Date((b as any).createdAt || 0).getTime();
+                return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+            }
         });
+
+        // Then, if there's a favorite class, bring those to the top while preserving the sort within each group
+        if (this.favoriteClass) {
+            const favoriteClassLower = this.favoriteClass.toLowerCase().replace(/\s+/g, '');
+            sorted.sort((a, b) => {
+                const aIsFavorite = a.class && a.class.toLowerCase().replace(/\s+/g, '') === favoriteClassLower;
+                const bIsFavorite = b.class && b.class.toLowerCase().replace(/\s+/g, '') === favoriteClassLower;
+
+                if (aIsFavorite && !bIsFavorite) return -1;
+                if (!aIsFavorite && bIsFavorite) return 1;
+                return 0;
+            });
+        }
+        
+        return sorted;
     }
 
     filterMacros(): void {

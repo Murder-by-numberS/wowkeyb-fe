@@ -51,6 +51,9 @@ interface ExpandableMacro extends Macro {
     templateUrl: './my-macros.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
+    host: {
+        class: 'flex flex-col flex-auto w-full h-full'
+    },
     imports: [
         CommonModule,
         ReactiveFormsModule,
@@ -105,6 +108,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     availableHeroTalents: string[] = [];
     selectedAbilities = new FormControl<Ability[]>([]);
     availableAbilities: Ability[] = [];
+    sortByControl = new FormControl<'name' | 'created_at'>('created_at');
     sortOrderControl = new FormControl<'asc' | 'desc'>('desc');
     latestGameVersion: string = '11.2.0'; // Default fallback
     
@@ -286,6 +290,10 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         });
 
         this.selectedAbilities.valueChanges.subscribe(() => {
+            this.applyFilter();
+        });
+
+        this.sortByControl.valueChanges.subscribe(() => {
             this.applyFilter();
         });
 
@@ -963,12 +971,22 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             });
         }
 
-        // Sort by creation date
+        // Sort based on sortBy and sortOrder
+        const sortBy = this.sortByControl.value || 'created_at';
         const sortOrder = this.sortOrderControl.value || 'desc';
+        
         filtered.sort((a, b) => {
-            const dateA = new Date(a.createdAt || 0).getTime();
-            const dateB = new Date(b.createdAt || 0).getTime();
-            return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+            if (sortBy === 'name') {
+                const nameA = (a.name || '').toLowerCase();
+                const nameB = (b.name || '').toLowerCase();
+                const comparison = nameA.localeCompare(nameB);
+                return sortOrder === 'asc' ? comparison : -comparison;
+            } else {
+                // Sort by creation date
+                const dateA = new Date(a.createdAt || 0).getTime();
+                const dateB = new Date(b.createdAt || 0).getTime();
+                return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+            }
         });
 
         this.filteredMacros = filtered;

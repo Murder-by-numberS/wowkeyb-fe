@@ -99,6 +99,53 @@ export interface GenerateMacroFileRequest {
     file_id?: string; // Optional: ID of existing file to update
 }
 
+export interface PreviewMacroFileResponse {
+    message: string;
+    preview: {
+        file_name: string;
+        macros_count: number;
+        macros: Array<{
+            index: number;
+            name: string;
+            macro_text: string;
+            icon_fdid?: string;
+            show_tooltip?: boolean;
+        }>;
+    };
+    user_macro_count: number;
+    available_slots: number;
+    would_exceed_limit: boolean;
+    validation: {
+        errors: any[];
+        warnings: any[];
+        isValid: boolean;
+    };
+}
+
+export interface ImportSelectedMacrosRequest {
+    macros: Array<{
+        name: string;
+        macro_text: string;
+        icon_fdid?: string;
+        show_tooltip?: boolean;
+    }>;
+    file_type: 'account' | 'character';
+    character_class?: string;
+    game_version?: string;
+}
+
+export interface ImportSelectedMacrosResponse {
+    message: string;
+    imported_count: number;
+    requested_count: number;
+    created_macros: Array<{
+        id: string;
+        name: string;
+        class?: string;
+        macro_text: string;
+    }>;
+}
+
 export interface GenerateMacroFileResponse {
     message: string;
     file: {
@@ -173,6 +220,28 @@ export class MacroFileService {
     private baseUrl = `${environment.apiUrl}/files`;
 
     constructor(private http: HttpClient) { }
+
+    /**
+     * Preview a macro file (parse without creating macros)
+     */
+    previewMacroFile(file: File, fileType?: string, characterClass?: string): Observable<PreviewMacroFileResponse> {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (fileType) {
+            formData.append('file_type', fileType);
+        }
+        if (characterClass) {
+            formData.append('character_class', characterClass);
+        }
+        return this.http.post<PreviewMacroFileResponse>(`${this.baseUrl}/preview`, formData);
+    }
+
+    /**
+     * Import selected macros from a previewed file
+     */
+    importSelectedMacros(request: ImportSelectedMacrosRequest): Observable<ImportSelectedMacrosResponse> {
+        return this.http.post<ImportSelectedMacrosResponse>(`${this.baseUrl}/import`, request);
+    }
 
     /**
      * Upload a WoW macro file

@@ -28,6 +28,9 @@ export interface HomeMacrosResponse {
     selector: 'view-all-macros',
     standalone: true,
     templateUrl: './view-all-macros.component.html',
+    host: {
+        class: 'flex flex-col flex-auto w-full h-full overflow-y-auto'
+    },
     imports: [
         CommonModule,
         RouterModule,

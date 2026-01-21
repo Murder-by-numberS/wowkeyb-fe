@@ -40,6 +40,9 @@ import { MacroFileService } from 'app/modules/macros/services/macro-file.service
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
+    host: {
+        class: 'flex flex-col flex-auto w-full h-full overflow-y-auto'
+    },
     imports: [
         CommonModule,
         ReactiveFormsModule,
@@ -64,6 +67,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     keybindingCount: number = 0;
     fileCount: number = 0;
     isLoading: boolean = true;
+
+    // Limits
+    readonly macroLimit: number = 200;
+    readonly keybindingLimit: number = 10;
 
     passwordForm: FormGroup;
     isChangingPassword: boolean = false;

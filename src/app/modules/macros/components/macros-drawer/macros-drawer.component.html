@@ -54,10 +54,22 @@
                     </mat-select>
                 </mat-form-field>
                     <mat-form-field class="w-full">
-                        <mat-label>Sort by Creation Date</mat-label>
+                        <mat-label>Sort By</mat-label>
+                        <mat-select [formControl]="sortByControl">
+                            <mat-option value="name">Name</mat-option>
+                            <mat-option value="created_at">Date Created</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                    <mat-form-field class="w-full">
+                        <mat-label>Sort Order</mat-label>
                         <mat-select [formControl]="sortOrderControl">
+                            @if (sortByControl.value === 'name') {
+                            <mat-option value="asc">A to Z</mat-option>
+                            <mat-option value="desc">Z to A</mat-option>
+                            } @else {
                             <mat-option value="desc">Latest First</mat-option>
                             <mat-option value="asc">Earliest First</mat-option>
+                            }
                         </mat-select>
                     </mat-form-field>
                 </div>

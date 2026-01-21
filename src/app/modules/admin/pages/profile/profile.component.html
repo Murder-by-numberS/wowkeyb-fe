@@ -1,4 +1,4 @@
-<div class="flex flex-col w-full max-w-4xl mx-auto p-6 sm:p-8">
+<div class="flex flex-col w-full max-w-4xl mx-auto p-6 sm:p-8 pb-16">
     <!-- Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold tracking-tight">Profile</h1>
@@ -37,40 +37,74 @@
             </div>
         </fuse-card>
 
-        <!-- Quick Actions Card -->
+        <!-- Usage & Quick Actions Card -->
         <fuse-card class="flex flex-col">
             <div class="px-6 py-4 border-b">
-                <h2 class="text-xl font-semibold">Quick Actions</h2>
+                <h2 class="text-xl font-semibold">Usage & Quick Actions</h2>
             </div>
             <div class="p-6">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- My Macros Button -->
-                    <button mat-flat-button color="primary" class="h-24 text-left" (click)="goToMyMacros()">
-                        <div class="flex items-center gap-4 w-full">
-                            <mat-icon class="text-[40px] w-10 h-10" [svgIcon]="'heroicons_outline:document-text'">
-                            </mat-icon>
-                            <div class="flex-1">
-                                <div class="font-semibold text-lg">My Macros</div>
-                                <div class="text-sm opacity-80">{{ macroCount }} macro{{ macroCount !== 1 ? 's' : '' }}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <!-- Keybindings Section -->
+                    <div class="flex flex-col">
+                        <!-- Usage Display -->
+                        <div class="mb-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <mat-icon class="text-accent" [svgIcon]="'heroicons_outline:key'"></mat-icon>
+                                <span class="font-semibold">Keybindings</span>
+                            </div>
+                            <div class="flex items-baseline gap-2 mb-2">
+                                <span class="text-3xl font-bold text-accent">{{ keybindingCount }}</span>
+                                <span class="text-secondary">/ {{ keybindingLimit }}</span>
+                            </div>
+                            <!-- Progress Bar -->
+                            <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-300"
+                                    [ngClass]="{
+                                        'bg-accent': (keybindingCount / keybindingLimit) < 0.8,
+                                        'bg-yellow-500': (keybindingCount / keybindingLimit) >= 0.8 && (keybindingCount / keybindingLimit) < 1,
+                                        'bg-red-500': (keybindingCount / keybindingLimit) >= 1
+                                    }"
+                                    [style.width.%]="(keybindingCount / keybindingLimit) * 100">
                                 </div>
                             </div>
-                            <mat-icon [svgIcon]="'heroicons_outline:chevron-right'"></mat-icon>
+                            <p class="text-xs text-secondary mt-1">{{ keybindingLimit - keybindingCount }} slots available</p>
                         </div>
-                    </button>
+                        <!-- Button -->
+                        <button mat-flat-button color="accent" class="w-full" (click)="goToMyKeybindings()">
+                            View My Keybindings
+                        </button>
+                    </div>
 
-                    <!-- My Keybindings Button -->
-                    <button mat-flat-button color="accent" class="h-24 text-left" (click)="goToMyKeybindings()">
-                        <div class="flex items-center gap-4 w-full">
-                            <mat-icon class="text-[40px] w-10 h-10" [svgIcon]="'heroicons_outline:key'">
-                            </mat-icon>
-                            <div class="flex-1">
-                                <div class="font-semibold text-lg">My Keybindings</div>
-                                <div class="text-sm opacity-80">{{ keybindingCount }} keybinding{{ keybindingCount !== 1
-                                    ? 's' : '' }}</div>
+                    <!-- Macros Section -->
+                    <div class="flex flex-col">
+                        <!-- Usage Display -->
+                        <div class="mb-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <mat-icon class="text-primary" [svgIcon]="'heroicons_outline:document-text'"></mat-icon>
+                                <span class="font-semibold">Macros</span>
                             </div>
-                            <mat-icon [svgIcon]="'heroicons_outline:chevron-right'"></mat-icon>
+                            <div class="flex items-baseline gap-2 mb-2">
+                                <span class="text-3xl font-bold text-primary">{{ macroCount }}</span>
+                                <span class="text-secondary">/ {{ macroLimit }}</span>
+                            </div>
+                            <!-- Progress Bar -->
+                            <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-300"
+                                    [ngClass]="{
+                                        'bg-primary': (macroCount / macroLimit) < 0.8,
+                                        'bg-yellow-500': (macroCount / macroLimit) >= 0.8 && (macroCount / macroLimit) < 1,
+                                        'bg-red-500': (macroCount / macroLimit) >= 1
+                                    }"
+                                    [style.width.%]="(macroCount / macroLimit) * 100">
+                                </div>
+                            </div>
+                            <p class="text-xs text-secondary mt-1">{{ macroLimit - macroCount }} slots available</p>
                         </div>
-                    </button>
+                        <!-- Button -->
+                        <button mat-flat-button color="primary" class="w-full" (click)="goToMyMacros()">
+                            View My Macros
+                        </button>
+                    </div>
                 </div>
             </div>
         </fuse-card>
@@ -209,40 +243,25 @@
             </div>
         </fuse-card>
 
-        <!-- Statistics Card -->
+        <!-- Files Card -->
         <fuse-card class="flex flex-col">
-            <div class="px-6 py-4 border-b flex items-center justify-between">
-                <h2 class="text-xl font-semibold">Your Stats</h2>
+            <div class="px-6 py-4 border-b">
+                <h2 class="text-xl font-semibold">Uploaded Files</h2>
             </div>
             <div class="p-6">
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="text-center p-4 rounded-lg bg-primary-50 dark:bg-primary-900">
-                        <div class="text-3xl font-bold text-primary">{{ macroCount }}</div>
-                        <div class="text-sm text-secondary mt-1">Total Macros</div>
-                    </div>
-                    <div class="text-center p-4 rounded-lg bg-accent-50 dark:bg-accent-900">
-                        <div class="text-3xl font-bold text-accent">{{ keybindingCount }}</div>
-                        <div class="text-sm text-secondary mt-1">Total Keybindings</div>
-                    </div>
-                </div>
-                
-                <!-- Files Summary -->
-                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <mat-icon class="text-gray-600 dark:text-gray-400">upload_file</mat-icon>
-                                <span class="font-medium">Uploaded Files</span>
-                            </div>
-                            <p class="text-sm text-secondary">
-                                {{ fileCount }} file{{ fileCount !== 1 ? 's' : '' }} uploaded
-                            </p>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                            <mat-icon class="text-gray-600 dark:text-gray-400">upload_file</mat-icon>
                         </div>
-                        <button mat-raised-button color="primary" routerLink="/files">
-                            <mat-icon class="mr-2">folder</mat-icon>
-                            View Files
-                        </button>
+                        <div>
+                            <p class="text-2xl font-bold">{{ fileCount }}</p>
+                            <p class="text-sm text-secondary">file{{ fileCount !== 1 ? 's' : '' }} uploaded</p>
+                        </div>
                     </div>
+                    <button mat-flat-button color="primary" routerLink="/files">
+                        View Files
+                    </button>
                 </div>
             </div>
         </fuse-card>

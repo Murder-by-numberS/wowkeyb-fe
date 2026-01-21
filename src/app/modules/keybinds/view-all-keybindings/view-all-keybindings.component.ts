@@ -24,6 +24,9 @@ export interface ClassInfo {
     selector: 'view-all-keybindings',
     standalone: true,
     templateUrl: './view-all-keybindings.component.html',
+    host: {
+        class: 'flex flex-col flex-auto w-full h-full overflow-y-auto'
+    },
     imports: [
         CommonModule,
         RouterModule,
