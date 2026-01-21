@@ -1,24 +1,28 @@
-<div class="flex h-full w-full flex-col items-center justify-center p-4 sm:p-8">
-    <div class="w-full max-w-3xl text-center">
-        <div class="prose prose-sm mx-auto max-w-none">
-            <h1 class="text-2xl sm:text-4xl font-bold mb-4 sm:mb-8">Welcome to WoWKeyb</h1>
-            <p class="text-base sm:text-xl mb-8 sm:mb-12">
-                Your ultimate companion for World of Warcraft keybindings and macros
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
-                <button mat-raised-button color="primary" routerLink="/keybinds" class="w-full sm:w-auto">
-                    <mat-icon class="mr-2">keyboard</mat-icon>
-                    Keybindings
-                </button>
-                <button mat-raised-button color="accent" routerLink="/macros" class="w-full sm:w-auto">
-                    <mat-icon class="mr-2">code</mat-icon>
-                    Macros
-                </button>
-                <button mat-raised-button color="warn" routerLink="/abilities" class="w-full sm:w-auto">
-                    <mat-icon class="mr-2">auto_awesome</mat-icon>
-                    Abilities
-                </button>
+<div class="flex h-full w-full flex-col items-center justify-between p-4 sm:p-8">
+    <div class="flex-1 flex items-center">
+        <div class="w-full max-w-3xl text-center">
+            <div class="prose prose-sm mx-auto max-w-none">
+                <h1 class="text-2xl sm:text-4xl font-bold mb-4 sm:mb-8">Welcome to WoWKeyb</h1>
+                <p class="text-base sm:text-xl mb-8 sm:mb-12">
+                    Your ultimate companion for World of Warcraft keybindings and macros
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
+                    <button mat-raised-button color="primary" routerLink="/keybinds" class="w-full sm:w-auto">
+                        <mat-icon class="mr-2">keyboard</mat-icon>
+                        Keybindings
+                    </button>
+                    <button mat-raised-button color="accent" routerLink="/macros" class="w-full sm:w-auto">
+                        <mat-icon class="mr-2">code</mat-icon>
+                        Macros
+                    </button>
+                    <button mat-raised-button color="warn" routerLink="/abilities" class="w-full sm:w-auto">
+                        <mat-icon class="mr-2">auto_awesome</mat-icon>
+                        Abilities
+                    </button>
+                </div>
             </div>
         </div>
     </div>
+
+    <app-footer></app-footer>
 </div>

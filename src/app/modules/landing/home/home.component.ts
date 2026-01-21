@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { AuthService } from 'app/core/auth/auth.service';
+import { AppFooterComponent } from 'app/shared/app-footer/app-footer.component';
 
 @Component({
     selector: 'landing-home',
@@ -11,7 +12,8 @@ import { AuthService } from 'app/core/auth/auth.service';
     imports: [
         MatButtonModule,
         MatIconModule,
-        RouterLink
+        RouterLink,
+        AppFooterComponent
     ]
 })
 export class HomeComponent implements OnInit {

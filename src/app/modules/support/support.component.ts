@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { RouterLink } from '@angular/router';
 import { AuthService } from 'app/core/auth/auth.service';
+import { AppFooterComponent } from 'app/shared/app-footer/app-footer.component';
 
 @Component({
     selector: 'app-support',
@@ -15,7 +16,8 @@ import { AuthService } from 'app/core/auth/auth.service';
         MatButtonModule,
         MatIconModule,
         MatCardModule,
-        RouterLink
+        RouterLink,
+        AppFooterComponent
     ]
 })
 export class SupportComponent implements OnInit {
