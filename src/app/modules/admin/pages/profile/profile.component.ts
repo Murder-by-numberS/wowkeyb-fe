@@ -328,16 +328,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.macroFileService.getDownloadHistory(undefined, undefined, 1000, 1)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: (response) => {
+            next: (response) => {
                     // Count only uploaded files (source: 'upload')
                     this.fileCount = response.downloads.filter((d: any) => d.source === 'upload').length;
-                    this.cdr.markForCheck();
-                },
-                error: (error) => {
+                this.cdr.markForCheck();
+            },
+            error: (error) => {
                     console.error('Error loading file count:', error);
                     this.fileCount = 0;
-                    this.cdr.markForCheck();
-                }
-            });
+                this.cdr.markForCheck();
+            }
+        });
     }
 }

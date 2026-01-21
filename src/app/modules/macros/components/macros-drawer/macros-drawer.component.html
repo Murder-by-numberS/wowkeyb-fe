@@ -30,29 +30,29 @@
                         }
                         } @else {
                         <span>Sort: {{ sortOrderControl.value === 'desc' ? 'Latest' : 'Earliest' }}</span>
-                        }
+                            }
                     </mat-panel-description>
                 </mat-expansion-panel-header>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-2">
-                    <mat-form-field class="w-full">
-                        <mat-label>Classes</mat-label>
-                        <mat-select [formControl]="selectedClasses" multiple>
-                            <mat-select-trigger>
-                                {{selectedClasses.value?.[0]?.name || ''}}
-                                @if ((selectedClasses.value?.length || 0) > 1) {
-                                <span>
+                <mat-form-field class="w-full">
+                    <mat-label>Classes</mat-label>
+                    <mat-select [formControl]="selectedClasses" multiple>
+                        <mat-select-trigger>
+                            {{selectedClasses.value?.[0]?.name || ''}}
+                            @if ((selectedClasses.value?.length || 0) > 1) {
+                            <span>
                                     (+{{(selectedClasses.value?.length || 0) - 1}} {{selectedClasses.value?.length === 2
                                     ?
-                                    'other' :
-                                    'others'}})
-                                </span>
-                                }
-                            </mat-select-trigger>
-                            @for (class of classList; track class) {
-                            <mat-option [value]="class">{{class.name}}</mat-option>
+                                'other' :
+                                'others'}})
+                            </span>
                             }
-                        </mat-select>
-                    </mat-form-field>
+                        </mat-select-trigger>
+                        @for (class of classList; track class) {
+                        <mat-option [value]="class">{{class.name}}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
                     <mat-form-field class="w-full">
                         <mat-label>Sort by Creation Date</mat-label>
                         <mat-select [formControl]="sortOrderControl">
@@ -78,9 +78,9 @@
 <div class="flex-1 overflow-y-auto min-h-0">
     @for (macro of filteredMacros; track macro.id) {
     <div class="flex items-center p-3 cursor-pointer gap-2" [ngClass]="{
-                'bg-blue-500 text-white': isSelected(macro.id),
-                'bg-gray-200 text-black': !isSelected(macro.id)
-             }" (click)="selectMacro(macro)">
+            'bg-blue-500 text-white': isSelected(macro.id),
+            'bg-gray-200 text-black': !isSelected(macro.id)
+         }" (click)="selectMacro(macro)">
         <img [src]="getMacroIcon(macro)" [alt]="macro.name" class="w-6 h-6 flex-shrink-0">
         <div class="flex-1 min-w-0">
             <p class="truncate">{{macro.name}} - {{getClassDisplayName(macro.class)}}</p>

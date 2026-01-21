@@ -106,7 +106,7 @@ export interface MacroResponse {
         totalCount: number;
         hasNextPage: boolean;
         hasPrevPage: boolean;
-        limit: number;
+    limit: number;
     };
 }
 

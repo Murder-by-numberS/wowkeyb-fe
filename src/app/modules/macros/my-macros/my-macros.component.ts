@@ -23,7 +23,7 @@ import { UploadMacroFileDialogComponent } from '../components/upload-macro-file-
 import { ExportMacroFileDialogComponent } from '../components/export-macro-file-dialog/export-macro-file-dialog.component';
 import { DownloadHistoryDialogComponent } from '../components/download-history-dialog/download-history-dialog.component';
 import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
@@ -72,7 +72,8 @@ interface ExpandableMacro extends Macro {
         IconPickerComponent,
         AbilityPickerComponent,
         MacroValidatorComponent,
-        MacrosDrawerComponent
+        MacrosDrawerComponent,
+        RouterLink
     ]
 })
 export class MyMacrosComponent implements OnInit, OnChanges {
@@ -364,12 +365,12 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             next: (response) => {
                 console.log('MyMacrosComponent - Loaded macros response:', response);
                 console.log('Number of macros:', response.macros?.length || 0);
-                    this.macros = (response.macros || []).map(macro => ({
-                        ...macro,
-                        isExpanded: false,
-                        isEditing: false,
-                        selectedIcon: this.getIconFromMacro(macro)
-                    }));
+                this.macros = (response.macros || []).map(macro => ({
+                    ...macro,
+                    isExpanded: false,
+                    isEditing: false,
+                    selectedIcon: this.getIconFromMacro(macro)
+                }));
                     this.applyFilter();
                 
                 console.log('MyMacrosComponent - Final macros array:', this.macros);

@@ -1,0 +1,437 @@
+<div class="flex flex-row w-full" style="height: calc(100vh - 96px);">
+    <!-- Left Column: File List -->
+    <div class="w-80 flex flex-col border-r border-gray-200 bg-white" *ngIf="drawerOpen">
+        <!-- Header -->
+        <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-center">Files</h2>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex-shrink-0 px-4 py-2 border-b border-gray-200 flex flex-col gap-2">
+            <button type="button" class="w-full" mat-flat-button color="primary" (click)="onCreateFile()"
+                [disabled]="isCreatingFile">
+                <mat-icon class="icon-size-5">file_download</mat-icon>
+                <span class="ml-2">Create File</span>
+            </button>
+            <button type="button" class="w-full" mat-stroked-button (click)="openUploadDialog()"
+                [disabled]="isCreatingFile">
+                <mat-icon class="icon-size-5">upload_file</mat-icon>
+                <span class="ml-2">Upload File</span>
+            </button>
+        </div>
+
+        <!-- Scrollable File List -->
+        <div class="flex-1 overflow-y-auto">
+            <!-- Regular File List - Always shown -->
+            @if (loadingUploads || loadingDownloads) {
+            <div class="flex justify-center items-center py-12">
+                <mat-spinner diameter="40"></mat-spinner>
+            </div>
+            } @else {
+            @for (file of allFiles; track file.id || file.file_name) {
+            <div class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 flex items-center gap-3"
+                [class.bg-blue-50]="currentSelectedFile?.id === file.id" (click)="selectFile(file)"
+                [class.opacity-50]="isCreatingFile">
+                <mat-icon class="text-gray-400 text-2xl">description</mat-icon>
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate">{{ file.file_name }}</div>
+                    <div class="text-sm text-gray-500 truncate">
+                        {{ file.file_type === 'account' ? 'Account-Wide' : 'Character' }}
+                        @if (file.character_class) {
+                        • {{ getClassName(file.character_class) }}
+                        }
+                    </div>
+                </div>
+            </div>
+            }
+            @if (allFiles.length === 0) {
+            <div class="px-4 py-8 text-center text-gray-500">
+                No files yet
+            </div>
+            }
+            }
+        </div>
+    </div>
+
+    <!-- Right Column: File Details / Creation -->
+    <div class="flex-1 flex flex-col bg-gray-50">
+        <!-- Header with Toggle Button -->
+        <div class="flex items-center gap-4 p-4 border-b bg-white">
+            <button mat-icon-button (click)="toggleDrawer()" matTooltip="Toggle File List">
+                <mat-icon>{{ drawerOpen ? 'chevron_left' : 'menu' }}</mat-icon>
+            </button>
+            <h2 class="text-lg font-semibold">
+                @if (isCreatingFile) {
+                Create Macro File
+                } @else {
+                File Details
+                }
+            </h2>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-6">
+            @if (isCreatingFile) {
+            <!-- File Creation View -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">Create Macro File</h3>
+                    <button mat-icon-button (click)="onCancelCreateFile()" matTooltip="Cancel">
+                        <mat-icon>close</mat-icon>
+                    </button>
+                </div>
+
+                <!-- Search Macros -->
+                <div class="mb-6">
+                    <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Search Macros</mat-label>
+                        <input matInput [(ngModel)]="macroSearchQuery" (ngModelChange)="onMacroSearchChange()"
+                            [ngModelOptions]="{standalone: true}"
+                            placeholder="Search by name, description, or macro text...">
+                        <mat-icon matPrefix>search</mat-icon>
+                    </mat-form-field>
+                </div>
+
+                <!-- Class Selection -->
+                <div class="space-y-4 mb-6">
+                    <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Class (Optional)</mat-label>
+                        <mat-select [(ngModel)]="fileCreationClass" (ngModelChange)="onFileCreationClassChange()"
+                            [ngModelOptions]="{standalone: true}">
+                            <mat-option [value]="null">Non-Class-Specific Only</mat-option>
+                            @for (cls of getClassesForFileCreation(); track cls.value) {
+                            <mat-option [value]="cls.value">{{ cls.label }}</mat-option>
+                            }
+                        </mat-select>
+                        <mat-hint>
+                            @if (fileCreationClass === null) {
+                            Only macros without a specific class will be available
+                            } @else {
+                            Only macros for {{ getClassDisplayName(fileCreationClass) }} or non-class-specific macros
+                            will be available
+                            }
+                        </mat-hint>
+                    </mat-form-field>
+                </div>
+
+                <!-- Selection Controls -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-sm text-gray-600">
+                        Selected: {{ getSelectedMacrosCount() }} / {{ availableMacrosForFile.length }} macros
+                    </div>
+                    <div class="flex gap-2">
+                        <button mat-button (click)="selectAllMacrosForFile()"
+                            [disabled]="availableMacrosForFile.length === 0">
+                            Select All
+                        </button>
+                        <button mat-button (click)="deselectAllMacrosForFile()"
+                            [disabled]="getSelectedMacrosCount() === 0">
+                            Deselect All
+                        </button>
+                    </div>
+                </div>
+
+                @if (loadingMacros) {
+                <div class="flex justify-center items-center py-12">
+                    <mat-spinner diameter="50"></mat-spinner>
+                </div>
+                } @else {
+                <!-- Macro Selection List -->
+                <div class="max-h-[400px] overflow-y-auto border border-gray-200 rounded-lg mb-6">
+                    @for (macro of availableMacrosForFile; track macro.id) {
+                    <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 flex items-center gap-3 last:border-b-0"
+                        [class.opacity-50]="!isMacroSelectedForFile(macro) && !canSelectMacroForFile(macro)">
+                        <mat-checkbox [checked]="isMacroSelectedForFile(macro)"
+                            [disabled]="!isMacroSelectedForFile(macro) && !canSelectMacroForFile(macro)"
+                            (change)="toggleMacroForFile(macro)" (click)="$event.stopPropagation()">
+                        </mat-checkbox>
+                        @if (getMacroIcon(macro)) {
+                        <img [src]="getMacroIcon(macro)" [alt]="macro.name" class="w-8 h-8 flex-shrink-0 rounded">
+                        } @else {
+                        <div class="w-8 h-8 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+                            <mat-icon class="text-gray-400 text-lg">auto_awesome</mat-icon>
+                        </div>
+                        }
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium truncate">{{ macro.name }}</div>
+                            <div class="text-sm text-gray-500 truncate">
+                                {{ getClassDisplayName(macro.class) }}
+                                @if (macro.creatorUsername && macro.userId !== currentUserId) {
+                                <span class="text-xs"> • By {{ macro.creatorUsername }}</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="flex items-center flex-shrink-0">
+                            @if (macro.is_public || macro.isPublic) {
+                            <mat-icon class="text-green-500 text-xl">public</mat-icon>
+                            } @else {
+                            <mat-icon class="text-gray-400 text-xl">lock</mat-icon>
+                            }
+                        </div>
+                    </div>
+                    }
+                    @if (availableMacrosForFile.length === 0) {
+                    <div class="px-4 py-8 text-center text-gray-500">
+                        @if (fileCreationClass === null) {
+                        No non-class-specific macros found
+                        } @else if (fileCreationClass) {
+                        No macros found for {{ getClassDisplayName(fileCreationClass) }}
+                        } @else {
+                        No macros match your search
+                        }
+                    </div>
+                    }
+                </div>
+                }
+
+                <!-- Generate Button -->
+                <div class="flex justify-end gap-4 mt-6">
+                    <button mat-button (click)="onCancelCreateFile()" [disabled]="isGeneratingFile">
+                        Cancel
+                    </button>
+                    <button mat-raised-button color="primary" (click)="onGenerateFile()"
+                        [disabled]="getSelectedMacrosCount() === 0 || isGeneratingFile">
+                        @if (isGeneratingFile) {
+                        <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+                        }
+                        Generate File ({{ getSelectedMacrosCount() }})
+                    </button>
+                </div>
+            </div>
+            } @else if (currentSelectedFile) {
+            @if (isEditingFile) {
+            <!-- File Edit View -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">Edit File</h3>
+                    <button mat-icon-button (click)="onCancelEditFile()" matTooltip="Cancel">
+                        <mat-icon>close</mat-icon>
+                    </button>
+                </div>
+
+                <!-- File Settings Section -->
+                <div class="mb-6 pb-6 border-b border-gray-200">
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">File Settings</h4>
+                    
+                    <!-- File Name -->
+                    <div class="mb-4">
+                        <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>File Name</mat-label>
+                            <input matInput [(ngModel)]="editingFileName" [ngModelOptions]="{standalone: true}"
+                                placeholder="Enter file name...">
+                            <mat-icon matPrefix>description</mat-icon>
+                            <span matSuffix class="text-gray-500 pr-3">.txt</span>
+                        </mat-form-field>
+                    </div>
+
+                    <!-- Class Selection -->
+                    <div>
+                        <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>Class (Optional)</mat-label>
+                            <mat-select [(ngModel)]="editingFileClass" (ngModelChange)="onEditingFileClassChange()"
+                                [ngModelOptions]="{standalone: true}">
+                                <mat-option [value]="null">All Classes</mat-option>
+                                @for (cls of getClassesForFileCreation(); track cls.value) {
+                                <mat-option [value]="cls.value">{{ cls.label }}</mat-option>
+                                }
+                            </mat-select>
+                            <mat-hint>Filter macros by class</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <!-- Macro Selection Section -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Select Macros</h4>
+                    
+                    <!-- Search Macros -->
+                    <div class="mb-4">
+                        <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>Search Macros</mat-label>
+                            <input matInput [(ngModel)]="editingFileSearchQuery"
+                                (ngModelChange)="onEditingFileSearchChange()" [ngModelOptions]="{standalone: true}"
+                                placeholder="Search by name, description, or macro text...">
+                            <mat-icon matPrefix>search</mat-icon>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <!-- Selection Controls -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-sm text-gray-600">
+                        Selected: {{ editingFileMacros.size }} / {{ editingFileAvailableMacros.length }} macros
+                    </div>
+                    <div class="flex gap-2">
+                        <button mat-button (click)="selectAllMacrosForEditing()"
+                            [disabled]="editingFileAvailableMacros.length === 0">
+                            Select All
+                        </button>
+                        <button mat-button (click)="deselectAllMacrosForEditing()"
+                            [disabled]="editingFileMacros.size === 0">
+                            Deselect All
+                        </button>
+                    </div>
+                </div>
+
+                @if (loadingMacros) {
+                <div class="flex justify-center items-center py-12">
+                    <mat-spinner diameter="50"></mat-spinner>
+                </div>
+                } @else {
+                <!-- Macro Selection List -->
+                <div class="max-h-[400px] overflow-y-auto border border-gray-200 rounded-lg mb-6">
+                    @for (macro of editingFileAvailableMacros; track macro.id) {
+                    <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 flex items-center gap-3 last:border-b-0"
+                        [class.opacity-50]="!isMacroSelectedForEditing(macro) && !canSelectMacroForEditing(macro)">
+                        <mat-checkbox [checked]="isMacroSelectedForEditing(macro)"
+                            [disabled]="!isMacroSelectedForEditing(macro) && !canSelectMacroForEditing(macro)"
+                            (change)="toggleMacroForEditing(macro)" (click)="$event.stopPropagation()">
+                        </mat-checkbox>
+                        @if (getMacroIcon(macro)) {
+                        <img [src]="getMacroIcon(macro)" [alt]="macro.name" class="w-8 h-8 flex-shrink-0 rounded">
+                        } @else {
+                        <div class="w-8 h-8 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+                            <mat-icon class="text-gray-400 text-lg">auto_awesome</mat-icon>
+                        </div>
+                        }
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium truncate">{{ macro.name }}</div>
+                            <div class="text-sm text-gray-500 truncate">
+                                {{ getClassDisplayName(macro.class) }}
+                                @if (macro.creatorUsername && macro.userId !== currentUserId) {
+                                <span class="text-xs"> • By {{ macro.creatorUsername }}</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="flex items-center flex-shrink-0">
+                            @if (macro.is_public || macro.isPublic) {
+                            <mat-icon class="text-green-500 text-xl">public</mat-icon>
+                            } @else {
+                            <mat-icon class="text-gray-400 text-xl">lock</mat-icon>
+                            }
+                        </div>
+                    </div>
+                    }
+                    @if (editingFileAvailableMacros.length === 0) {
+                    <div class="px-4 py-8 text-center text-gray-500">
+                        No macros match your search
+                    </div>
+                    }
+                </div>
+                }
+
+                <!-- Save Button -->
+                <div class="flex justify-end gap-4 mt-6">
+                    <button mat-button (click)="onCancelEditFile()" [disabled]="isSavingFile">
+                        Cancel
+                    </button>
+                    <button mat-raised-button color="primary" (click)="onSaveEditedFile()"
+                        [disabled]="editingFileMacros.size === 0 || isSavingFile">
+                        @if (isSavingFile) {
+                        <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+                        }
+                        Save Changes ({{ editingFileMacros.size }})
+                    </button>
+                </div>
+            </div>
+            } @else {
+            <!-- File Details View (not editing) -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold">{{ currentSelectedFile.file_name }}</h3>
+                    <div class="flex gap-2">
+                        <button mat-stroked-button (click)="onEditFile()" matTooltip="Edit File">
+                            <mat-icon class="mr-1">edit</mat-icon>
+                            Edit
+                        </button>
+                        @if (currentSelectedFile.macro_count > 0 || (currentSelectedFile.macros &&
+                        currentSelectedFile.macros.length > 0)) {
+                        <button mat-icon-button
+                            (click)="viewFile(currentSelectedFile, currentSelectedFile.source === 'upload')"
+                            matTooltip="View File">
+                            <mat-icon>visibility</mat-icon>
+                        </button>
+                        }
+                        <button mat-raised-button color="primary" (click)="redownloadFile(currentSelectedFile)"
+                            matTooltip="Download">
+                            <mat-icon class="mr-1">download</mat-icon>
+                            Download
+                        </button>
+                        @if (currentSelectedFile.source === 'upload') {
+                        <button mat-icon-button color="warn" (click)="deleteUpload(currentSelectedFile)"
+                            matTooltip="Delete">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <mat-chip class="h-6 text-xs">
+                            {{ currentSelectedFile.file_type === 'account' ? 'Account-Wide' : 'Character' }}
+                        </mat-chip>
+                        @if (currentSelectedFile.character_class) {
+                        <mat-chip class="h-6 text-xs" color="primary">
+                            {{ getClassName(currentSelectedFile.character_class) }}
+                        </mat-chip>
+                        }
+                    </div>
+
+                    <div class="text-sm text-gray-600">
+                        @if (currentSelectedFile.source === 'upload') {
+                        <p><strong>Uploaded:</strong> {{ formatDate(currentSelectedFile.downloaded_at) }}</p>
+                        } @else {
+                        @if (currentSelectedFile.created_at) {
+                        <p><strong>Created:</strong> {{ formatDate(currentSelectedFile.created_at) }}</p>
+                        }
+                        @if (currentSelectedFile.updated_at) {
+                        <p><strong>Updated:</strong> {{ formatDate(currentSelectedFile.updated_at) }}</p>
+                        }
+                        @if (currentSelectedFile.source === 'generated') {
+                        <p><strong>Downloaded:</strong> {{ currentSelectedFile.download_count || 0 }} time{{
+                            (currentSelectedFile.download_count || 0) !== 1 ? 's' : '' }}
+                        </p>
+                        }
+                        @if (currentSelectedFile.last_downloaded_at && (currentSelectedFile.download_count || 0) > 0) {
+                        <p><strong>Last downloaded:</strong> {{ formatDate(currentSelectedFile.last_downloaded_at) }}
+                        </p>
+                        }
+                        }
+                    </div>
+
+                    @if (currentSelectedFile.macros && currentSelectedFile.macros.length > 0) {
+                    <div class="mt-6">
+                        <h4 class="font-semibold mb-3">Macros in this file:</h4>
+                        <div class="space-y-2">
+                            @for (macro of currentSelectedFile.macros; track macro.id) {
+                            <div class="p-3 bg-gray-50 rounded border border-gray-200">
+                                <div class="font-medium">{{ macro.name }}</div>
+                                @if (macro.class) {
+                                <div class="text-sm text-gray-600">{{ getClassDisplayName(macro.class) }}</div>
+                                }
+                            </div>
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+            } @else {
+            <!-- Empty State -->
+            <div class="bg-white rounded-lg shadow p-12 text-center">
+                <mat-icon class="text-6xl text-gray-400 mb-4">description</mat-icon>
+                <h3 class="text-lg font-medium text-gray-700 mb-2">No File Selected</h3>
+                <p class="text-gray-500 mb-4">
+                    Select a file from the list to view details, or create a new file from macros
+                </p>
+                <button mat-raised-button color="primary" (click)="onCreateFile()">
+                    <mat-icon class="mr-2">file_download</mat-icon>
+                    Create File
+                </button>
+            </div>
+            }
+        </div>
+    </div>
+</div>

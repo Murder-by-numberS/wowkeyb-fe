@@ -333,7 +333,7 @@ export class ExportMacroFileDialogComponent implements OnInit {
             file_type: formValue.file_type,
             character_class: formValue.character_class || undefined,
             character_name: formValue.character_name || undefined,
-            save_to_history: formValue.save_to_history
+            // save_to_history removed - files are always persisted
         }).subscribe({
             next: (response) => {
                 this.exporting = false;

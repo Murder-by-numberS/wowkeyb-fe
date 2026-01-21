@@ -37,12 +37,66 @@ export interface MacroFileUploadResponse {
     }>;
 }
 
+export interface CreateMacroFileRequest {
+    file_type?: 'account' | 'character';
+    character_class?: string;
+    character_name?: string;
+    file_name?: string;
+}
+
+export interface CreateMacroFileResponse {
+    message: string;
+    file: {
+        id: string;
+        file_name: string;
+        file_type: string;
+        character_class?: string;
+        character_name?: string;
+        macro_count: number;
+        macros: Array<{
+            id: string;
+            name: string;
+            class?: string;
+        }>;
+        created_at?: string;
+        updated_at?: string;
+    };
+}
+
+export interface SaveMacroFileRequest {
+    file_id?: string; // Optional: ID of existing file to update
+    macro_ids: string[];
+    file_type: 'account' | 'character';
+    character_class?: string;
+    character_name?: string;
+    file_name?: string;
+}
+
+export interface SaveMacroFileResponse {
+    message: string;
+    file: {
+        id: string;
+        file_name: string;
+        file_type: string;
+        character_class?: string;
+        character_name?: string;
+        macro_count: number;
+        macros: Array<{
+            id: string;
+            name: string;
+            class?: string;
+        }>;
+        created_at?: string;
+        updated_at?: string;
+    };
+}
+
 export interface GenerateMacroFileRequest {
     macro_ids: string[];
     file_type: 'account' | 'character';
     character_class?: string;
     character_name?: string;
-    save_to_history?: boolean;
+    file_id?: string; // Optional: ID of existing file to update
 }
 
 export interface GenerateMacroFileResponse {
@@ -75,7 +129,9 @@ export interface MacroDownload {
     macro_count: number;
     download_count: number;
     downloaded_at: string;
-    last_downloaded_at: string;
+    last_downloaded_at?: string;
+    created_at?: string;
+    updated_at?: string;
     macros: Array<{
         id: string;
         name: string;
@@ -142,7 +198,21 @@ export class MacroFileService {
     }
 
     /**
-     * Generate a macro file from selected macros
+     * Create a macro file (persistent, no S3 upload)
+     */
+    createMacroFile(request: CreateMacroFileRequest = {}): Observable<CreateMacroFileResponse> {
+        return this.http.post<CreateMacroFileResponse>(`${this.baseUrl}`, request);
+    }
+
+    /**
+     * Save/update macro file (update macros in DB without generating S3 file)
+     */
+    saveMacroFile(request: SaveMacroFileRequest): Observable<SaveMacroFileResponse> {
+        return this.http.put<SaveMacroFileResponse>(`${this.baseUrl}`, request);
+    }
+
+    /**
+     * Generate a macro file from selected macros (creates/updates S3 file)
      */
     generateMacroFile(request: GenerateMacroFileRequest): Observable<GenerateMacroFileResponse> {
         return this.http.post<GenerateMacroFileResponse>(`${this.baseUrl}/generate`, request);
@@ -197,14 +267,37 @@ export class MacroFileService {
      * Download a file from URL (opens in new window)
      */
     downloadFileFromUrl(url: string, fileName: string): void {
-        // Create a temporary anchor element to trigger download
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // For blank files, use fetch to ensure the download works properly
+        // Some browsers have issues with anchor download for very small files
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch file');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+            })
+            .catch(error => {
+                console.error('Error downloading file:', error);
+                // Fallback to direct link if fetch fails
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
     }
 }
 

@@ -4,7 +4,7 @@
         <!-- Header -->
         <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-center">Macro List</h2>
-        </div>
+    </div>
 
         <!-- Filter and Sort -->
         <div class="flex-shrink-0 border-b border-gray-200">
@@ -52,7 +52,7 @@
                                     }
                                 </mat-select>
                             </mat-form-field>
-                        </div>
+            </div>
 
                         <!-- Spec Filter -->
                         @if (selectedClasses.value && selectedClasses.value.length > 0) {
@@ -80,12 +80,12 @@
                                     }
                                 </mat-select>
                             </mat-form-field>
-                        </div>
+        </div>
                         }
 
                         <!-- Hero Talent Filter -->
                         @if (selectedClasses.value && selectedClasses.value.length > 0) {
-                        <div>
+                    <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Hero Talent</label>
                             <mat-form-field appearance="outline" class="w-full">
                                 <mat-label>Hero Talents</mat-label>
@@ -100,9 +100,9 @@
                                             0) === 2 ? 'other' : 'others'}})
                                         </span>
                                         }
-                                        } @else {
+                            } @else {
                                         All Hero Talents
-                                        }
+                            }
                                     </mat-select-trigger>
                                     @for (heroTalent of availableHeroTalents; track heroTalent) {
                                     <mat-option [value]="heroTalent">{{heroTalent}}</mat-option>
@@ -129,16 +129,16 @@
                                             0) === 2 ? 'other' : 'others'}})
                                         </span>
                                         }
-                                        } @else {
+                            } @else {
                                         All Abilities
                                         }
                                     </mat-select-trigger>
                                     @for (ability of availableAbilities; track ability.id) {
                                     <mat-option [value]="ability">{{ability.name}}</mat-option>
-                                    }
+                            }
                                 </mat-select>
                             </mat-form-field>
-                        </div>
+                    </div>
                         }
 
                         <!-- Sort Order -->
@@ -151,8 +151,8 @@
                                     <mat-option value="asc">Earliest First</mat-option>
                                 </mat-select>
                             </mat-form-field>
-                        </div>
-                    </div>
+                </div>
+                </div>
                 </mat-expansion-panel>
             </mat-accordion>
         </div>
@@ -162,7 +162,7 @@
             <button type="button" class="w-full" mat-flat-button color="primary" (click)="onCreateNewMacro()">
                 <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon>
                 <span class="ml-2">Create Macro</span>
-            </button>
+                    </button>
         </div>
 
         <!-- Scrollable Macro List -->
@@ -172,7 +172,7 @@
                 [class.bg-blue-50]="currentSelectedMacro?.id === macro.id" (click)="selectMacro(macro)">
                 @if (getMacroIcon(macro)) {
                 <img [src]="getMacroIcon(macro)" [alt]="macro.name" class="w-8 h-8 flex-shrink-0 rounded">
-                } @else {
+                    } @else {
                 <div class="w-8 h-8 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
                     <mat-icon class="text-gray-400 text-lg">auto_awesome</mat-icon>
                 </div>
@@ -184,12 +184,12 @@
                 <div class="flex items-center flex-shrink-0">
                     @if (macro.is_public || macro.isPublic) {
                     <mat-icon class="text-green-500 text-xl">public</mat-icon>
-                    } @else {
+                } @else {
                     <mat-icon class="text-gray-400 text-xl">lock</mat-icon>
                     }
                 </div>
-            </div>
-            }
+                </div>
+                }
             @if (filteredMacros.length === 0) {
             <div class="px-4 py-8 text-center text-gray-500">
                 @if (macros.length === 0) {
@@ -198,19 +198,25 @@
                 No macros match the selected filters
                 }
             </div>
-            }
+                }
+            </div>
         </div>
-    </div>
 
     <!-- Right Column: Macro Data -->
     <div class="flex-1 flex flex-col bg-gray-50">
         <!-- Header with Toggle Button -->
-        <div class="flex items-center gap-4 p-4 border-b bg-white">
-            <button mat-icon-button (click)="toggleDrawer()" matTooltip="Toggle Macro List">
-                <mat-icon>{{ drawerOpen ? 'chevron_left' : 'menu' }}</mat-icon>
+        <div class="flex items-center justify-between gap-4 p-4 border-b bg-white">
+            <div class="flex items-center gap-4">
+                <button mat-icon-button (click)="toggleDrawer()" matTooltip="Toggle Macro List">
+                    <mat-icon>{{ drawerOpen ? 'chevron_left' : 'menu' }}</mat-icon>
+                </button>
+                <h2 class="text-lg font-semibold">Macro Data</h2>
+            </div>
+            <button mat-stroked-button [routerLink]="['/files']" [queryParams]="{create: 'true'}" matTooltip="Create macro files from your macros">
+                <mat-icon class="mr-2">file_download</mat-icon>
+                Create File
             </button>
-            <h2 class="text-lg font-semibold">Macro Data</h2>
-        </div>
+                            </div>
 
         <!-- Scrollable Content -->
         <div class="flex-1 overflow-y-auto p-6">
@@ -220,7 +226,7 @@
                     <h3 class="text-xl font-bold">Create New Macro</h3>
                     <button mat-icon-button (click)="onCancelCreate()" matTooltip="Cancel">
                         <mat-icon>close</mat-icon>
-                    </button>
+                                </button>
                 </div>
 
                 <!-- Choice Screen -->
@@ -229,71 +235,71 @@
                     <div class="mb-8">
                         <h4 class="text-xl font-medium text-gray-900 mb-2">How would you like to create your macro?</h4>
                         <p class="text-gray-600">Choose your preferred method for creating a new macro</p>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-                        <button mat-flat-button color="primary" (click)="selectManualMode()"
-                            class="flex items-center justify-center gap-2 py-6">
-                            <mat-icon class="text-2xl">edit</mat-icon>
-                            <div class="text-left">
-                                <div class="font-semibold">Manual</div>
-                                <div class="text-sm opacity-90">Create macro freehand</div>
                             </div>
-                        </button>
 
-                        <button mat-flat-button color="accent" (click)="selectGenerateMode()"
-                            class="flex items-center justify-center gap-2 py-6">
-                            <mat-icon class="text-2xl">auto_fix_high</mat-icon>
-                            <div class="text-left">
-                                <div class="font-semibold">Generate</div>
-                                <div class="text-sm opacity-90">Step by step macro creation</div>
+                            <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+                                <button mat-flat-button color="primary" (click)="selectManualMode()"
+                                    class="flex items-center justify-center gap-2 py-6">
+                                    <mat-icon class="text-2xl">edit</mat-icon>
+                                    <div class="text-left">
+                                        <div class="font-semibold">Manual</div>
+                                        <div class="text-sm opacity-90">Create macro freehand</div>
+                                    </div>
+                                </button>
+
+                                <button mat-flat-button color="accent" (click)="selectGenerateMode()"
+                                    class="flex items-center justify-center gap-2 py-6">
+                                    <mat-icon class="text-2xl">auto_fix_high</mat-icon>
+                                    <div class="text-left">
+                                        <div class="font-semibold">Generate</div>
+                                        <div class="text-sm opacity-90">Step by step macro creation</div>
+                                    </div>
+                                </button>
                             </div>
-                        </button>
-                    </div>
-                </div>
+                        </div>
                 }
 
-                <!-- MANUAL MODE: Simple Form -->
+                        <!-- MANUAL MODE: Simple Form -->
                 @if (useManualMode && !showManualValidation) {
                 <form [formGroup]="createForm" class="space-y-6">
-                    <!-- Icon Picker and Ability Picker Side by Side -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Icon Picker -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">Macro Icon (Optional)</label>
-                            <app-icon-picker [selectedIcon]="createSelectedIcon"
+                            <!-- Icon Picker and Ability Picker Side by Side -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Icon Picker -->
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-gray-700">Macro Icon (Optional)</label>
+                                    <app-icon-picker [selectedIcon]="createSelectedIcon"
                                 (iconSelected)="onCreateIconSelected($event)" (iconCleared)="onCreateIconCleared()"
-                                placeholder="Select an icon for your macro">
-                            </app-icon-picker>
-                        </div>
+                                        placeholder="Select an icon for your macro">
+                                    </app-icon-picker>
+                                </div>
 
-                        <!-- Ability Picker -->
-                        <div class="space-y-2">
+                                <!-- Ability Picker -->
+                                <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-700">Ability Selection (Optional)</label>
-                            <app-ability-picker [selectedAbility]="createSelectedAbility"
-                                (abilitySelected)="onCreateAbilitySelected($event)"
-                                (abilityCleared)="onCreateAbilityCleared()" placeholder="Search for an ability">
-                            </app-ability-picker>
+                                    <app-ability-picker [selectedAbility]="createSelectedAbility"
+                                        (abilitySelected)="onCreateAbilitySelected($event)"
+                                        (abilityCleared)="onCreateAbilityCleared()" placeholder="Search for an ability">
+                                    </app-ability-picker>
 
-                            <!-- Add Tooltip Checkbox -->
-                            @if (createSelectedAbility?.ability) {
-                            <div class="mt-3">
+                                    <!-- Add Tooltip Checkbox -->
+                                    @if (createSelectedAbility?.ability) {
+                                    <div class="mt-3">
                                 <mat-checkbox [(ngModel)]="createAddTooltip" [ngModelOptions]="{standalone: true}"
-                                    (ngModelChange)="onCreateTooltipChanged($event)" color="primary">
-                                    Add #showtooltip command
-                                </mat-checkbox>
-                                <p class="text-xs text-gray-500 mt-1 ml-7">
-                                    Shows the ability tooltip when mousing over the macro button
-                                </p>
+                                            (ngModelChange)="onCreateTooltipChanged($event)" color="primary">
+                                            Add #showtooltip command
+                                        </mat-checkbox>
+                                        <p class="text-xs text-gray-500 mt-1 ml-7">
+                                            Shows the ability tooltip when mousing over the macro button
+                                        </p>
+                                    </div>
+                                    }
+                                </div>
                             </div>
-                            }
-                        </div>
-                    </div>
 
-                    <!-- Macro Text -->
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium text-gray-700">Macro Text</label>
-                        <mat-form-field appearance="outline" class="w-full">
+                            <!-- Macro Text -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-700">Macro Text</label>
+                                <mat-form-field appearance="outline" class="w-full">
                             <textarea matInput formControlName="macro_text" placeholder="Enter your macro commands"
                                 rows="8" maxlength="255"></textarea>
                             <mat-hint align="end">{{ createForm.get('macro_text')?.value?.length || 0 }}/255</mat-hint>
@@ -303,41 +309,41 @@
                             @if (createForm.get('macro_text')?.hasError('maxlength')) {
                             <mat-error>Macro text is too long</mat-error>
                             }
-                        </mat-form-field>
-                    </div>
+                                </mat-form-field>
+                            </div>
 
-                    <!-- Validate Button -->
-                    <div class="flex justify-end">
+                            <!-- Validate Button -->
+                            <div class="flex justify-end">
                         <button type="button" mat-raised-button color="primary" (click)="showManualValidation = true"
-                            [disabled]="!createForm.get('macro_text')?.value">
-                            <mat-icon class="mr-1">check_circle</mat-icon>
-                            Validate & Continue
-                        </button>
-                    </div>
-                </form>
+                                    [disabled]="!createForm.get('macro_text')?.value">
+                                    <mat-icon class="mr-1">check_circle</mat-icon>
+                                    Validate & Continue
+                                </button>
+                            </div>
+                        </form>
                 }
 
-                <!-- MANUAL MODE: Validation & Name/Description -->
+                        <!-- MANUAL MODE: Validation & Name/Description -->
                 @if (useManualMode && showManualValidation) {
                 <form [formGroup]="createForm" class="space-y-6">
-                    <!-- Validation Section -->
-                    <div class="space-y-4">
-                        <h4 class="text-md font-medium text-gray-900">Validate Your Macro</h4>
-                        <app-macro-validator [macroText]="createForm.get('macro_text')?.value || ''"
-                            [wowClass]="createSelectedAbility?.class || undefined" [autoValidate]="true"
-                            (validationChange)="onCreateValidationChange($event)">
-                        </app-macro-validator>
-                    </div>
+                            <!-- Validation Section -->
+                            <div class="space-y-4">
+                                <h4 class="text-md font-medium text-gray-900">Validate Your Macro</h4>
+                                <app-macro-validator [macroText]="createForm.get('macro_text')?.value || ''"
+                                    [wowClass]="createSelectedAbility?.class || undefined" [autoValidate]="true"
+                                    (validationChange)="onCreateValidationChange($event)">
+                                </app-macro-validator>
+                            </div>
 
-                    <!-- Name and Description -->
-                    <div class="space-y-4 pt-4 border-t">
-                        <h4 class="text-md font-medium text-gray-900">Macro Details</h4>
+                            <!-- Name and Description -->
+                            <div class="space-y-4 pt-4 border-t">
+                                <h4 class="text-md font-medium text-gray-900">Macro Details</h4>
                         <p class="text-sm text-gray-600">Note: Macro text, ability, and icon cannot be edited after
                             creation</p>
 
-                        <!-- Macro Name -->
-                        <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Macro Name</mat-label>
+                                <!-- Macro Name -->
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Macro Name</mat-label>
                             <input matInput formControlName="name" placeholder="Enter macro name" maxlength="100">
                             @if (createForm.get('name')?.hasError('required')) {
                             <mat-error>Name is required</mat-error>
@@ -345,409 +351,409 @@
                             @if (createForm.get('name')?.hasError('maxlength')) {
                             <mat-error>Name is too long</mat-error>
                             }
-                        </mat-form-field>
-
-                        <!-- Description -->
-                        <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Description (Optional)</mat-label>
-                            <textarea matInput formControlName="description" placeholder="Enter macro description"
-                                rows="3" maxlength="500"></textarea>
-                            @if (createForm.get('description')?.hasError('maxlength')) {
-                            <mat-error>Description is too long</mat-error>
-                            }
-                        </mat-form-field>
-
-                        <!-- Tags -->
-                        <div class="space-y-3">
-                            <label class="text-sm font-medium text-gray-700">Tags (Optional)</label>
-                            <div class="flex flex-wrap gap-2">
-                                @for (tag of createForm.get('tags')?.value; track tag) {
-                                <mat-chip [removable]="true" (removed)="removeCreateTag(tag)">
-                                    {{ tag }}
-                                    <mat-icon matChipRemove>cancel</mat-icon>
-                                </mat-chip>
-                                }
-                            </div>
-                            <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>Add Tag</mat-label>
-                                <input matInput #createTagInput placeholder="Type a tag and press Enter"
-                                    (keyup.enter)="addCreateTag(createTagInput.value); createTagInput.value=''">
-                                <mat-hint>Press Enter to add a tag</mat-hint>
-                            </mat-form-field>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="flex justify-end gap-3">
-                        <button type="button" mat-stroked-button (click)="showManualValidation = false">
-                            <mat-icon class="mr-1">arrow_back</mat-icon>
-                            Back to Edit
-                        </button>
-                        <button type="button" mat-flat-button color="primary" (click)="onSaveCreate()"
-                            [disabled]="createForm.invalid || isLoading || !createMacroValidationPassed">
-                            @if (isLoading) {
-                            <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
-                            }
-                            @if (!isLoading) {
-                            <mat-icon class="mr-1">save</mat-icon>
-                            }
-                            {{ isLoading ? 'Creating...' : 'Create Macro' }}
-                        </button>
-                    </div>
-                </form>
-                }
-
-                <!-- GENERATE MODE: Stepper -->
-                @if (useMacroBuilder) {
-                <form [formGroup]="createForm">
-                    <mat-stepper orientation="vertical" linear #stepper>
-
-                        <!-- Step 1: Select Ability -->
-                        <mat-step label="Select Ability">
-                            <div class="space-y-6 py-4">
-                                <h4 class="text-md font-medium text-gray-900">Select Your Ability</h4>
-                                <p class="text-sm text-gray-600">Search and select the spell/ability for your macro</p>
-
-                                <app-ability-picker [selectedAbility]="createSelectedAbility"
-                                    (abilitySelected)="onCreateAbilitySelected($event)"
-                                    (abilityCleared)="onCreateAbilityCleared()" placeholder="Search for an ability">
-                                </app-ability-picker>
-                            </div>
-
-                            <div class="mt-4">
-                                <button type="button" mat-button matStepperNext
-                                    [disabled]="!createSelectedAbility?.ability">Next</button>
-                            </div>
-                        </mat-step>
-
-                        <!-- Step 2: Select Icon -->
-                        <mat-step label="Select Icon">
-                            <div class="space-y-6 py-4">
-                                <h4 class="text-md font-medium text-gray-900">Choose an Icon</h4>
-                                <p class="text-sm text-gray-600">Select an icon for your macro</p>
-
-                                <app-icon-picker [selectedIcon]="createSelectedIcon"
-                                    (iconSelected)="onCreateIconSelected($event)" (iconCleared)="onCreateIconCleared()"
-                                    placeholder="Select an icon for your macro">
-                                </app-icon-picker>
-                            </div>
-
-                            <div class="mt-4">
-                                <button type="button" mat-button matStepperPrevious>Back</button>
-                                <button type="button" mat-button matStepperNext
-                                    [disabled]="!createSelectedIcon">Next</button>
-                            </div>
-                        </mat-step>
-
-                        <!-- Step 3: Target Modifier -->
-                        <mat-step label="Target Modifier">
-                            <div class="space-y-6 py-4">
-                                <h4 class="text-md font-medium text-gray-900">Select Target Modifier</h4>
-                                <p class="text-sm text-gray-600">Choose how the macro should target (Optional)</p>
-
-                                <mat-form-field appearance="outline" class="w-full">
-                                    <mat-label>Target Modifier</mat-label>
-                                    <mat-select [(ngModel)]="macroBuilderTargetModifier"
-                                        [ngModelOptions]="{standalone: true}">
-                                        <mat-option value="">None (Default Target)</mat-option>
-                                        @for (target of availableTargetModifiers; track target.value) {
-                                        <mat-option [value]="target.value" [matTooltip]="target.description">
-                                            {{ target.label }}
-                                        </mat-option>
-                                        }
-                                    </mat-select>
-                                    <mat-hint>Specifies which target the spell should cast on</mat-hint>
-                                </mat-form-field>
-                            </div>
-
-                            <div class="mt-4">
-                                <button type="button" mat-button matStepperPrevious>Back</button>
-                                <button type="button" mat-button matStepperNext>Next</button>
-                            </div>
-                        </mat-step>
-
-                        <!-- Step 4: Conditionals -->
-                        <mat-step label="Conditionals">
-                            <div class="space-y-6 py-4">
-                                <h4 class="text-md font-medium text-gray-900">Add Conditionals</h4>
-                                <p class="text-sm text-gray-600">Select conditions for when the macro should execute
-                                    (Optional)</p>
-
-                                <mat-form-field appearance="outline" class="w-full">
-                                    <mat-label>Conditionals</mat-label>
-                                    <mat-select [(ngModel)]="macroBuilderConditionals"
-                                        [ngModelOptions]="{standalone: true}" multiple>
-                                        @for (conditional of availableConditionals; track conditional.value) {
-                                        <mat-option [value]="conditional.value" [matTooltip]="conditional.description">
-                                            {{ conditional.label }}
-                                        </mat-option>
-                                        }
-                                    </mat-select>
-                                    <mat-hint>These conditions must be true for the macro to execute</mat-hint>
-                                </mat-form-field>
-
-                                @if (macroBuilderConditionals.length > 0) {
-                                <div class="flex flex-wrap gap-2 mt-2">
-                                    @for (conditional of macroBuilderConditionals; track conditional) {
-                                    <mat-chip>{{ getConditionalLabel(conditional) }}</mat-chip>
-                                    }
-                                </div>
-                                }
-                            </div>
-
-                            <div class="mt-4">
-                                <button type="button" mat-button matStepperPrevious>Back</button>
-                                <button type="button" mat-button matStepperNext>Next</button>
-                            </div>
-                        </mat-step>
-
-                        <!-- Step 5: Key Modifiers -->
-                        <mat-step label="Key Modifiers">
-                            <div class="space-y-6 py-4">
-                                <h4 class="text-md font-medium text-gray-900">Add Key Modifiers</h4>
-                                <p class="text-sm text-gray-600">Select modifier keys to use with the macro (Optional)
-                                </p>
-
-                                <mat-form-field appearance="outline" class="w-full">
-                                    <mat-label>Key Modifiers</mat-label>
-                                    <mat-select [(ngModel)]="macroBuilderKeyModifiers"
-                                        [ngModelOptions]="{standalone: true}" multiple>
-                                        @for (modifier of availableKeyModifiers; track modifier.value) {
-                                        <mat-option [value]="modifier.value" [matTooltip]="modifier.description">
-                                            {{ modifier.label }}
-                                        </mat-option>
-                                        }
-                                    </mat-select>
-                                    <mat-hint>Hold these keys when pressing the macro button</mat-hint>
-                                </mat-form-field>
-
-                                @if (macroBuilderKeyModifiers.length > 0) {
-                                <div class="flex flex-wrap gap-2 mt-2">
-                                    @for (modifier of macroBuilderKeyModifiers; track modifier) {
-                                    <mat-chip>{{ getKeyModifierLabel(modifier) }}</mat-chip>
-                                    }
-                                </div>
-                                }
-                            </div>
-
-                            <div class="mt-4">
-                                <button type="button" mat-button matStepperPrevious>Back</button>
-                                <button type="button" mat-button matStepperNext>Next</button>
-                            </div>
-                        </mat-step>
-
-                        <!-- Step 6: Tooltip Options -->
-                        <mat-step label="Tooltip Options">
-                            <div class="space-y-6 py-4">
-                                <h4 class="text-md font-medium text-gray-900">Tooltip Options</h4>
-                                <p class="text-sm text-gray-600">Configure tooltip display</p>
-
-                                <div class="mt-3">
-                                    <mat-checkbox [(ngModel)]="macroBuilderIncludeTooltip"
-                                        [ngModelOptions]="{standalone: true}" color="primary">
-                                        Add #showtooltip command
-                                    </mat-checkbox>
-                                    <p class="text-xs text-gray-500 mt-1 ml-7">
-                                        Shows the ability tooltip when mousing over the macro button
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <button type="button" mat-button matStepperPrevious>Back</button>
-                                <button type="button" mat-button matStepperNext>Next</button>
-                            </div>
-                        </mat-step>
-
-                        <!-- Step 7: Generate Macro -->
-                        <mat-step label="Generate Macro">
-                            <div class="space-y-6 py-4">
-                                <h4 class="text-md font-medium text-gray-900">Generate Your Macro</h4>
-                                <p class="text-sm text-gray-600">Review your selections and generate the macro</p>
-
-                                <!-- Configuration Summary -->
-                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                    <h5 class="text-sm font-semibold text-gray-900 mb-3">Configuration Summary</h5>
-                                    <div class="space-y-2 text-sm">
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">Ability:</span>
-                                            <span class="font-medium text-gray-900">{{
-                                                createSelectedAbility?.ability?.name }}</span>
-                                        </div>
-                                        @if (createSelectedIcon) {
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">Icon:</span>
-                                            <span class="font-medium text-gray-900">✓ Selected</span>
-                                        </div>
-                                        }
-                                        @if (macroBuilderTargetModifier) {
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">Target:</span>
-                                            <span class="font-medium text-gray-900">{{
-                                                getTargetModifierLabel(macroBuilderTargetModifier) }}</span>
-                                        </div>
-                                        }
-                                        @if (macroBuilderConditionals.length > 0) {
-                                        <div>
-                                            <span class="text-gray-600 block mb-1">Conditionals:</span>
-                                            <div class="flex flex-wrap gap-1">
-                                                @for (conditional of macroBuilderConditionals; track conditional) {
-                                                <mat-chip class="text-xs">{{ getConditionalLabel(conditional)
-                                                    }}</mat-chip>
-                                                }
-                                            </div>
-                                        </div>
-                                        }
-                                        @if (macroBuilderKeyModifiers.length > 0) {
-                                        <div>
-                                            <span class="text-gray-600 block mb-1">Key Modifiers:</span>
-                                            <div class="flex flex-wrap gap-1">
-                                                @for (modifier of macroBuilderKeyModifiers; track modifier) {
-                                                <mat-chip class="text-xs">{{ getKeyModifierLabel(modifier) }}</mat-chip>
-                                                }
-                                            </div>
-                                        </div>
-                                        }
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">Tooltip:</span>
-                                            <span class="font-medium text-gray-900">{{
-                                                macroBuilderIncludeTooltip ? '✓ Enabled' : 'Disabled' }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Generate Macro Button -->
-                                <div class="flex justify-center py-4">
-                                    <button type="button" mat-raised-button color="primary"
-                                        (click)="generateMacroFromBuilder()"
-                                        [disabled]="!createSelectedAbility?.ability || isGeneratingMacro"
-                                        class="flex items-center gap-2 px-8 py-3">
-                                        @if (isGeneratingMacro) {
-                                        <mat-spinner diameter="20"></mat-spinner>
-                                        }
-                                        @if (!isGeneratingMacro) {
-                                        <mat-icon>auto_fix_high</mat-icon>
-                                        }
-                                        {{ isGeneratingMacro ? 'Generating...' : 'Generate Macro' }}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <button type="button" mat-button matStepperPrevious>Back</button>
-                                <button type="button" mat-button matStepperNext
-                                    [disabled]="!createForm.get('macro_text')?.value">Next</button>
-                            </div>
-                        </mat-step>
-
-                        <!-- Step 8: Validate -->
-                        <mat-step label="Validate">
-                            <div class="space-y-6 py-4">
-                                <h4 class="text-md font-medium text-gray-900">Validate Your Macro</h4>
-                                <p class="text-sm text-gray-600">Review the generated macro for any issues</p>
-
-                                <!-- Generated Macro Display -->
-                                <div class="space-y-2">
-                                    <label class="text-sm font-medium text-gray-700">Generated Macro</label>
-                                    <div
-                                        class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm whitespace-pre-wrap">
-                                        {{ createForm.get('macro_text')?.value }}</div>
-                                </div>
-
-                                <!-- Validation -->
-                                <app-macro-validator [macroText]="createForm.get('macro_text')?.value || ''"
-                                    [wowClass]="createSelectedAbility?.class || undefined" [autoValidate]="true"
-                                    (validationChange)="onCreateValidationChange($event)">
-                                </app-macro-validator>
-                            </div>
-
-                            <div class="mt-4">
-                                <button type="button" mat-button matStepperPrevious>Back</button>
-                                <button type="button" mat-button matStepperNext>Next</button>
-                            </div>
-                        </mat-step>
-
-                        <!-- Step 9: Name & Description -->
-                        <mat-step label="Name & Description">
-                            <div class="space-y-6 py-4">
-                                <h4 class="text-md font-medium text-gray-900">Macro Details</h4>
-                                <p class="text-sm text-gray-600">Add a name and description for your macro</p>
-
-                                <!-- Macro Name -->
-                                <mat-form-field appearance="outline" class="w-full">
-                                    <mat-label>Macro Name</mat-label>
-                                    <input matInput formControlName="name" placeholder="Enter macro name"
-                                        maxlength="100">
-                                    @if (createForm.get('name')?.hasError('required')) {
-                                    <mat-error>Name is required</mat-error>
-                                    }
-                                    @if (createForm.get('name')?.hasError('maxlength')) {
-                                    <mat-error>Name is too long</mat-error>
-                                    }
                                 </mat-form-field>
 
                                 <!-- Description -->
                                 <mat-form-field appearance="outline" class="w-full">
                                     <mat-label>Description (Optional)</mat-label>
-                                    <textarea matInput formControlName="description"
-                                        placeholder="Enter macro description" rows="3" maxlength="500"></textarea>
-                                    @if (createForm.get('description')?.hasError('maxlength')) {
-                                    <mat-error>Description is too long</mat-error>
-                                    }
+                            <textarea matInput formControlName="description" placeholder="Enter macro description"
+                                rows="3" maxlength="500"></textarea>
+                            @if (createForm.get('description')?.hasError('maxlength')) {
+                            <mat-error>Description is too long</mat-error>
+                            }
                                 </mat-form-field>
 
                                 <!-- Tags -->
                                 <div class="space-y-3">
                                     <label class="text-sm font-medium text-gray-700">Tags (Optional)</label>
                                     <div class="flex flex-wrap gap-2">
-                                        @for (tag of createForm.get('tags')?.value; track tag) {
-                                        <mat-chip [removable]="true" (removed)="removeCreateTag(tag)">
+                                @for (tag of createForm.get('tags')?.value; track tag) {
+                                <mat-chip [removable]="true" (removed)="removeCreateTag(tag)">
                                             {{ tag }}
                                             <mat-icon matChipRemove>cancel</mat-icon>
                                         </mat-chip>
-                                        }
+                                }
                                     </div>
                                     <mat-form-field appearance="outline" class="w-full">
                                         <mat-label>Add Tag</mat-label>
-                                        <input matInput #stepperCreateTagInput placeholder="Type a tag and press Enter"
-                                            (keyup.enter)="addCreateTag(stepperCreateTagInput.value); stepperCreateTagInput.value=''">
+                                        <input matInput #createTagInput placeholder="Type a tag and press Enter"
+                                            (keyup.enter)="addCreateTag(createTagInput.value); createTagInput.value=''">
                                         <mat-hint>Press Enter to add a tag</mat-hint>
                                     </mat-form-field>
                                 </div>
+                            </div>
 
-                                <!-- Summary Note -->
-                                <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                                    <p class="text-sm text-blue-900">
+                            <!-- Action Buttons -->
+                            <div class="flex justify-end gap-3">
+                                <button type="button" mat-stroked-button (click)="showManualValidation = false">
+                                    <mat-icon class="mr-1">arrow_back</mat-icon>
+                                    Back to Edit
+                                </button>
+                                <button type="button" mat-flat-button color="primary" (click)="onSaveCreate()"
+                                    [disabled]="createForm.invalid || isLoading || !createMacroValidationPassed">
+                            @if (isLoading) {
+                            <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+                            }
+                            @if (!isLoading) {
+                            <mat-icon class="mr-1">save</mat-icon>
+                            }
+                                    {{ isLoading ? 'Creating...' : 'Create Macro' }}
+                                </button>
+                            </div>
+                        </form>
+                }
+
+                        <!-- GENERATE MODE: Stepper -->
+                @if (useMacroBuilder) {
+                <form [formGroup]="createForm">
+                            <mat-stepper orientation="vertical" linear #stepper>
+
+                                <!-- Step 1: Select Ability -->
+                                <mat-step label="Select Ability">
+                                    <div class="space-y-6 py-4">
+                                        <h4 class="text-md font-medium text-gray-900">Select Your Ability</h4>
+                                <p class="text-sm text-gray-600">Search and select the spell/ability for your macro</p>
+
+                                        <app-ability-picker [selectedAbility]="createSelectedAbility"
+                                            (abilitySelected)="onCreateAbilitySelected($event)"
+                                    (abilityCleared)="onCreateAbilityCleared()" placeholder="Search for an ability">
+                                        </app-ability-picker>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <button type="button" mat-button matStepperNext
+                                            [disabled]="!createSelectedAbility?.ability">Next</button>
+                                    </div>
+                                </mat-step>
+
+                                <!-- Step 2: Select Icon -->
+                                <mat-step label="Select Icon">
+                                    <div class="space-y-6 py-4">
+                                        <h4 class="text-md font-medium text-gray-900">Choose an Icon</h4>
+                                        <p class="text-sm text-gray-600">Select an icon for your macro</p>
+
+                                        <app-icon-picker [selectedIcon]="createSelectedIcon"
+                                    (iconSelected)="onCreateIconSelected($event)" (iconCleared)="onCreateIconCleared()"
+                                            placeholder="Select an icon for your macro">
+                                        </app-icon-picker>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <button type="button" mat-button matStepperPrevious>Back</button>
+                                        <button type="button" mat-button matStepperNext
+                                            [disabled]="!createSelectedIcon">Next</button>
+                                    </div>
+                                </mat-step>
+
+                                <!-- Step 3: Target Modifier -->
+                                <mat-step label="Target Modifier">
+                                    <div class="space-y-6 py-4">
+                                        <h4 class="text-md font-medium text-gray-900">Select Target Modifier</h4>
+                                <p class="text-sm text-gray-600">Choose how the macro should target (Optional)</p>
+
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Target Modifier</mat-label>
+                                            <mat-select [(ngModel)]="macroBuilderTargetModifier"
+                                                [ngModelOptions]="{standalone: true}">
+                                                <mat-option value="">None (Default Target)</mat-option>
+                                        @for (target of availableTargetModifiers; track target.value) {
+                                        <mat-option [value]="target.value" [matTooltip]="target.description">
+                                                    {{ target.label }}
+                                                </mat-option>
+                                        }
+                                            </mat-select>
+                                            <mat-hint>Specifies which target the spell should cast on</mat-hint>
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <button type="button" mat-button matStepperPrevious>Back</button>
+                                        <button type="button" mat-button matStepperNext>Next</button>
+                                    </div>
+                                </mat-step>
+
+                                <!-- Step 4: Conditionals -->
+                                <mat-step label="Conditionals">
+                                    <div class="space-y-6 py-4">
+                                        <h4 class="text-md font-medium text-gray-900">Add Conditionals</h4>
+                                <p class="text-sm text-gray-600">Select conditions for when the macro should execute
+                                    (Optional)</p>
+
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Conditionals</mat-label>
+                                            <mat-select [(ngModel)]="macroBuilderConditionals"
+                                                [ngModelOptions]="{standalone: true}" multiple>
+                                        @for (conditional of availableConditionals; track conditional.value) {
+                                        <mat-option [value]="conditional.value" [matTooltip]="conditional.description">
+                                                    {{ conditional.label }}
+                                                </mat-option>
+                                        }
+                                            </mat-select>
+                                            <mat-hint>These conditions must be true for the macro to execute</mat-hint>
+                                        </mat-form-field>
+
+                                @if (macroBuilderConditionals.length > 0) {
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    @for (conditional of macroBuilderConditionals; track conditional) {
+                                    <mat-chip>{{ getConditionalLabel(conditional) }}</mat-chip>
+                                    }
+                                        </div>
+                                }
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <button type="button" mat-button matStepperPrevious>Back</button>
+                                        <button type="button" mat-button matStepperNext>Next</button>
+                                    </div>
+                                </mat-step>
+
+                                <!-- Step 5: Key Modifiers -->
+                                <mat-step label="Key Modifiers">
+                                    <div class="space-y-6 py-4">
+                                        <h4 class="text-md font-medium text-gray-900">Add Key Modifiers</h4>
+                                <p class="text-sm text-gray-600">Select modifier keys to use with the macro (Optional)
+                                </p>
+
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Key Modifiers</mat-label>
+                                            <mat-select [(ngModel)]="macroBuilderKeyModifiers"
+                                                [ngModelOptions]="{standalone: true}" multiple>
+                                        @for (modifier of availableKeyModifiers; track modifier.value) {
+                                        <mat-option [value]="modifier.value" [matTooltip]="modifier.description">
+                                                    {{ modifier.label }}
+                                                </mat-option>
+                                        }
+                                            </mat-select>
+                                            <mat-hint>Hold these keys when pressing the macro button</mat-hint>
+                                        </mat-form-field>
+
+                                @if (macroBuilderKeyModifiers.length > 0) {
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    @for (modifier of macroBuilderKeyModifiers; track modifier) {
+                                    <mat-chip>{{ getKeyModifierLabel(modifier) }}</mat-chip>
+                                    }
+                                        </div>
+                                }
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <button type="button" mat-button matStepperPrevious>Back</button>
+                                        <button type="button" mat-button matStepperNext>Next</button>
+                                    </div>
+                                </mat-step>
+
+                                <!-- Step 6: Tooltip Options -->
+                                <mat-step label="Tooltip Options">
+                                    <div class="space-y-6 py-4">
+                                        <h4 class="text-md font-medium text-gray-900">Tooltip Options</h4>
+                                        <p class="text-sm text-gray-600">Configure tooltip display</p>
+
+                                        <div class="mt-3">
+                                            <mat-checkbox [(ngModel)]="macroBuilderIncludeTooltip"
+                                                [ngModelOptions]="{standalone: true}" color="primary">
+                                                Add #showtooltip command
+                                            </mat-checkbox>
+                                            <p class="text-xs text-gray-500 mt-1 ml-7">
+                                                Shows the ability tooltip when mousing over the macro button
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <button type="button" mat-button matStepperPrevious>Back</button>
+                                        <button type="button" mat-button matStepperNext>Next</button>
+                                    </div>
+                                </mat-step>
+
+                                <!-- Step 7: Generate Macro -->
+                                <mat-step label="Generate Macro">
+                                    <div class="space-y-6 py-4">
+                                        <h4 class="text-md font-medium text-gray-900">Generate Your Macro</h4>
+                                <p class="text-sm text-gray-600">Review your selections and generate the macro</p>
+
+                                        <!-- Configuration Summary -->
+                                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <h5 class="text-sm font-semibold text-gray-900 mb-3">Configuration Summary</h5>
+                                            <div class="space-y-2 text-sm">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Ability:</span>
+                                                    <span class="font-medium text-gray-900">{{
+                                                        createSelectedAbility?.ability?.name }}</span>
+                                                </div>
+                                        @if (createSelectedIcon) {
+                                        <div class="flex justify-between">
+                                                    <span class="text-gray-600">Icon:</span>
+                                                    <span class="font-medium text-gray-900">✓ Selected</span>
+                                                </div>
+                                        }
+                                        @if (macroBuilderTargetModifier) {
+                                        <div class="flex justify-between">
+                                                    <span class="text-gray-600">Target:</span>
+                                                    <span class="font-medium text-gray-900">{{
+                                                        getTargetModifierLabel(macroBuilderTargetModifier) }}</span>
+                                                </div>
+                                        }
+                                        @if (macroBuilderConditionals.length > 0) {
+                                        <div>
+                                                    <span class="text-gray-600 block mb-1">Conditionals:</span>
+                                                    <div class="flex flex-wrap gap-1">
+                                                @for (conditional of macroBuilderConditionals; track conditional) {
+                                                <mat-chip class="text-xs">{{ getConditionalLabel(conditional)
+                                                    }}</mat-chip>
+                                                }
+                                                    </div>
+                                                </div>
+                                        }
+                                        @if (macroBuilderKeyModifiers.length > 0) {
+                                        <div>
+                                                    <span class="text-gray-600 block mb-1">Key Modifiers:</span>
+                                                    <div class="flex flex-wrap gap-1">
+                                                @for (modifier of macroBuilderKeyModifiers; track modifier) {
+                                                <mat-chip class="text-xs">{{ getKeyModifierLabel(modifier) }}</mat-chip>
+                                                }
+                                                    </div>
+                                                </div>
+                                        }
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Tooltip:</span>
+                                                    <span class="font-medium text-gray-900">{{
+                                                        macroBuilderIncludeTooltip ? '✓ Enabled' : 'Disabled' }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Generate Macro Button -->
+                                        <div class="flex justify-center py-4">
+                                            <button type="button" mat-raised-button color="primary"
+                                                (click)="generateMacroFromBuilder()"
+                                                [disabled]="!createSelectedAbility?.ability || isGeneratingMacro"
+                                                class="flex items-center gap-2 px-8 py-3">
+                                        @if (isGeneratingMacro) {
+                                        <mat-spinner diameter="20"></mat-spinner>
+                                        }
+                                        @if (!isGeneratingMacro) {
+                                        <mat-icon>auto_fix_high</mat-icon>
+                                        }
+                                                {{ isGeneratingMacro ? 'Generating...' : 'Generate Macro' }}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <button type="button" mat-button matStepperPrevious>Back</button>
+                                        <button type="button" mat-button matStepperNext
+                                            [disabled]="!createForm.get('macro_text')?.value">Next</button>
+                                    </div>
+                                </mat-step>
+
+                                <!-- Step 8: Validate -->
+                                <mat-step label="Validate">
+                                    <div class="space-y-6 py-4">
+                                        <h4 class="text-md font-medium text-gray-900">Validate Your Macro</h4>
+                                        <p class="text-sm text-gray-600">Review the generated macro for any issues</p>
+
+                                        <!-- Generated Macro Display -->
+                                        <div class="space-y-2">
+                                            <label class="text-sm font-medium text-gray-700">Generated Macro</label>
+                                            <div
+                                                class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm whitespace-pre-wrap">
+                                                {{ createForm.get('macro_text')?.value }}</div>
+                                        </div>
+
+                                        <!-- Validation -->
+                                        <app-macro-validator [macroText]="createForm.get('macro_text')?.value || ''"
+                                            [wowClass]="createSelectedAbility?.class || undefined" [autoValidate]="true"
+                                            (validationChange)="onCreateValidationChange($event)">
+                                        </app-macro-validator>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <button type="button" mat-button matStepperPrevious>Back</button>
+                                        <button type="button" mat-button matStepperNext>Next</button>
+                                    </div>
+                                </mat-step>
+
+                                <!-- Step 9: Name & Description -->
+                                <mat-step label="Name & Description">
+                                    <div class="space-y-6 py-4">
+                                        <h4 class="text-md font-medium text-gray-900">Macro Details</h4>
+                                        <p class="text-sm text-gray-600">Add a name and description for your macro</p>
+
+                                        <!-- Macro Name -->
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Macro Name</mat-label>
+                                            <input matInput formControlName="name" placeholder="Enter macro name"
+                                                maxlength="100">
+                                    @if (createForm.get('name')?.hasError('required')) {
+                                    <mat-error>Name is required</mat-error>
+                                    }
+                                    @if (createForm.get('name')?.hasError('maxlength')) {
+                                    <mat-error>Name is too long</mat-error>
+                                    }
+                                        </mat-form-field>
+
+                                        <!-- Description -->
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Description (Optional)</mat-label>
+                                            <textarea matInput formControlName="description"
+                                        placeholder="Enter macro description" rows="3" maxlength="500"></textarea>
+                                    @if (createForm.get('description')?.hasError('maxlength')) {
+                                    <mat-error>Description is too long</mat-error>
+                                    }
+                                        </mat-form-field>
+
+                                        <!-- Tags -->
+                                        <div class="space-y-3">
+                                            <label class="text-sm font-medium text-gray-700">Tags (Optional)</label>
+                                            <div class="flex flex-wrap gap-2">
+                                        @for (tag of createForm.get('tags')?.value; track tag) {
+                                        <mat-chip [removable]="true" (removed)="removeCreateTag(tag)">
+                                                    {{ tag }}
+                                                    <mat-icon matChipRemove>cancel</mat-icon>
+                                                </mat-chip>
+                                        }
+                                            </div>
+                                            <mat-form-field appearance="outline" class="w-full">
+                                                <mat-label>Add Tag</mat-label>
+                                        <input matInput #stepperCreateTagInput placeholder="Type a tag and press Enter"
+                                                    (keyup.enter)="addCreateTag(stepperCreateTagInput.value); stepperCreateTagInput.value=''">
+                                                <mat-hint>Press Enter to add a tag</mat-hint>
+                                            </mat-form-field>
+                                        </div>
+
+                                        <!-- Summary Note -->
+                                        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                                            <p class="text-sm text-blue-900">
                                         <mat-icon class="text-blue-600 mr-2 align-middle text-sm">info</mat-icon>
                                         Note: Macro text, ability, and icon cannot be edited after creation. Use the
                                         back
                                         button if you need to make changes.
-                                    </p>
-                                </div>
-                            </div>
+                                            </p>
+                                        </div>
+                                    </div>
 
-                            <div class="mt-4">
-                                <button type="button" mat-button matStepperPrevious>Back</button>
-                                <button type="button" mat-flat-button color="primary" (click)="onSaveCreate()"
-                                    [disabled]="createForm.invalid || isLoading || !createMacroValidationPassed">
+                                    <div class="mt-4">
+                                        <button type="button" mat-button matStepperPrevious>Back</button>
+                                        <button type="button" mat-flat-button color="primary" (click)="onSaveCreate()"
+                                            [disabled]="createForm.invalid || isLoading || !createMacroValidationPassed">
                                     @if (isLoading) {
                                     <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
                                     }
                                     @if (!isLoading) {
                                     <mat-icon class="mr-1">save</mat-icon>
                                     }
-                                    {{ isLoading ? 'Creating...' : 'Create Macro' }}
-                                </button>
-                            </div>
-                        </mat-step>
+                                            {{ isLoading ? 'Creating...' : 'Create Macro' }}
+                                        </button>
+                                    </div>
+                                </mat-step>
 
-                    </mat-stepper>
-                </form>
+                            </mat-stepper>
+                        </form>
                 }
             </div>
             } @else if (currentSelectedMacro) {
-            @if (!isEditing) {
-            <!-- View Mode -->
+                @if (!isEditing) {
+                <!-- View Mode -->
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-xl font-bold">{{ currentSelectedMacro.name }}</h3>
@@ -763,8 +769,8 @@
                         <button mat-flat-button color="warn" (click)="onDeleteMacro()">
                             <mat-icon>delete</mat-icon>
                         </button>
-                    </div>
-                </div>
+                        </div>
+                            </div>
                 <div class="space-y-2">
                     <div><strong>Class:</strong> {{ getClassDisplayName(currentSelectedMacro.class) }}</div>
                     @if (currentSelectedMacro.spec) {
@@ -790,16 +796,16 @@
                         <div class="flex items-center gap-1">
                             <mat-icon class="text-green-600 text-sm">create</mat-icon>
                             <span>App-created</span>
-                        </div>
-                        }
                     </div>
+                        }
+                        </div>
                     <div class="flex items-center gap-2">
                         <strong>Visibility:</strong>
                         @if (currentSelectedMacro.is_public || currentSelectedMacro.isPublic) {
                         <div class="flex items-center gap-1">
                             <mat-icon class="text-green-600 text-sm">public</mat-icon>
                             <span>Public</span>
-                        </div>
+                    </div>
                         } @else {
                         <div class="flex items-center gap-1">
                             <mat-icon class="text-gray-500 text-sm">lock</mat-icon>
@@ -817,24 +823,24 @@
                                 } @else {
                                 Imported from file
                                 }
-                            </span>
-                        </div>
+                                    </span>
+                            </div>
                         <div class="text-sm text-blue-700 ml-7">
                             <div><strong>File:</strong> {{ currentSelectedMacro.file.file_name }}</div>
                             @if (currentSelectedMacro.file.uploaded_at) {
                             <div><strong>Uploaded:</strong> {{ currentSelectedMacro.file.uploaded_at | date:'medium' }}
-                            </div>
-                            }
                         </div>
+                            }
                     </div>
+                                </div>
                     }
                     @if (currentSelectedMacro.description) {
                     <div><strong>Description:</strong> {{ currentSelectedMacro.description }}</div>
                     }
                     <div><strong>Macro Text:</strong></div>
                     <pre class="bg-gray-100 p-3 rounded">{{ currentSelectedMacro.macro_text }}</pre>
-                </div>
-            </div>
+                            </div>
+                                </div>
             } @else {
             <!-- Edit Mode -->
             <div class="bg-white rounded-lg shadow p-6">
@@ -855,8 +861,8 @@
                             }
                             Save Changes
                         </button>
-                    </div>
-                </div>
+                            </div>
+                                </div>
 
                 <form [formGroup]="editForm" class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -881,23 +887,23 @@
                             <div class="flex items-center gap-1">
                                 <mat-icon class="text-green-600 text-sm">create</mat-icon>
                                 <span>App-created</span>
-                            </div>
+                                </div>
                             }
-                        </div>
+                            </div>
                         <div class="flex items-center gap-2">
                             <strong>Visibility:</strong>
                             @if (currentSelectedMacro?.is_public || currentSelectedMacro?.isPublic) {
                             <div class="flex items-center gap-1">
                                 <mat-icon class="text-green-600 text-sm">public</mat-icon>
                                 <span>Public</span>
-                            </div>
+                        </div>
                             } @else {
                             <div class="flex items-center gap-1">
                                 <mat-icon class="text-gray-500 text-sm">lock</mat-icon>
                                 <span>Private</span>
-                            </div>
+                    </div>
                             }
-                        </div>
+                </div>
                     </div>
                     @if (currentSelectedMacro?.file) {
                     <div class="bg-blue-50 border border-blue-200 rounded p-3">
@@ -906,7 +912,7 @@
                             <span class="text-sm font-medium text-blue-900">
                                 @if (isImportedAndModified(currentSelectedMacro)) {
                                 Originally imported but modified
-                                } @else {
+                } @else {
                                 Imported from file
                                 }
                             </span>
@@ -921,66 +927,66 @@
                     </div>
                     }
 
-                    <!-- Macro Name -->
-                    <mat-form-field appearance="outline" class="w-full">
-                        <mat-label>Macro Name</mat-label>
-                        <input matInput formControlName="name" placeholder="Enter macro name" maxlength="100">
+                            <!-- Macro Name -->
+                            <mat-form-field appearance="outline" class="w-full">
+                                <mat-label>Macro Name</mat-label>
+                                <input matInput formControlName="name" placeholder="Enter macro name" maxlength="100">
                         @if (editForm.get('name')?.hasError('required')) {
                         <mat-error>Name is required</mat-error>
                         }
                         @if (editForm.get('name')?.hasError('maxlength')) {
                         <mat-error>Name is too long</mat-error>
                         }
-                    </mat-form-field>
+                            </mat-form-field>
 
-                    <!-- Description -->
-                    <mat-form-field appearance="outline" class="w-full">
-                        <mat-label>Description (Optional)</mat-label>
+                            <!-- Description -->
+                            <mat-form-field appearance="outline" class="w-full">
+                                <mat-label>Description (Optional)</mat-label>
                         <textarea matInput formControlName="description" placeholder="Enter macro description" rows="3"
                             maxlength="500"></textarea>
                         @if (editForm.get('description')?.hasError('maxlength')) {
                         <mat-error>Description is too long</mat-error>
                         }
-                    </mat-form-field>
+                            </mat-form-field>
 
-                    <!-- Icon Picker and Ability Picker Side by Side -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Icon Picker -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">Macro Icon</label>
-                            <app-icon-picker [selectedIcon]="getSelectedIconForMacro(currentSelectedMacro)"
-                                (iconSelected)="onIconSelected($event, currentSelectedMacro)"
-                                (iconCleared)="onIconCleared(currentSelectedMacro)"
-                                placeholder="Select an icon for your macro">
-                            </app-icon-picker>
-                        </div>
+                            <!-- Icon Picker and Ability Picker Side by Side -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Icon Picker -->
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-gray-700">Macro Icon</label>
+                                    <app-icon-picker [selectedIcon]="getSelectedIconForMacro(currentSelectedMacro)"
+                                        (iconSelected)="onIconSelected($event, currentSelectedMacro)"
+                                        (iconCleared)="onIconCleared(currentSelectedMacro)"
+                                        placeholder="Select an icon for your macro">
+                                    </app-icon-picker>
+                                </div>
 
-                        <!-- Ability Picker -->
-                        <div class="space-y-2">
+                                <!-- Ability Picker -->
+                                <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-700">Ability Selection (Optional)</label>
-                            <app-ability-picker [selectedAbility]="editSelectedAbility"
-                                (abilitySelected)="onEditAbilitySelected($event)"
-                                (abilityCleared)="onEditAbilityCleared()"
-                                placeholder="Configure ability selection for your macro">
-                            </app-ability-picker>
+                                    <app-ability-picker [selectedAbility]="editSelectedAbility"
+                                        (abilitySelected)="onEditAbilitySelected($event)"
+                                        (abilityCleared)="onEditAbilityCleared()"
+                                        placeholder="Configure ability selection for your macro">
+                                    </app-ability-picker>
 
-                            <!-- Add Tooltip Checkbox -->
-                            @if (editSelectedAbility?.ability) {
-                            <div class="mt-3">
-                                <mat-checkbox [(ngModel)]="editAddTooltip" [ngModelOptions]="{standalone: true}"
-                                    (ngModelChange)="onEditTooltipChanged($event)" color="primary">
-                                    Add #showtooltip command
-                                </mat-checkbox>
-                                <p class="text-xs text-gray-500 mt-1 ml-7">
-                                    Shows the ability tooltip when mousing over the macro button
-                                </p>
+                                    <!-- Add Tooltip Checkbox -->
+                                    @if (editSelectedAbility?.ability) {
+                                    <div class="mt-3">
+                                        <mat-checkbox [(ngModel)]="editAddTooltip" [ngModelOptions]="{standalone: true}"
+                                            (ngModelChange)="onEditTooltipChanged($event)" color="primary">
+                                            Add #showtooltip command
+                                        </mat-checkbox>
+                                        <p class="text-xs text-gray-500 mt-1 ml-7">
+                                            Shows the ability tooltip when mousing over the macro button
+                                        </p>
+                                    </div>
+                                    }
+                                </div>
                             </div>
-                            }
-                        </div>
-                    </div>
 
-                    <!-- Macro Text -->
-                    <mat-form-field appearance="outline" class="w-full">
+                            <!-- Macro Text -->
+                                <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Macro Text</mat-label>
                         <textarea matInput formControlName="macro_text" placeholder="Enter your macro commands" rows="6"
                             maxlength="255"></textarea>
@@ -991,29 +997,29 @@
                         @if (editForm.get('macro_text')?.hasError('maxlength')) {
                         <mat-error>Macro text is too long</mat-error>
                         }
-                    </mat-form-field>
+                                </mat-form-field>
 
-                    <!-- Tags -->
-                    <div class="space-y-3">
+                            <!-- Tags -->
+                            <div class="space-y-3">
                         <label class="text-sm font-medium text-gray-700">Tags (Optional)</label>
-                        <div class="flex flex-wrap gap-2">
+                                <div class="flex flex-wrap gap-2">
                             @for (tag of editForm.get('tags')?.value; track tag) {
                             <mat-chip [removable]="true" (removed)="removeTag(tag)">
-                                {{ tag }}
-                                <mat-icon matChipRemove>cancel</mat-icon>
-                            </mat-chip>
+                                        {{ tag }}
+                                        <mat-icon matChipRemove>cancel</mat-icon>
+                                    </mat-chip>
                             }
-                        </div>
-                        <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Add Tag</mat-label>
+                                </div>
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Add Tag</mat-label>
                             <input matInput #editTagInput placeholder="Type a tag and press Enter"
                                 (keyup.enter)="addTag(editTagInput.value); editTagInput.value=''">
                             <mat-hint>Press Enter to add a tag</mat-hint>
-                        </mat-form-field>
-                    </div>
-                </form>
-            </div>
-            }
+                                </mat-form-field>
+                            </div>
+                        </form>
+                </div>
+                }
             } @else {
             <div class="text-center text-gray-500 py-12">
                 Select a macro from the list to view its data
