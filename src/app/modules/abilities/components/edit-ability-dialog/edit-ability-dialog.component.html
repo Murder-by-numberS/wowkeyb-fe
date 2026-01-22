@@ -1,0 +1,150 @@
+<div class="min-w-[400px] max-w-[600px]">
+    <h2 mat-dialog-title class="flex items-center gap-3 text-lg font-semibold">
+        <mat-icon class="text-blue-500">edit</mat-icon>
+        Edit Ability
+    </h2>
+
+    <mat-dialog-content class="py-4">
+        <!-- Ability Preview -->
+        <div class="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            <img [src]="originalAbility.icon" [alt]="originalAbility.name" class="w-12 h-12 rounded" />
+            <div>
+                <h3 class="font-semibold text-lg">{{ originalAbility.name }}</h3>
+                <p class="text-sm text-gray-600">
+                    <span class="capitalize">{{ originalAbility.class }}</span>
+                    @if (originalAbility.spec) {
+                    <span> • {{ originalAbility.spec }}</span>
+                    }
+                    @if (originalAbility.heroTalent) {
+                    <span> • {{ originalAbility.heroTalent }}</span>
+                    }
+                </p>
+            </div>
+        </div>
+
+        <form [formGroup]="abilityForm" class="flex flex-col gap-4">
+            <!-- Name -->
+            <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Name</mat-label>
+                <input matInput formControlName="name" placeholder="Ability name">
+                @if (hasError('name', 'required')) {
+                <mat-error>Name is required</mat-error>
+                }
+                @if (hasError('name', 'maxlength')) {
+                <mat-error>Name must be less than 100 characters</mat-error>
+                }
+            </mat-form-field>
+
+            <!-- Spell ID -->
+            <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Spell ID</mat-label>
+                <input matInput formControlName="spellId" placeholder="Spell ID">
+            </mat-form-field>
+
+            <!-- Description -->
+            <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="description" rows="3"
+                    placeholder="Ability description"></textarea>
+                @if (hasError('description', 'required')) {
+                <mat-error>Description is required</mat-error>
+                }
+                @if (hasError('description', 'maxlength')) {
+                <mat-error>Description must be less than 1000 characters</mat-error>
+                }
+            </mat-form-field>
+
+            <!-- Icon URL -->
+            <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Icon URL</mat-label>
+                <input matInput formControlName="icon" placeholder="https://...">
+                @if (hasError('icon', 'required')) {
+                <mat-error>Icon URL is required</mat-error>
+                }
+            </mat-form-field>
+
+            <!-- Ability Type -->
+            <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Ability Type</mat-label>
+                <mat-select formControlName="abilityType">
+                    @for (type of abilityTypes; track type.value) {
+                    <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <!-- Two columns for numeric fields -->
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Level Required -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Level Required</mat-label>
+                    <input matInput type="number" formControlName="levelRequired" min="1" max="80">
+                    @if (hasError('levelRequired', 'min')) {
+                    <mat-error>Level must be at least 1</mat-error>
+                    }
+                    @if (hasError('levelRequired', 'max')) {
+                    <mat-error>Level must be at most 80</mat-error>
+                    }
+                </mat-form-field>
+
+                <!-- Cooldown -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Cooldown (seconds)</mat-label>
+                    <input matInput type="number" formControlName="cooldown" min="0">
+                    @if (hasError('cooldown', 'min')) {
+                    <mat-error>Cooldown cannot be negative</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Range -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Range (yards)</mat-label>
+                    <input matInput type="number" formControlName="range" min="0">
+                    @if (hasError('range', 'min')) {
+                    <mat-error>Range cannot be negative</mat-error>
+                    }
+                </mat-form-field>
+
+                <!-- Cost Amount -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Cost Amount</mat-label>
+                    <input matInput type="number" formControlName="costAmount" min="0">
+                    @if (hasError('costAmount', 'min')) {
+                    <mat-error>Cost cannot be negative</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+
+            <!-- Cost Type -->
+            <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Resource Type</mat-label>
+                <mat-select formControlName="cost">
+                    @for (resource of resourceTypes; track resource) {
+                    <mat-option [value]="resource">{{ resource }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </form>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="pt-4 border-t">
+        <button mat-button (click)="onCancel()" [disabled]="isLoading">
+            Cancel
+        </button>
+        <button mat-flat-button color="primary" (click)="onSave()" [disabled]="isLoading || abilityForm.invalid">
+            @if (isLoading) {
+            <ng-container>
+                <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+                Saving...
+            </ng-container>
+            } @else {
+            <ng-container>
+                <mat-icon class="mr-1">save</mat-icon>
+                Save Changes
+            </ng-container>
+            }
+        </button>
+    </mat-dialog-actions>
+</div>

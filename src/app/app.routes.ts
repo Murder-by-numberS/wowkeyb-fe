@@ -155,6 +155,20 @@ export const appRoutes: Route[] = [
         ]
     },
 
+    // Admin Dashboard (for admin users)
+    {
+        path: '',
+        canActivate: [AuthGuard],
+        canActivateChild: [AuthGuard],
+        component: LayoutComponent,
+        data: {
+            layout: 'modern'
+        },
+        children: [
+            { path: 'admin-dashboard', loadChildren: () => import('app/modules/admin-dashboard/admin-dashboard.routes') },
+        ]
+    },
+
     // Admin routes
     {
         path: '',

@@ -4,6 +4,8 @@ import { Navigation } from './navigation.types';
 import { AuthService } from '../auth/auth.service';
 import { getNavigationForAuthState } from './navigation.config';
 
+const ADMIN_ACCESS_LEVEL = 9;
+
 @Injectable({ providedIn: 'root' })
 export class NavigationService {
     private _authService = inject(AuthService);
@@ -16,16 +18,28 @@ export class NavigationService {
 
     constructor() {
         // Initialize navigation on service creation
-        this.updateNavigation(false);
+        this.updateNavigation(false, false);
     }
 
     get navigation$(): Observable<Navigation> {
         return this._navigation.asObservable();
     }
 
-    private updateNavigation(isAuthenticated: boolean): void {
-        const verticalNavigationItems = getNavigationForAuthState(isAuthenticated, false);
-        const horizontalNavigationItems = getNavigationForAuthState(isAuthenticated, true);
+    private isUserAdmin(): boolean {
+        try {
+            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            return user.access_level >= ADMIN_ACCESS_LEVEL;
+        } catch {
+            return false;
+        }
+    }
+
+    private updateNavigation(isAuthenticated: boolean, isAdmin?: boolean): void {
+        // If isAdmin is not provided, check from localStorage
+        const adminStatus = isAdmin !== undefined ? isAdmin : (isAuthenticated && this.isUserAdmin());
+
+        const verticalNavigationItems = getNavigationForAuthState(isAuthenticated, false, adminStatus);
+        const horizontalNavigationItems = getNavigationForAuthState(isAuthenticated, true, adminStatus);
 
         const navigation: Navigation = {
             compact: verticalNavigationItems,

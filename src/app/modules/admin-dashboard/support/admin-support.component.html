@@ -1,0 +1,167 @@
+<div class="flex flex-col min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-red-600 to-red-800 text-white px-6 py-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center gap-2 mb-2">
+                <a routerLink="/admin-dashboard" class="hover:opacity-80">
+                    <mat-icon>arrow_back</mat-icon>
+                </a>
+                <mat-icon class="text-2xl">support_agent</mat-icon>
+                <h1 class="text-2xl font-bold">Support Tickets</h1>
+            </div>
+            <p class="text-red-100">View and manage support tickets from Jira</p>
+        </div>
+    </div>
+
+    <div class="flex-1 px-6 py-6">
+        <div class="max-w-7xl mx-auto">
+            <!-- Jira Disabled Warning -->
+            @if (jiraDisabled) {
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+                <div class="flex items-center gap-3">
+                    <mat-icon class="text-yellow-600">warning</mat-icon>
+                    <div>
+                        <h3 class="font-semibold text-yellow-800">Jira Integration Not Configured</h3>
+                        <p class="text-yellow-700 text-sm">
+                            Support tickets are stored in Jira. Please configure the Jira integration
+                            in the backend environment variables to view tickets here.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            }
+
+            <!-- Filters -->
+            @if (!jiraDisabled) {
+            <mat-card class="mb-6">
+                <mat-card-content class="p-4">
+                    <div class="flex flex-col sm:flex-row gap-4 items-center">
+                        <mat-form-field appearance="outline" class="w-48">
+                            <mat-label>Status</mat-label>
+                            <mat-select [(value)]="statusFilter" (selectionChange)="onStatusChange($event.value)">
+                                @for (status of statusOptions; track status.value) {
+                                <mat-option [value]="status.value">{{ status.label }}</mat-option>
+                                }
+                            </mat-select>
+                        </mat-form-field>
+
+                        <div class="flex-1"></div>
+
+                        <div class="text-sm text-gray-500">
+                            {{ totalCount }} tickets
+                        </div>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+            }
+
+            <!-- Loading -->
+            @if (isLoading) {
+            <div class="flex items-center justify-center py-12">
+                <mat-spinner diameter="48"></mat-spinner>
+            </div>
+            }
+
+            <!-- Error -->
+            @if (error) {
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center gap-2 text-red-600">
+                    <mat-icon>error</mat-icon>
+                    <span>{{ error }}</span>
+                </div>
+                <button mat-button color="primary" (click)="loadTickets()" class="mt-2">
+                    <mat-icon>refresh</mat-icon>
+                    Retry
+                </button>
+            </div>
+            }
+
+            <!-- Tickets List -->
+            @if (!isLoading && !error && !jiraDisabled && tickets.length > 0) {
+            <div class="space-y-4">
+                @for (ticket of tickets; track ticket.id) {
+                <mat-card class="hover:shadow-lg transition-shadow">
+                    <mat-card-content class="p-6">
+                        <div class="flex flex-col lg:flex-row gap-4">
+                            <!-- Main Info -->
+                            <div class="flex-1">
+                                <div class="flex items-start gap-3 mb-2">
+                                    <span
+                                        class="px-2 py-1 text-xs font-mono bg-gray-100 rounded">{{ ticket.key }}</span>
+                                    <span class="px-2 py-1 text-xs rounded-full {{ getStatusColor(ticket.status) }}">
+                                        {{ ticket.status }}
+                                    </span>
+                                    <span class="flex items-center gap-1 text-sm {{ getPriorityColor(ticket.priority) }}">
+                                        <mat-icon class="text-sm">flag</mat-icon>
+                                        {{ ticket.priority }}
+                                    </span>
+                                </div>
+
+                                <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ ticket.summary }}</h3>
+
+                                <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+                                    <div class="flex items-center gap-1">
+                                        <mat-icon class="text-sm">person</mat-icon>
+                                        {{ ticket.reporter }}
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <mat-icon class="text-sm">assignment_ind</mat-icon>
+                                        {{ ticket.assignee }}
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <mat-icon class="text-sm">schedule</mat-icon>
+                                        {{ formatDate(ticket.created) }}
+                                    </div>
+                                </div>
+
+                                <!-- Labels -->
+                                @if (ticket.labels.length > 0) {
+                                <div class="flex flex-wrap gap-2 mt-3">
+                                    @for (label of ticket.labels; track label) {
+                                    <span class="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded">{{ label }}</span>
+                                    }
+                                </div>
+                                }
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex items-center gap-2">
+                                <button mat-stroked-button color="primary" (click)="openInJira(ticket)"
+                                    matTooltip="Open in Jira">
+                                    <mat-icon>open_in_new</mat-icon>
+                                    View in Jira
+                                </button>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+                }
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages > 1) {
+            <div class="flex items-center justify-center gap-4 mt-6">
+                <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+                    <mat-icon>chevron_left</mat-icon>
+                </button>
+                <span class="text-sm text-gray-600">Page {{ currentPage }} of {{ totalPages }}</span>
+                <button mat-icon-button [disabled]="currentPage >= totalPages" (click)="goToPage(currentPage + 1)">
+                    <mat-icon>chevron_right</mat-icon>
+                </button>
+            </div>
+            }
+            }
+
+            <!-- Empty State -->
+            @if (!isLoading && !error && !jiraDisabled && tickets.length === 0) {
+            <mat-card>
+                <mat-card-content class="text-center py-12">
+                    <mat-icon class="text-6xl text-gray-300 mb-4">inbox</mat-icon>
+                    <h3 class="text-xl font-medium text-gray-600 mb-2">No tickets found</h3>
+                    <p class="text-gray-500">No support tickets match the current filter</p>
+                </mat-card-content>
+            </mat-card>
+            }
+        </div>
+    </div>
+</div>
