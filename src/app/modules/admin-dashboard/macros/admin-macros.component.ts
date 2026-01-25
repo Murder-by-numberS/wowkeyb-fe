@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,6 +14,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 import { AdminService, AdminMacro } from 'app/core/services/admin.service';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -37,7 +39,9 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
         MatSnackBarModule,
         MatTabsModule,
         MatTooltipModule,
-        MatChipsModule
+        MatChipsModule,
+        MatDatepickerModule,
+        MatNativeDateModule
     ]
 })
 export class AdminMacrosComponent implements OnInit {
@@ -54,13 +58,27 @@ export class AdminMacrosComponent implements OnInit {
     // Filters
     searchQuery = '';
     showDeleted = false;
+    selectedDateRange = '';
+    customStartDate: Date | null = null;
+    customEndDate: Date | null = null;
     private searchSubject = new Subject<string>();
+
+    dateRangeOptions = [
+        { value: '', label: 'All time' },
+        { value: '7', label: 'Last 7 days' },
+        { value: '30', label: 'Last 30 days' },
+        { value: '90', label: 'Last 90 days' },
+        { value: '180', label: 'Last 6 months' },
+        { value: '365', label: 'Last year' },
+        { value: 'custom', label: 'Custom range' }
+    ];
 
     displayedColumns = ['name', 'class', 'user', 'usage', 'status', 'created_at', 'actions'];
 
     constructor(
         private adminService: AdminService,
-        private snackBar: MatSnackBar
+        private snackBar: MatSnackBar,
+        private router: Router
     ) {}
 
     ngOnInit(): void {
@@ -80,12 +98,16 @@ export class AdminMacrosComponent implements OnInit {
         this.isLoading = true;
         this.error = null;
 
+        const dateRange = this.getDateRange();
+        
         this.adminService.getMacros({
             page: this.currentPage,
             limit: this.perPage,
             search: this.searchQuery,
             includeDeleted: true,
-            onlyDeleted: this.showDeleted
+            onlyDeleted: this.showDeleted,
+            startDate: dateRange.startDate,
+            endDate: dateRange.endDate
         }).subscribe({
             next: (response) => {
                 this.macros = response.macros;
@@ -163,5 +185,57 @@ export class AdminMacrosComponent implements OnInit {
             this.currentPage = page;
             this.loadMacros();
         }
+    }
+
+    viewMacro(macro: AdminMacro): void {
+        this.router.navigate(['/macros', macro.id]);
+    }
+
+    onDateRangeChange(): void {
+        this.currentPage = 1;
+        // Only reload if not custom (custom waits for date selection)
+        if (this.selectedDateRange !== 'custom') {
+            this.customStartDate = null;
+            this.customEndDate = null;
+            this.loadMacros();
+        }
+    }
+
+    onCustomDateChange(): void {
+        // Only reload if both dates are selected
+        if (this.customStartDate && this.customEndDate) {
+            this.currentPage = 1;
+            this.loadMacros();
+        }
+    }
+
+    private getDateRange(): { startDate?: string; endDate?: string } {
+        if (!this.selectedDateRange) {
+            return {};
+        }
+
+        if (this.selectedDateRange === 'custom') {
+            if (this.customStartDate && this.customEndDate) {
+                return {
+                    startDate: this.customStartDate.toISOString().split('T')[0],
+                    endDate: this.customEndDate.toISOString().split('T')[0]
+                };
+            }
+            return {};
+        }
+
+        const days = parseInt(this.selectedDateRange);
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+
+        return {
+            startDate: startDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0]
+        };
+    }
+
+    isCustomRange(): boolean {
+        return this.selectedDateRange === 'custom';
     }
 }

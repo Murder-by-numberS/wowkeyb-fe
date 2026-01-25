@@ -339,6 +339,8 @@ export class AdminService {
         search?: string;
         includeDeleted?: boolean;
         onlyDeleted?: boolean;
+        startDate?: string;
+        endDate?: string;
     } = {}): Observable<{ macros: AdminMacro[] } & PaginatedResponse<AdminMacro>> {
         let httpParams = new HttpParams();
         if (params.page) httpParams = httpParams.set('page', params.page.toString());
@@ -350,6 +352,8 @@ export class AdminService {
         if (params.onlyDeleted !== undefined) {
             httpParams = httpParams.set('onlyDeleted', params.onlyDeleted.toString());
         }
+        if (params.startDate) httpParams = httpParams.set('startDate', params.startDate);
+        if (params.endDate) httpParams = httpParams.set('endDate', params.endDate);
 
         return this.http.get<{ macros: AdminMacro[] } & PaginatedResponse<AdminMacro>>(
             `${this.apiUrl}/admin/macros`,

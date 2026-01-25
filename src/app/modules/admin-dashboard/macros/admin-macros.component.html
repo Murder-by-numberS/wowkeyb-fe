@@ -19,19 +19,50 @@
                 <mat-tab label="Deleted Only"></mat-tab>
             </mat-tab-group>
 
-            <!-- Search -->
+            <!-- Search & Filters -->
             <mat-card class="mb-6">
                 <mat-card-content class="p-4">
-                    <div class="flex flex-col sm:flex-row gap-4 items-center">
+                    <div class="flex flex-col gap-4">
+                        <div class="flex flex-col sm:flex-row gap-4 items-center">
                         <mat-form-field appearance="outline" class="flex-1">
                             <mat-label>Search macros</mat-label>
-                            <input matInput placeholder="Search by name..." (input)="onSearchInput($event)">
+                            <input matInput placeholder="Search by name or username..." (input)="onSearchInput($event)">
                             <mat-icon matPrefix>search</mat-icon>
                         </mat-form-field>
 
-                        <div class="text-sm text-gray-500">
-                            {{ totalCount }} macros
+                            <mat-form-field appearance="outline" class="w-48">
+                                <mat-label>Created</mat-label>
+                                <mat-select [(value)]="selectedDateRange" (selectionChange)="onDateRangeChange()">
+                                    @for (option of dateRangeOptions; track option.value) {
+                                    <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                                    }
+                                </mat-select>
+                            </mat-form-field>
+
+                            <div class="text-sm text-gray-500">
+                                {{ totalCount }} macros
+                            </div>
                         </div>
+
+                        @if (isCustomRange()) {
+                        <div class="flex flex-col sm:flex-row gap-4 items-center">
+                            <mat-form-field appearance="outline" class="flex-1">
+                                <mat-label>Start Date</mat-label>
+                                <input matInput [matDatepicker]="startPicker" [(ngModel)]="customStartDate"
+                                    (dateChange)="onCustomDateChange()">
+                                <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+                                <mat-datepicker #startPicker></mat-datepicker>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" class="flex-1">
+                                <mat-label>End Date</mat-label>
+                                <input matInput [matDatepicker]="endPicker" [(ngModel)]="customEndDate"
+                                    (dateChange)="onCustomDateChange()">
+                                <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+                                <mat-datepicker #endPicker></mat-datepicker>
+                            </mat-form-field>
+                        </div>
+                        }
                     </div>
                 </mat-card-content>
             </mat-card>
@@ -150,7 +181,7 @@
                                         <mat-icon>delete_forever</mat-icon>
                                     </button>
                                     } @else {
-                                    <button mat-icon-button matTooltip="View">
+                                    <button mat-icon-button matTooltip="View" (click)="viewMacro(macro)">
                                         <mat-icon>visibility</mat-icon>
                                     </button>
                                     }

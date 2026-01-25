@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -61,7 +61,8 @@ export class AdminKeybindingsComponent implements OnInit {
     constructor(
         private adminService: AdminService,
         private snackBar: MatSnackBar,
-        private dialog: MatDialog
+        private dialog: MatDialog,
+        private router: Router
     ) {}
 
     ngOnInit(): void {
@@ -162,5 +163,9 @@ export class AdminKeybindingsComponent implements OnInit {
             this.currentPage = page;
             this.loadKeybindings();
         }
+    }
+
+    viewKeybinding(keybinding: AdminKeybinding): void {
+        this.router.navigate(['/keybinds', keybinding.id]);
     }
 }
