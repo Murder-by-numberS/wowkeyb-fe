@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -48,7 +48,8 @@ export class ViewProfileComponent implements OnInit, OnDestroy {
     constructor(
         private route: ActivatedRoute,
         private router: Router,
-        private profileService: ProfileService
+        private profileService: ProfileService,
+        private location: Location
     ) { }
 
     ngOnInit(): void {
@@ -130,7 +131,7 @@ export class ViewProfileComponent implements OnInit, OnDestroy {
     }
 
     goBack(): void {
-        this.router.navigate(['/keybinds']);
+        this.location.back();
     }
 }
 

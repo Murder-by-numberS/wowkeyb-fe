@@ -1,20 +1,15 @@
-<div class="flex flex-col min-h-screen bg-gray-50">
+<div class="flex flex-col min-h-screen bg-gray-50 w-full">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-red-600 to-red-800 text-white px-6 py-6">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex items-center gap-2 mb-2">
-                <a routerLink="/admin-dashboard" class="hover:opacity-80">
-                    <mat-icon>arrow_back</mat-icon>
-                </a>
-                <mat-icon class="text-2xl">support_agent</mat-icon>
-                <h1 class="text-2xl font-bold">Support Tickets</h1>
-            </div>
-            <p class="text-red-100">View and manage support tickets from Jira</p>
+    <div class="bg-gradient-to-r from-red-600 to-red-800 text-white px-6 py-6 w-full">
+        <div class="flex items-center justify-center gap-2 mb-2">
+            <mat-icon class="text-2xl">support_agent</mat-icon>
+            <h1 class="text-2xl font-bold">Support Tickets</h1>
         </div>
+        <p class="text-red-100 text-center">View and manage support tickets from Jira</p>
     </div>
 
-    <div class="flex-1 px-6 py-6">
-        <div class="max-w-7xl mx-auto">
+    <div class="flex-1 w-full flex justify-center px-6 py-6">
+        <div class="w-full max-w-5xl">
             <!-- Jira Disabled Warning -->
             @if (jiraDisabled) {
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">

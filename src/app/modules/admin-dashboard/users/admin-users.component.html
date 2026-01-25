@@ -1,20 +1,15 @@
-<div class="flex flex-col min-h-screen bg-gray-50">
+<div class="flex flex-col min-h-screen bg-gray-50 w-full">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-6">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex items-center gap-2 mb-2">
-                <a routerLink="/admin-dashboard" class="hover:opacity-80">
-                    <mat-icon>arrow_back</mat-icon>
-                </a>
-                <mat-icon class="text-2xl">people</mat-icon>
-                <h1 class="text-2xl font-bold">User Management</h1>
-            </div>
-            <p class="text-blue-100">View and manage user access levels</p>
+    <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-6 w-full">
+        <div class="flex items-center justify-center gap-2 mb-2">
+            <mat-icon class="text-2xl">people</mat-icon>
+            <h1 class="text-2xl font-bold">User Management</h1>
         </div>
+        <p class="text-blue-100 text-center">View and manage user access levels</p>
     </div>
 
-    <div class="flex-1 px-6 py-6">
-        <div class="max-w-7xl mx-auto">
+    <div class="flex-1 w-full flex justify-center px-6 py-6">
+        <div class="w-full max-w-5xl">
             <!-- Search & Filters -->
             <mat-card class="mb-6">
                 <mat-card-content class="p-4">
@@ -75,23 +70,25 @@
 
                             <!-- Access Level Column -->
                             <ng-container matColumnDef="access_level">
-                                <th mat-header-cell *matHeaderCellDef class="font-semibold">Access Level</th>
-                                <td mat-cell *matCellDef="let user">
-                                    <mat-form-field appearance="outline" class="w-32">
-                                        <mat-select [value]="user.access_level"
-                                            (selectionChange)="updateAccessLevel(user, $event.value)">
-                                            @for (level of accessLevels; track level.value) {
-                                            <mat-option [value]="level.value">{{ level.label }}</mat-option>
-                                            }
-                                        </mat-select>
-                                    </mat-form-field>
+                                <th mat-header-cell *matHeaderCellDef class="font-semibold text-center">Access Level</th>
+                                <td mat-cell *matCellDef="let user" class="!py-2">
+                                    <div class="flex justify-center items-center h-full">
+                                        <mat-form-field appearance="outline" class="w-28 !mt-0" subscriptSizing="dynamic">
+                                            <mat-select [value]="user.access_level"
+                                                (selectionChange)="updateAccessLevel(user, $event.value)">
+                                                @for (level of accessLevels; track level.value) {
+                                                <mat-option [value]="level.value">{{ level.label }}</mat-option>
+                                                }
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
                                 </td>
                             </ng-container>
 
                             <!-- Confirmed Column -->
                             <ng-container matColumnDef="confirmed">
-                                <th mat-header-cell *matHeaderCellDef class="font-semibold">Status</th>
-                                <td mat-cell *matCellDef="let user">
+                                <th mat-header-cell *matHeaderCellDef class="font-semibold text-center">Status</th>
+                                <td mat-cell *matCellDef="let user" class="text-center">
                                     @if (user.confirmed) {
                                     <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                                         Confirmed
@@ -106,17 +103,17 @@
 
                             <!-- Created At Column -->
                             <ng-container matColumnDef="created_at">
-                                <th mat-header-cell *matHeaderCellDef class="font-semibold">Joined</th>
-                                <td mat-cell *matCellDef="let user">
+                                <th mat-header-cell *matHeaderCellDef class="font-semibold text-center">Joined</th>
+                                <td mat-cell *matCellDef="let user" class="text-center">
                                     <span class="text-sm text-gray-600">{{ formatDate(user.created_at) }}</span>
                                 </td>
                             </ng-container>
 
                             <!-- Actions Column -->
                             <ng-container matColumnDef="actions">
-                                <th mat-header-cell *matHeaderCellDef class="font-semibold">Actions</th>
-                                <td mat-cell *matCellDef="let user">
-                                    <button mat-icon-button matTooltip="View details">
+                                <th mat-header-cell *matHeaderCellDef class="font-semibold text-center">Actions</th>
+                                <td mat-cell *matCellDef="let user" class="text-center">
+                                    <button mat-icon-button matTooltip="View profile" (click)="viewUser(user)">
                                         <mat-icon>visibility</mat-icon>
                                     </button>
                                 </td>

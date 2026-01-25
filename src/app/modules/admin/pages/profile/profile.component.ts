@@ -139,8 +139,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
                 console.log('Profile - user data:', user);
                 this.user = user;
                 // Load favorite class from user object first, then fallback to localStorage
+                // Handle both camelCase (favoriteClass) and snake_case (favorite_class) for backward compatibility
                 if (user?.favoriteClass) {
                     this.favoriteClass = user.favoriteClass;
+                } else if ((user as any)?.favorite_class) {
+                    this.favoriteClass = (user as any).favorite_class;
                 }
                 this.cdr.markForCheck();
             },

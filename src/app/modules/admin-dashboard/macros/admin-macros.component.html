@@ -1,20 +1,15 @@
-<div class="flex flex-col min-h-screen bg-gray-50">
+<div class="flex flex-col min-h-screen bg-gray-50 w-full">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-orange-500 to-orange-700 text-white px-6 py-6">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex items-center gap-2 mb-2">
-                <a routerLink="/admin-dashboard" class="hover:opacity-80">
-                    <mat-icon>arrow_back</mat-icon>
-                </a>
-                <mat-icon class="text-2xl">code</mat-icon>
-                <h1 class="text-2xl font-bold">Macros Management</h1>
-            </div>
-            <p class="text-orange-100">View all macros and restore deleted ones</p>
+    <div class="bg-gradient-to-r from-orange-500 to-orange-700 text-white px-6 py-6 w-full">
+        <div class="flex items-center justify-center gap-2 mb-2">
+            <mat-icon class="text-2xl">code</mat-icon>
+            <h1 class="text-2xl font-bold">Macros Management</h1>
         </div>
+        <p class="text-orange-100 text-center">View all macros and restore deleted ones</p>
     </div>
 
-    <div class="flex-1 px-6 py-6">
-        <div class="max-w-7xl mx-auto">
+    <div class="flex-1 w-full flex justify-center px-6 py-6">
+        <div class="w-full max-w-5xl">
             <!-- Tabs -->
             <mat-tab-group (selectedIndexChange)="onTabChange($event)" class="mb-6">
                 <mat-tab label="All Macros"></mat-tab>

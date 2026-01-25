@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,6 +14,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import { AdminService, AdminUser } from 'app/core/services/admin.service';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -37,7 +38,8 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
         MatSnackBarModule,
         MatDialogModule,
         MatChipsModule,
-        MatTooltipModule
+        MatTooltipModule,
+        MatSlideToggleModule
     ]
 })
 export class AdminUsersComponent implements OnInit {
@@ -61,14 +63,14 @@ export class AdminUsersComponent implements OnInit {
     // Access level options
     accessLevels = [
         { value: 1, label: 'User' },
-        { value: 5, label: 'Moderator' },
         { value: 9, label: 'Admin' }
     ];
 
     constructor(
         private adminService: AdminService,
         private snackBar: MatSnackBar,
-        private dialog: MatDialog
+        private dialog: MatDialog,
+        private router: Router
     ) {}
 
     ngOnInit(): void {
@@ -128,13 +130,11 @@ export class AdminUsersComponent implements OnInit {
 
     getAccessLevelLabel(level: number): string {
         if (level >= 9) return 'Admin';
-        if (level >= 5) return 'Moderator';
         return 'User';
     }
 
     getAccessLevelColor(level: number): string {
         if (level >= 9) return 'bg-red-100 text-red-800';
-        if (level >= 5) return 'bg-yellow-100 text-yellow-800';
         return 'bg-gray-100 text-gray-800';
     }
 
@@ -151,5 +151,9 @@ export class AdminUsersComponent implements OnInit {
             month: 'short',
             day: 'numeric'
         });
+    }
+
+    viewUser(user: AdminUser): void {
+        this.router.navigate(['/user', user.username]);
     }
 }

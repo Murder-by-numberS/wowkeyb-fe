@@ -59,15 +59,6 @@ export const navigationConfig: NavigationItemWithAuth[] = [
         type: 'basic',
         link: '/files',
         requiresAuth: true // Files section requires authentication
-    },
-    {
-        id: 'admin',
-        title: 'Admin',
-        type: 'basic',
-        link: '/admin-dashboard',
-        icon: 'heroicons_outline:cog-8-tooth',
-        requiresAuth: true,
-        requiresAdmin: true // Only shows for admin users (access_level >= 9)
     }
 ];
 

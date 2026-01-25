@@ -4,6 +4,13 @@ import { Observable } from 'rxjs';
 import { environment } from 'environments/environment';
 
 // Interfaces
+export interface BackendStatus {
+    dbStatus: 'UP' | 'DOWN';
+    version: string;
+    environment: string;
+    timestamp: string;
+}
+
 export interface DashboardStats {
     users: { total: number; admins: number };
     abilities: { total: number; active: number; inactive: number };
@@ -132,9 +139,12 @@ export interface PaginatedResponse<T> {
 })
 export class AdminService {
     private apiUrl: string;
+    private baseUrl: string;
 
     constructor(private http: HttpClient) {
         this.apiUrl = environment.apiUrl;
+        // Derive base URL by removing /api from apiUrl
+        this.baseUrl = this.apiUrl.replace(/\/api$/, '');
     }
 
     private getAuthHeaders(): HttpHeaders {
@@ -145,6 +155,11 @@ export class AdminService {
     }
 
     // ==================== DASHBOARD ====================
+
+    getBackendStatus(): Observable<BackendStatus> {
+        // Status endpoint doesn't require auth
+        return this.http.get<BackendStatus>(`${this.baseUrl}/status`);
+    }
 
     getDashboardStats(): Observable<DashboardStats> {
         return this.http.get<DashboardStats>(

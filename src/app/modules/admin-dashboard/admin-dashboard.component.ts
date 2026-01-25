@@ -6,7 +6,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { AdminService, DashboardStats } from 'app/core/services/admin.service';
+import { AdminService, DashboardStats, BackendStatus } from 'app/core/services/admin.service';
+import { environment } from 'environments/environment';
 
 @Component({
     selector: 'admin-dashboard',
@@ -23,8 +24,14 @@ import { AdminService, DashboardStats } from 'app/core/services/admin.service';
 })
 export class AdminDashboardComponent implements OnInit {
     stats: DashboardStats | null = null;
+    backendStatus: BackendStatus | null = null;
     isLoading = true;
     error: string | null = null;
+    
+    // Frontend environment info
+    frontendEnv = environment.envName || 'unknown';
+    frontendProduction = environment.production;
+    frontendVersion = environment.version || 'unknown';
 
     // Dashboard menu items
     menuItems = [
@@ -69,6 +76,7 @@ export class AdminDashboardComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadStats();
+        this.loadBackendStatus();
     }
 
     loadStats(): void {
@@ -86,5 +94,32 @@ export class AdminDashboardComponent implements OnInit {
                 this.isLoading = false;
             }
         });
+    }
+
+    loadBackendStatus(): void {
+        this.adminService.getBackendStatus().subscribe({
+            next: (status) => {
+                this.backendStatus = status;
+            },
+            error: (err) => {
+                console.error('Error loading backend status:', err);
+                this.backendStatus = null;
+            }
+        });
+    }
+
+    getEnvColor(env: string): string {
+        switch (env?.toLowerCase()) {
+            case 'production':
+            case 'prod':
+                return 'bg-red-100 text-red-800';
+            case 'staging':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'develop':
+            case 'development':
+            case 'dev':
+            default:
+                return 'bg-green-100 text-green-800';
+        }
     }
 }

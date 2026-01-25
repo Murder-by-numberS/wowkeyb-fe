@@ -1,17 +1,15 @@
-<div class="flex flex-col min-h-screen bg-gray-50">
+<div class="flex flex-col min-h-screen bg-gray-50 w-full">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-8">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex items-center gap-3 mb-2">
-                <mat-icon class="text-3xl">admin_panel_settings</mat-icon>
-                <h1 class="text-3xl font-bold">Admin Dashboard</h1>
-            </div>
-            <p class="text-slate-300">Manage users, content, and support tickets</p>
+    <div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-8 w-full">
+        <div class="flex items-center justify-center gap-3 mb-2">
+            <mat-icon class="text-3xl">admin_panel_settings</mat-icon>
+            <h1 class="text-3xl font-bold">Admin Dashboard</h1>
         </div>
+        <p class="text-slate-300 text-center">Manage users, content, and support tickets</p>
     </div>
 
-    <div class="flex-1 px-6 py-8">
-        <div class="max-w-7xl mx-auto">
+    <div class="flex-1 w-full flex justify-center px-6 py-8">
+        <div class="w-full max-w-5xl">
             <!-- Loading State -->
             @if (isLoading) {
             <div class="flex items-center justify-center py-12">
@@ -32,6 +30,70 @@
                 </button>
             </div>
             }
+
+            <!-- System Status -->
+            <mat-card class="mb-6">
+                <mat-card-content class="p-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-6">
+                            <!-- Backend Status -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">Backend:</span>
+                                @if (backendStatus) {
+                                <span class="flex items-center gap-1">
+                                    @if (backendStatus.dbStatus === 'UP') {
+                                    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                    <span class="text-sm text-green-600">Connected</span>
+                                    } @else {
+                                    <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                                    <span class="text-sm text-red-600">Disconnected</span>
+                                    }
+                                </span>
+                                } @else {
+                                <span class="flex items-center gap-1">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                                    <span class="text-sm text-red-600">Unreachable</span>
+                                </span>
+                                }
+                            </div>
+
+                            <!-- Frontend Version -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">FE:</span>
+                                <span class="text-sm font-medium">v{{ frontendVersion }}</span>
+                            </div>
+
+                            <!-- Backend Version -->
+                            @if (backendStatus?.version) {
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">BE:</span>
+                                <span class="text-sm font-medium">v{{ backendStatus.version }}</span>
+                            </div>
+                            }
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <!-- Frontend Environment -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">Frontend:</span>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded {{ getEnvColor(frontendEnv) }}">
+                                    {{ frontendEnv | uppercase }}
+                                </span>
+                            </div>
+
+                            <!-- Backend Environment -->
+                            @if (backendStatus?.environment) {
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">Backend:</span>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded {{ getEnvColor(backendStatus.environment) }}">
+                                    {{ backendStatus.environment | uppercase }}
+                                </span>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </mat-card-content>
+            </mat-card>
 
             <!-- Stats Cards -->
             @if (stats) {
@@ -103,7 +165,7 @@
             }
 
             <!-- Navigation Cards -->
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Quick Access</h2>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Quick Access</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @for (item of menuItems; track item.link) {
                 <a [routerLink]="item.link" class="block">
