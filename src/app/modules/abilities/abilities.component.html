@@ -14,20 +14,6 @@
             </p>
                 </div>
 
-                <!-- Admin Mode Toggle -->
-                @if (isAdmin) {
-                <div class="flex items-center gap-2">
-                    <mat-slide-toggle [(ngModel)]="adminModeEnabled" (change)="toggleAdminMode()"
-                        [color]="'primary'" class="admin-toggle">
-                    </mat-slide-toggle>
-                    <span class="text-sm font-medium" [class.text-blue-600]="adminModeEnabled">
-                        Admin Mode
-                    </span>
-                    @if (adminModeEnabled) {
-                    <mat-icon class="text-blue-600 text-sm">admin_panel_settings</mat-icon>
-                    }
-                </div>
-                }
             </div>
         </div>
 
@@ -416,15 +402,7 @@
                             <img [src]="ability.icon" [alt]="ability.name + ' icon'"
                                 class="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0" />
                             <div class="flex-1 min-w-0">
-                                <div class="flex items-start justify-between">
                                 <h3 class="font-semibold text-sm sm:text-base mb-1 sm:mb-2">{{ability.name}}</h3>
-                                    @if (adminModeEnabled) {
-                                    <button mat-icon-button color="primary" (click)="editAbility(ability)"
-                                        class="!w-8 !h-8 !min-w-0">
-                                        <mat-icon class="!text-lg">edit</mat-icon>
-                                    </button>
-                                    }
-                                </div>
                                 <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-3">
                                     {{ability.description}}</p>
                                 <div class="flex flex-wrap gap-0.5 sm:gap-1">
@@ -649,21 +627,6 @@
                             <div class="max-w-md truncate text-sm" [matTooltip]="ability.description">
                                 {{ability.description}}
                             </div>
-                        </td>
-                    </ng-container>
-
-                    <!-- Actions Column (Admin Mode Only) -->
-                    <ng-container matColumnDef="actions">
-                        <th mat-header-cell *matHeaderCellDef>
-                            <div class="flex items-center gap-2">
-                                <span>Actions</span>
-                            </div>
-                        </th>
-                        <td mat-cell *matCellDef="let ability">
-                            <button mat-icon-button color="primary" (click)="editAbility(ability)"
-                                matTooltip="Edit ability">
-                                <mat-icon>edit</mat-icon>
-                            </button>
                         </td>
                     </ng-container>
 

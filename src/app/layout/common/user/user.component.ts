@@ -103,6 +103,6 @@ export class UserComponent implements OnInit, OnDestroy {
     }
 
     goToAdmin(): void {
-        this._router.navigate(['/admin-dashboard']);
+        this._router.navigate(['/admin/dashboard']);
     }
 }

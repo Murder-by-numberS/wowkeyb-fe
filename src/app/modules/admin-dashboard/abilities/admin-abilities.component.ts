@@ -10,8 +10,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AdminService, AdminAbility } from 'app/core/services/admin.service';
@@ -33,8 +31,6 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
         MatInputModule,
         MatSelectModule,
         MatProgressSpinnerModule,
-        MatSnackBarModule,
-        MatSlideToggleModule,
         MatTooltipModule
     ]
 })
@@ -52,21 +48,28 @@ export class AdminAbilitiesComponent implements OnInit {
     // Filters
     searchQuery = '';
     selectedClass = '';
+    selectedSpec = '';
+    selectedAbilityType = '';
+    selectedVersion = '';
+    filtersExpanded = false;
     private searchSubject = new Subject<string>();
 
+    // Filter options
     classes = [
         'deathknight', 'demonhunter', 'druid', 'evoker', 'hunter',
         'mage', 'monk', 'paladin', 'priest', 'rogue', 'shaman', 'warlock', 'warrior'
     ];
 
-    displayedColumns = ['icon', 'name', 'class', 'spec', 'ability_type', 'is_active', 'actions'];
+    abilityTypes = ['class', 'spec', 'hero_talent'];
 
-    constructor(
-        private adminService: AdminService,
-        private snackBar: MatSnackBar
-    ) {}
+    versions: string[] = [];
+
+    displayedColumns = ['icon', 'name', 'class', 'spec', 'ability_type', 'version', 'actions'];
+
+    constructor(private adminService: AdminService) {}
 
     ngOnInit(): void {
+        this.loadVersions();
         this.loadAbilities();
 
         this.searchSubject.pipe(
@@ -79,6 +82,17 @@ export class AdminAbilitiesComponent implements OnInit {
         });
     }
 
+    loadVersions(): void {
+        this.adminService.getVersions().subscribe({
+            next: (response) => {
+                this.versions = response.versions.map(v => v.game_version);
+            },
+            error: (err) => {
+                console.error('Error loading versions:', err);
+            }
+        });
+    }
+
     loadAbilities(): void {
         this.isLoading = true;
         this.error = null;
@@ -88,6 +102,9 @@ export class AdminAbilitiesComponent implements OnInit {
             limit: this.perPage,
             search: this.searchQuery,
             class: this.selectedClass,
+            spec: this.selectedSpec,
+            ability_type: this.selectedAbilityType,
+            version: this.selectedVersion,
             includeInactive: true
         }).subscribe({
             next: (response) => {
@@ -115,27 +132,52 @@ export class AdminAbilitiesComponent implements OnInit {
         this.loadAbilities();
     }
 
-    toggleActive(ability: AdminAbility): void {
-        this.adminService.toggleAbilityActive(ability.id).subscribe({
-            next: (response) => {
-                ability.is_active = !ability.is_active;
-                this.snackBar.open(
-                    `${ability.name} ${ability.is_active ? 'activated' : 'deactivated'}`,
-                    'OK',
-                    { duration: 3000 }
-                );
-            },
-            error: (err) => {
-                console.error('Error toggling ability:', err);
-                this.snackBar.open(err.error?.message || 'Failed to update ability', 'OK', { duration: 5000 });
-            }
-        });
+    onSpecChange(specValue: string): void {
+        this.selectedSpec = specValue;
+        this.currentPage = 1;
+        this.loadAbilities();
+    }
+
+    onAbilityTypeChange(typeValue: string): void {
+        this.selectedAbilityType = typeValue;
+        this.currentPage = 1;
+        this.loadAbilities();
+    }
+
+    onVersionChange(versionValue: string): void {
+        this.selectedVersion = versionValue;
+        this.currentPage = 1;
+        this.loadAbilities();
+    }
+
+    toggleFilters(): void {
+        this.filtersExpanded = !this.filtersExpanded;
+    }
+
+    hasActiveFilters(): boolean {
+        return !!(this.selectedClass || this.selectedSpec || this.selectedAbilityType || this.selectedVersion || this.searchQuery);
+    }
+
+    clearAllFilters(): void {
+        this.selectedClass = '';
+        this.selectedSpec = '';
+        this.selectedAbilityType = '';
+        this.selectedVersion = '';
+        this.searchQuery = '';
+        this.currentPage = 1;
+        this.loadAbilities();
     }
 
     formatClassName(className: string): string {
+        if (!className) return '-';
         if (className === 'deathknight') return 'Death Knight';
         if (className === 'demonhunter') return 'Demon Hunter';
         return className.charAt(0).toUpperCase() + className.slice(1);
+    }
+
+    formatAbilityType(type: string): string {
+        if (!type) return '-';
+        return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     }
 
     goToPage(page: number): void {

@@ -39,35 +39,42 @@ export class AdminDashboardComponent implements OnInit {
             title: 'Users',
             description: 'Manage users and access levels',
             icon: 'people',
-            link: '/admin-dashboard/users',
+            link: '/admin/users',
             color: 'bg-blue-500'
         },
         {
             title: 'Abilities',
             description: 'Manage game abilities',
             icon: 'auto_awesome',
-            link: '/admin-dashboard/abilities',
+            link: '/admin/abilities',
             color: 'bg-purple-500'
+        },
+        {
+            title: 'Versions',
+            description: 'Manage game versions',
+            icon: 'history',
+            link: '/admin/versions',
+            color: 'bg-teal-500'
         },
         {
             title: 'Keybindings',
             description: 'View and restore keybindings',
             icon: 'keyboard',
-            link: '/admin-dashboard/keybindings',
+            link: '/admin/keybindings',
             color: 'bg-green-500'
         },
         {
             title: 'Macros',
             description: 'View and restore macros',
             icon: 'code',
-            link: '/admin-dashboard/macros',
+            link: '/admin/macros',
             color: 'bg-orange-500'
         },
         {
             title: 'Support Tickets',
             description: 'View support tickets from Jira',
             icon: 'support_agent',
-            link: '/admin-dashboard/support',
+            link: '/admin/support',
             color: 'bg-red-500'
         }
     ];

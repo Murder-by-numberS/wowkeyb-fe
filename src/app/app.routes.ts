@@ -165,7 +165,7 @@ export const appRoutes: Route[] = [
             layout: 'modern'
         },
         children: [
-            { path: 'admin-dashboard', loadChildren: () => import('app/modules/admin-dashboard/admin-dashboard.routes') },
+            { path: 'admin', loadChildren: () => import('app/modules/admin-dashboard/admin-dashboard.routes') },
         ]
     },
 

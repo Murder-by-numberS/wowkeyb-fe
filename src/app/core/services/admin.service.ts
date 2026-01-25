@@ -74,6 +74,13 @@ export interface AdminKeybinding {
     updated_at: string;
 }
 
+export interface AdminVersion {
+    id: string;
+    game_version: string;
+    ability_count: number;
+    created_at: string;
+}
+
 export interface AdminMacro {
     id: string;
     name: string;
@@ -212,6 +219,9 @@ export class AdminService {
         limit?: number;
         search?: string;
         class?: string;
+        spec?: string;
+        ability_type?: string;
+        version?: string;
         includeInactive?: boolean;
     } = {}): Observable<{ abilities: AdminAbility[] } & PaginatedResponse<AdminAbility>> {
         let httpParams = new HttpParams();
@@ -219,6 +229,9 @@ export class AdminService {
         if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
         if (params.search) httpParams = httpParams.set('search', params.search);
         if (params.class) httpParams = httpParams.set('class', params.class);
+        if (params.spec) httpParams = httpParams.set('spec', params.spec);
+        if (params.ability_type) httpParams = httpParams.set('ability_type', params.ability_type);
+        if (params.version) httpParams = httpParams.set('version', params.version);
         if (params.includeInactive !== undefined) {
             httpParams = httpParams.set('includeInactive', params.includeInactive.toString());
         }
@@ -226,6 +239,46 @@ export class AdminService {
         return this.http.get<{ abilities: AdminAbility[] } & PaginatedResponse<AdminAbility>>(
             `${this.apiUrl}/admin/abilities`,
             { headers: this.getAuthHeaders(), params: httpParams }
+        );
+    }
+
+    getVersions(): Observable<{ versions: AdminVersion[] }> {
+        return this.http.get<{ versions: AdminVersion[] }>(
+            `${this.apiUrl}/admin/versions`,
+            { headers: this.getAuthHeaders() }
+        );
+    }
+
+    createVersion(gameVersion: string): Observable<{ message: string; version: AdminVersion }> {
+        return this.http.post<{ message: string; version: AdminVersion }>(
+            `${this.apiUrl}/admin/versions`,
+            { game_version: gameVersion },
+            { headers: this.getAuthHeaders() }
+        );
+    }
+
+    copyAbilitiesFromVersion(sourceVersionId: string, targetVersionId: string): Observable<{
+        message: string;
+        copied_count: number;
+        source_version: string;
+        target_version: string;
+    }> {
+        return this.http.post<{
+            message: string;
+            copied_count: number;
+            source_version: string;
+            target_version: string;
+        }>(
+            `${this.apiUrl}/admin/versions/copy-abilities`,
+            { sourceVersionId, targetVersionId },
+            { headers: this.getAuthHeaders() }
+        );
+    }
+
+    deleteVersion(versionId: string): Observable<{ message: string }> {
+        return this.http.delete<{ message: string }>(
+            `${this.apiUrl}/admin/versions/${versionId}`,
+            { headers: this.getAuthHeaders() }
         );
     }
 

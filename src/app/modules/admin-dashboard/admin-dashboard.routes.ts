@@ -5,10 +5,16 @@ import { AdminAbilitiesComponent } from './abilities/admin-abilities.component';
 import { AdminKeybindingsComponent } from './keybindings/admin-keybindings.component';
 import { AdminMacrosComponent } from './macros/admin-macros.component';
 import { AdminSupportComponent } from './support/admin-support.component';
+import { AdminVersionsComponent } from './versions/admin-versions.component';
 
 export default [
     {
         path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
+    },
+    {
+        path: 'dashboard',
         component: AdminDashboardComponent
     },
     {
@@ -26,6 +32,10 @@ export default [
     {
         path: 'macros',
         component: AdminMacrosComponent
+    },
+    {
+        path: 'versions',
+        component: AdminVersionsComponent
     },
     {
         path: 'support',

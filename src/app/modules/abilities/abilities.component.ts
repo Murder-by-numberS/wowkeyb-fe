@@ -13,7 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -22,23 +22,16 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 //Services
 import { AbilitiesService } from 'app/core/services/abilities.service';
 import { VersionCompareService } from 'app/core/services/version-compare.service';
-import { UserService } from 'app/core/user/user.service';
 
 //Data
 import { fullClasses } from 'app/core/data/classes';
 
 //Interfaces
 import { Ability } from 'app/core/types/ability';
-import { User, ADMIN_ACCESS_LEVEL } from 'app/core/user/user.types';
-
-// Components
-import { EditAbilityDialogComponent, EditAbilityDialogData } from './components/edit-ability-dialog/edit-ability-dialog.component';
 
 @Component({
     selector: 'abilities',
@@ -62,17 +55,10 @@ import { EditAbilityDialogComponent, EditAbilityDialogData } from './components/
         MatInputModule,
         MatCardModule,
         MatChipsModule,
-        MatProgressSpinnerModule,
-        MatSlideToggleModule,
-        MatSnackBarModule
+        MatProgressSpinnerModule
     ],
 })
 export class AbilitiesComponent implements OnInit, OnDestroy {
-
-    // Admin mode properties
-    isAdmin = false;
-    adminModeEnabled = false;
-    currentUser: User | null = null;
 
     // Filter properties
     selectedClass: string;
@@ -155,12 +141,9 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     constructor(
         private abilitiesService: AbilitiesService,
         private versionCompare: VersionCompareService,
-        private dialog: MatDialog,
         private router: Router,
         private route: ActivatedRoute,
-        private cdr: ChangeDetectorRef,
-        private userService: UserService,
-        private snackBar: MatSnackBar
+        private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
@@ -173,9 +156,6 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
         // Set up debounce subscriptions for text inputs
         this.setupDebounceSubscriptions();
 
-        // Check for admin status
-        this.checkAdminStatus();
-
         // Check for URL parameters first
         this.route.queryParams.subscribe(params => {
             if (params['class'] || params['spec'] || params['heroTalent'] || params['gameVersion']) {
@@ -186,115 +166,6 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
                 this.loadAllAbilities();
             }
         });
-    }
-
-    /**
-     * Check if current user has admin privileges
-     */
-    private checkAdminStatus(): void {
-        // First check localStorage for current user
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-            try {
-                this.currentUser = JSON.parse(storedUser);
-                this.isAdmin = (this.currentUser?.access_level || 0) >= ADMIN_ACCESS_LEVEL;
-                console.log('Admin status from localStorage:', this.isAdmin, 'access_level:', this.currentUser?.access_level);
-            } catch (e) {
-                console.error('Error parsing stored user:', e);
-            }
-        }
-
-        // Also subscribe to user service for updates
-        this.userService.user$.subscribe(user => {
-            if (user) {
-                this.currentUser = user;
-                this.isAdmin = (user.access_level || 0) >= ADMIN_ACCESS_LEVEL;
-                console.log('Admin status from user service:', this.isAdmin, 'access_level:', user.access_level);
-            }
-        });
-    }
-
-    /**
-     * Toggle admin mode
-     */
-    toggleAdminMode(): void {
-        if (!this.isAdmin) {
-            this.snackBar.open('You do not have admin privileges', 'OK', { duration: 3000 });
-            return;
-        }
-        this.adminModeEnabled = !this.adminModeEnabled;
-        this.updateDisplayedColumns();
-
-        const message = this.adminModeEnabled
-            ? 'Admin mode enabled - you can now edit abilities'
-            : 'Admin mode disabled';
-        this.snackBar.open(message, 'OK', { duration: 2000 });
-    }
-
-    /**
-     * Update displayed columns based on admin mode
-     */
-    private updateDisplayedColumns(): void {
-        if (this.adminModeEnabled) {
-            // Add actions column if not already present
-            if (!this.displayedColumns.includes('actions')) {
-                this.displayedColumns = [...this.displayedColumns, 'actions'];
-            }
-        } else {
-            // Remove actions column
-            this.displayedColumns = this.displayedColumns.filter(col => col !== 'actions');
-        }
-    }
-
-    /**
-     * Open edit dialog for an ability
-     */
-    editAbility(ability: Ability): void {
-        if (!this.adminModeEnabled || !this.isAdmin) {
-            return;
-        }
-
-        const dialogData: EditAbilityDialogData = { ability };
-
-        const dialogRef = this.dialog.open(EditAbilityDialogComponent, {
-            width: '600px',
-            maxHeight: '90vh',
-            data: dialogData
-        });
-
-        dialogRef.afterClosed().subscribe(result => {
-            if (result) {
-                // Update the ability in the local arrays
-                this.updateAbilityInArrays(result);
-                this.snackBar.open('Ability updated successfully!', 'OK', { duration: 3000 });
-            }
-        });
-    }
-
-    /**
-     * Update ability in local arrays after edit
-     */
-    private updateAbilityInArrays(updatedAbility: Ability): void {
-        // Update in abilities array
-        const abilitiesIndex = this.abilities.findIndex(a => a.id === updatedAbility.id);
-        if (abilitiesIndex !== -1) {
-            this.abilities[abilitiesIndex] = { ...this.abilities[abilitiesIndex], ...updatedAbility };
-        }
-
-        // Update in filteredAbilities array
-        const filteredIndex = this.filteredAbilities.findIndex(a => a.id === updatedAbility.id);
-        if (filteredIndex !== -1) {
-            this.filteredAbilities[filteredIndex] = { ...this.filteredAbilities[filteredIndex], ...updatedAbility };
-        }
-
-        // Update in displayedAbilities array (for mobile infinite scroll)
-        const displayedIndex = this.displayedAbilities.findIndex(a => a.id === updatedAbility.id);
-        if (displayedIndex !== -1) {
-            this.displayedAbilities[displayedIndex] = { ...this.displayedAbilities[displayedIndex], ...updatedAbility };
-        }
-
-        // Update dataSource
-        this.updateTableData();
     }
 
     /**
