@@ -33,8 +33,24 @@
             @if (!jiraDisabled) {
             <mat-card class="mb-6">
                 <mat-card-content class="p-4">
-                    <div class="flex flex-col sm:flex-row gap-4 items-center">
-                        <mat-form-field appearance="outline" class="w-48">
+                    <!-- Search -->
+                    <div class="mb-4">
+                        <mat-form-field appearance="outline" class="w-full">
+                            <mat-label>Search tickets</mat-label>
+                            <mat-icon matPrefix class="mr-2">search</mat-icon>
+                            <input matInput [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()"
+                                placeholder="Search by ticket key, summary, or description...">
+                            @if (searchTerm) {
+                            <button matSuffix mat-icon-button (click)="searchTerm = ''; onSearchChange()">
+                                <mat-icon>close</mat-icon>
+                            </button>
+                            }
+                        </mat-form-field>
+                    </div>
+
+                    <!-- Filter row -->
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <mat-form-field appearance="outline" class="w-40">
                             <mat-label>Status</mat-label>
                             <mat-select [(value)]="statusFilter" (selectionChange)="onStatusChange($event.value)">
                                 @for (status of statusOptions; track status.value) {
@@ -43,7 +59,59 @@
                             </mat-select>
                         </mat-form-field>
 
+                        <mat-form-field appearance="outline" class="w-40">
+                            <mat-label>Priority</mat-label>
+                            <mat-select [(value)]="priorityFilter" (selectionChange)="onPriorityChange($event.value)">
+                                @for (priority of priorityOptions; track priority.value) {
+                                <mat-option [value]="priority.value">{{ priority.label }}</mat-option>
+                                }
+                            </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-40">
+                            <mat-label>Date Range</mat-label>
+                            <mat-select [(value)]="selectedDateRange" (selectionChange)="onDateRangeChange()">
+                                @for (range of dateRangeOptions; track range.value) {
+                                <mat-option [value]="range.value">{{ range.label }}</mat-option>
+                                }
+                            </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-44">
+                            <mat-label>Sort By</mat-label>
+                            <mat-select [(value)]="sortBy" (selectionChange)="onSortChange($event.value)">
+                                @for (sort of sortOptions; track sort.value) {
+                                <mat-option [value]="sort.value">{{ sort.label }}</mat-option>
+                                }
+                            </mat-select>
+                        </mat-form-field>
+
+                        @if (isCustomRange()) {
+                        <mat-form-field appearance="outline" class="w-36">
+                            <mat-label>Start Date</mat-label>
+                            <input matInput [matDatepicker]="startPicker" [(ngModel)]="customStartDate"
+                                (dateChange)="onCustomDateChange()">
+                            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+                            <mat-datepicker #startPicker></mat-datepicker>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="w-36">
+                            <mat-label>End Date</mat-label>
+                            <input matInput [matDatepicker]="endPicker" [(ngModel)]="customEndDate"
+                                (dateChange)="onCustomDateChange()">
+                            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+                            <mat-datepicker #endPicker></mat-datepicker>
+                        </mat-form-field>
+                        }
+
                         <div class="flex-1"></div>
+
+                        @if (hasActiveFilters()) {
+                        <button mat-stroked-button (click)="clearFilters()" class="!text-gray-600">
+                            <mat-icon>clear</mat-icon>
+                            Clear Filters
+                        </button>
+                        }
 
                         <div class="text-sm text-gray-500">
                             {{ totalCount }} tickets
@@ -124,10 +192,12 @@
 
                             <!-- Actions -->
                             <div class="flex items-center gap-2">
-                                <button mat-stroked-button color="primary" (click)="openInJira(ticket)"
-                                    matTooltip="Open in Jira">
+                                <button mat-flat-button color="primary" (click)="viewTicket(ticket)">
+                                    <mat-icon>visibility</mat-icon>
+                                    View Details
+                                </button>
+                                <button mat-stroked-button (click)="openInJira(ticket)" matTooltip="Open in Jira">
                                     <mat-icon>open_in_new</mat-icon>
-                                    View in Jira
                                 </button>
                             </div>
                         </div>
@@ -162,4 +232,131 @@
             }
         </div>
     </div>
+
+    <!-- Ticket Detail Panel -->
+    @if (showTicketDetail && selectedTicket) {
+    <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" (click)="closeTicketDetail()">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+            (click)="$event.stopPropagation()">
+            <!-- Panel Header -->
+            <div class="bg-gray-100 px-6 py-4 flex items-center justify-between border-b">
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-1 text-sm font-mono bg-white rounded border">{{ selectedTicket.key }}</span>
+                    <span class="px-2 py-1 text-sm rounded-full {{ getStatusColor(selectedTicket.status) }}">
+                        {{ selectedTicket.status }}
+                    </span>
+                </div>
+                <button mat-icon-button (click)="closeTicketDetail()">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </div>
+
+            <!-- Panel Content -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <h2 class="text-xl font-semibold mb-4">{{ selectedTicket.summary }}</h2>
+
+                <!-- Meta Info -->
+                <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                    <div>
+                        <span class="text-gray-500">Reporter:</span>
+                        <span class="ml-2 font-medium">{{ selectedTicket.reporter }}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Assignee:</span>
+                        <span class="ml-2 font-medium">{{ selectedTicket.assignee }}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Priority:</span>
+                        <span class="ml-2 font-medium {{ getPriorityColor(selectedTicket.priority) }}">
+                            {{ selectedTicket.priority }}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Created:</span>
+                        <span class="ml-2">{{ formatDate(selectedTicket.created) }}</span>
+                    </div>
+                </div>
+
+                <!-- Change Status -->
+                @if (availableTransitions.length > 0) {
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Change Status</h3>
+                    <div class="flex flex-wrap gap-2">
+                        @for (transition of availableTransitions; track transition.id) {
+                        <button mat-stroked-button (click)="transitionTicket(transition.id, transition.name)"
+                            [disabled]="isTransitioning">
+                            @if (isTransitioning) {
+                            <mat-spinner diameter="16" class="mr-2"></mat-spinner>
+                            }
+                            {{ transition.name }}
+                        </button>
+                        }
+                    </div>
+                </div>
+                }
+
+                <!-- Description -->
+                @if (selectedTicket.description) {
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Description</h3>
+                    <div class="bg-gray-50 rounded-lg p-4 text-sm whitespace-pre-wrap">
+                        {{ selectedTicket.description }}
+                    </div>
+                </div>
+                }
+
+                <!-- Comments -->
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">
+                        Comments ({{ selectedTicket.comments?.length || 0 }})
+                    </h3>
+                    @if (selectedTicket.comments && selectedTicket.comments.length > 0) {
+                    <div class="space-y-3">
+                        @for (comment of selectedTicket.comments; track comment.id) {
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="font-medium text-sm">{{ comment.author }}</span>
+                                <span class="text-xs text-gray-500">{{ formatDate(comment.created) }}</span>
+                            </div>
+                            <div class="text-sm whitespace-pre-wrap">{{ comment.body }}</div>
+                        </div>
+                        }
+                    </div>
+                    } @else {
+                    <p class="text-sm text-gray-500">No comments yet</p>
+                    }
+                </div>
+
+                <!-- Add Comment -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Add Comment</h3>
+                    <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Write a comment...</mat-label>
+                        <textarea matInput [(ngModel)]="newComment" rows="3"
+                            placeholder="Enter your comment here..."></textarea>
+                    </mat-form-field>
+                    <div class="flex justify-end">
+                        <button mat-flat-button color="primary" (click)="addComment()"
+                            [disabled]="!newComment.trim() || isAddingComment">
+                            @if (isAddingComment) {
+                            <mat-spinner diameter="16" class="mr-2"></mat-spinner>
+                            }
+                            <mat-icon>send</mat-icon>
+                            Add Comment
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Footer -->
+            <div class="bg-gray-100 px-6 py-4 flex justify-between border-t">
+                <button mat-stroked-button (click)="openInJira(selectedTicket)">
+                    <mat-icon>open_in_new</mat-icon>
+                    Open in Jira
+                </button>
+                <button mat-flat-button (click)="closeTicketDetail()">Close</button>
+            </div>
+        </div>
+    </div>
+    }
 </div>

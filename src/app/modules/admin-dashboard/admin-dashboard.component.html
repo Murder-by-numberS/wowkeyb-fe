@@ -97,7 +97,7 @@
 
             <!-- Stats Cards -->
             @if (stats) {
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                 <!-- Users Stats -->
                 <mat-card class="hover:shadow-lg transition-shadow">
                     <mat-card-content class="p-6">
@@ -157,6 +157,26 @@
                             </div>
                             <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                                 <mat-icon class="text-orange-600">code</mat-icon>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+
+                <!-- Tickets Stats -->
+                <mat-card class="hover:shadow-lg transition-shadow">
+                    <mat-card-content class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide">Tickets</p>
+                                @if (stats.tickets && !stats.tickets.jiraDisabled) {
+                                <p class="text-3xl font-bold text-gray-800">{{ stats.tickets.total }}</p>
+                                <p class="text-sm text-red-600 mt-1">{{ stats.tickets.recentlyCreated }} this week</p>
+                                } @else {
+                                <p class="text-lg font-medium text-gray-400 mt-2">Jira not configured</p>
+                                }
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <mat-icon class="text-red-600">support_agent</mat-icon>
                             </div>
                         </div>
                     </mat-card-content>
