@@ -61,6 +61,11 @@ export class FaqComponent {
             question: 'How do I filter keybinds by class?',
             answer: 'Use the filter dropdown on the keybinds page to select your class and spec. This will show you optimized setups specifically designed for your character.'
         },
+        {
+            category: 'Keybinds',
+            question: 'Can I restore a deleted keybinding?',
+            answer: 'Yes! If you accidentally delete a keybinding, you can request restoration by submitting a support ticket. Please include the name of the keybinding and any version information you remember. Our team will do their best to restore your data. Note that permanently deleted items may not be recoverable after an extended period, so please submit your request as soon as possible.'
+        },
         // {
         //     category: 'Keybinds',
         //     question: 'Can I customize existing keybind setups?',
@@ -82,6 +87,11 @@ export class FaqComponent {
             category: 'Macros',
             question: 'Can I test my macros before exporting?',
             answer: 'Yes, the macro validator will check your macro for common errors and syntax issues before you save or export it.'
+        },
+        {
+            category: 'Macros',
+            question: 'Can I restore a deleted macro?',
+            answer: 'Yes! If you accidentally delete a macro, you can request restoration by submitting a support ticket. Please include the macro name, the ability it was for (if applicable), and any other details you remember. Our team will attempt to restore your macro. Note that permanently deleted items may not be recoverable after an extended period, so submit your request as soon as possible.'
         },
         // {
         //     category: 'Macros',

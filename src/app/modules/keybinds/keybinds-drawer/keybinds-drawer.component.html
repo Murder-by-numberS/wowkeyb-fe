@@ -21,39 +21,38 @@
                         }
                         } @else {
                         None
-                            }
+                        }
                     </mat-panel-description>
                 </mat-expansion-panel-header>
                 <div class="px-4 py-3">
                     <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Classes</mat-label>
-                    <mat-select [formControl]="selectedClasses" multiple>
-                        <mat-select-trigger>
+                        <mat-label>Classes</mat-label>
+                        <mat-select [formControl]="selectedClasses" multiple>
+                            <mat-select-trigger>
                                 @if ((selectedClasses.value?.length || 0) > 0) {
-                            {{selectedClasses.value?.[0]?.name || ''}}
-                            @if ((selectedClasses.value?.length || 0) > 1) {
+                                {{selectedClasses.value?.[0]?.name || ''}}
+                                @if ((selectedClasses.value?.length || 0) > 1) {
                                 <span class="text-gray-500">
                                     (+{{(selectedClasses.value?.length || 0) - 1}}
                                     {{selectedClasses.value?.length === 2 ? 'other' : 'others'}})
-                            </span>
-                            }
+                                </span>
+                                }
                                 } @else {
                                 All Classes
                                 }
-                        </mat-select-trigger>
-                        @for (class of classList; track class) {
-                        <mat-option [value]="class">{{class.name}}</mat-option>
-                        }
-                    </mat-select>
-                </mat-form-field>
+                            </mat-select-trigger>
+                            @for (class of classList; track class) {
+                            <mat-option [value]="class">{{class.name}}</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
                 </div>
             </mat-expansion-panel>
         </mat-accordion>
     </div>
 
     <!-- Create Button -->
-    @if (keybindings.length < MAX_SIZE) {
-    <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200">
+    @if (keybindings.length < MAX_SIZE) { <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200">
         <button type="button" class="w-full" mat-flat-button [color]="'primary'" (click)="createKeybinding()">
             <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon>
             <span class="ml-2">Create Keybinding</span>
@@ -61,44 +60,54 @@
 </div>
 }
 
-    <!-- Scrollable Keybindings List -->
-    <div class="flex-1 overflow-y-auto">
-        @for (keybinding of filteredKeybindings; track trackByKeybindingId($index, keybinding)) {
-        <div class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 flex items-center gap-3"
-            [class.bg-blue-50]="isSelected(keybinding.keybindingId)" (click)="selectKeybinding(keybinding)">
-            @if (getClassIcon(keybinding.class)) {
-            <img [src]="getClassIcon(keybinding.class)" [alt]="keybinding.class" class="w-8 h-8 flex-shrink-0 rounded">
-            } @else {
-            <div class="w-8 h-8 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
-                <mat-icon class="text-gray-400 text-lg">keyboard</mat-icon>
+<!-- Scrollable Keybindings List -->
+<div class="flex-1 overflow-y-auto">
+    @for (keybinding of filteredKeybindings; track trackByKeybindingId($index, keybinding)) {
+    <div class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 flex items-center gap-3"
+        [class.bg-blue-50]="isSelected(keybinding.keybindingId)" (click)="selectKeybinding(keybinding)">
+        @if (getClassIcon(keybinding.class)) {
+        <img [src]="getClassIcon(keybinding.class)" [alt]="keybinding.class" class="w-8 h-8 flex-shrink-0 rounded">
+        } @else {
+        <div class="w-8 h-8 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+            <mat-icon class="text-gray-400 text-lg">keyboard</mat-icon>
+        </div>
+        }
+        <div class="flex-1 min-w-0">
+            <div class="font-medium truncate flex items-center gap-1">
+                {{ keybinding.name }}
+                @if (canUpgrade(keybinding)) {
+                <span
+                    class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800"
+                    matTooltip="Update available: v{{ latestVersion }}">
+                    <mat-icon class="!text-sm !w-3.5 !h-3.5 mr-0.5">update</mat-icon>
+                    Update
+                </span>
+                }
             </div>
-            }
-            <div class="flex-1 min-w-0">
-                <div class="font-medium truncate">{{ keybinding.name }}</div>
-                <div class="text-sm text-gray-500 truncate">
-                    {{ keybinding.class }}
-                    @if (keybinding.version?.game_version) {
-                    <span class="text-gray-400">• v{{ keybinding.version.game_version }}</span>
-                    }
-                </div>
-            </div>
-            <div class="flex items-center flex-shrink-0">
-                @if (keybinding.isPublic) {
-                <mat-icon class="text-green-500 text-xl">public</mat-icon>
-                } @else {
-                <mat-icon class="text-gray-400 text-xl">lock</mat-icon>
+            <div class="text-sm text-gray-500 truncate">
+                {{ keybinding.class }}
+                @if (keybinding.version?.game_version) {
+                <span class="text-gray-400">• v{{ keybinding.version.game_version }}</span>
                 }
             </div>
         </div>
-        }
-        @if (filteredKeybindings.length === 0) {
-        <div class="px-4 py-8 text-center text-gray-500">
-            @if (keybindings.length === 0) {
-            No keybindings found
+        <div class="flex items-center flex-shrink-0">
+            @if (keybinding.isPublic) {
+            <mat-icon class="text-green-500 text-xl">public</mat-icon>
             } @else {
-            No keybindings match the selected filters
+            <mat-icon class="text-gray-400 text-xl">lock</mat-icon>
             }
         </div>
+    </div>
+    }
+    @if (filteredKeybindings.length === 0) {
+    <div class="px-4 py-8 text-center text-gray-500">
+        @if (keybindings.length === 0) {
+        No keybindings found
+        } @else {
+        No keybindings match the selected filters
         }
     </div>
+    }
+</div>
 </div>

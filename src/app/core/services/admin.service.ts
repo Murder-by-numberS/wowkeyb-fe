@@ -75,6 +75,34 @@ export interface AdminKeybinding {
     updated_at: string;
 }
 
+export interface KeybindingVersionInfo {
+    keybinding_id: string;
+    name: string;
+    version_id: string;
+    game_version: string;
+    is_deleted: boolean;
+    deleted_at?: string;
+    keybind_count: number;
+    created_at: string;
+    is_current: boolean;
+}
+
+export interface KeybindingVersionsResponse {
+    keybinding: {
+        id: string;
+        name: string;
+        class: string;
+        spec?: string;
+        hero_talent?: string;
+        user?: {
+            id: string;
+            username: string;
+            email: string;
+        };
+    };
+    versions: KeybindingVersionInfo[];
+}
+
 export interface AdminVersion {
     id: string;
     game_version: string;
@@ -323,10 +351,10 @@ export class AdminService {
         );
     }
 
-    restoreKeybinding(keybindingId: string): Observable<any> {
+    restoreKeybinding(keybindingId: string, replace: boolean = false): Observable<any> {
         return this.http.post(
             `${this.apiUrl}/admin/keybindings/${keybindingId}/restore`,
-            {},
+            { replace },
             { headers: this.getAuthHeaders() }
         );
     }
@@ -334,6 +362,29 @@ export class AdminService {
     permanentDeleteKeybinding(keybindingId: string): Observable<any> {
         return this.http.delete(
             `${this.apiUrl}/admin/keybindings/${keybindingId}/permanent`,
+            { headers: this.getAuthHeaders() }
+        );
+    }
+
+    getKeybindingVersions(keybindingId: string): Observable<KeybindingVersionsResponse> {
+        return this.http.get<KeybindingVersionsResponse>(
+            `${this.apiUrl}/admin/keybindings/${keybindingId}/versions`,
+            { headers: this.getAuthHeaders() }
+        );
+    }
+
+    batchDeleteKeybindings(keybindingIds: string[]): Observable<{
+        message: string;
+        deleted_count: number;
+        deleted_keybindings: { id: string; name: string; version: string }[];
+    }> {
+        return this.http.post<{
+            message: string;
+            deleted_count: number;
+            deleted_keybindings: { id: string; name: string; version: string }[];
+        }>(
+            `${this.apiUrl}/admin/keybindings/batch-delete`,
+            { keybinding_ids: keybindingIds },
             { headers: this.getAuthHeaders() }
         );
     }

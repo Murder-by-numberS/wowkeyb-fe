@@ -16,6 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 import { AdminService, AdminKeybinding } from 'app/core/services/admin.service';
+import { DeleteVersionsDialogComponent, DeleteVersionsDialogResult } from './delete-versions-dialog.component';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
@@ -56,14 +57,14 @@ export class AdminKeybindingsComponent implements OnInit {
     showDeleted = false;
     private searchSubject = new Subject<string>();
 
-    displayedColumns = ['name', 'class', 'user', 'keybind_count', 'status', 'created_at', 'actions'];
+    displayedColumns = ['name', 'class', 'version', 'user', 'keybind_count', 'status', 'created_at', 'actions'];
 
     constructor(
         private adminService: AdminService,
         private snackBar: MatSnackBar,
         private dialog: MatDialog,
         private router: Router
-    ) {}
+    ) { }
 
     ngOnInit(): void {
         this.loadKeybindings();
@@ -114,8 +115,8 @@ export class AdminKeybindingsComponent implements OnInit {
         this.loadKeybindings();
     }
 
-    restoreKeybinding(keybinding: AdminKeybinding): void {
-        this.adminService.restoreKeybinding(keybinding.id).subscribe({
+    restoreKeybinding(keybinding: AdminKeybinding, replace: boolean = false): void {
+        this.adminService.restoreKeybinding(keybinding.id, replace).subscribe({
             next: () => {
                 keybinding.is_deleted = false;
                 keybinding.deleted_at = undefined;
@@ -124,24 +125,46 @@ export class AdminKeybindingsComponent implements OnInit {
             },
             error: (err) => {
                 console.error('Error restoring keybinding:', err);
-                this.snackBar.open(err.error?.message || 'Failed to restore', 'OK', { duration: 5000 });
+                // Handle 409 conflict - version collision
+                if (err.status === 409 && err.error?.conflict) {
+                    const conflict = err.error.conflict;
+                    const confirmReplace = confirm(
+                        `A keybinding for version ${conflict.version} already exists:\n\n` +
+                        `Existing: "${conflict.existingKeybindingName}"\n` +
+                        `Restoring: "${conflict.restoringKeybindingName}"\n\n` +
+                        `Do you want to replace the existing keybinding?`
+                    );
+                    if (confirmReplace) {
+                        this.restoreKeybinding(keybinding, true);
+                    }
+                } else {
+                    this.snackBar.open(err.error?.message || 'Failed to restore', 'OK', { duration: 5000 });
+                }
             }
         });
     }
 
     permanentDelete(keybinding: AdminKeybinding): void {
-        if (confirm(`Are you sure you want to PERMANENTLY delete "${keybinding.name}"? This cannot be undone.`)) {
-            this.adminService.permanentDeleteKeybinding(keybinding.id).subscribe({
-                next: () => {
-                    this.snackBar.open('Permanently deleted', 'OK', { duration: 3000 });
-                    this.loadKeybindings();
-                },
-                error: (err) => {
-                    console.error('Error deleting keybinding:', err);
-                    this.snackBar.open(err.error?.message || 'Failed to delete', 'OK', { duration: 5000 });
-                }
-            });
-        }
+        const dialogRef = this.dialog.open(DeleteVersionsDialogComponent, {
+            data: {
+                keybindingId: keybinding.id,
+                keybindingName: keybinding.name
+            },
+            width: '500px',
+            disableClose: true
+        });
+
+        dialogRef.afterClosed().subscribe((result: DeleteVersionsDialogResult | undefined) => {
+            if (result?.confirmed) {
+                const deletedCount = result.selectedVersionIds?.length || 0;
+                this.snackBar.open(
+                    `Successfully deleted ${deletedCount} version(s)`,
+                    'OK',
+                    { duration: 3000 }
+                );
+                this.loadKeybindings();
+            }
+        });
     }
 
     formatClassName(className: string): string {
