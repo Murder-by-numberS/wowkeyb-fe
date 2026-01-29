@@ -23,6 +23,7 @@ import { AbilitiesComponent } from '../abilities/abilities.component';
 import { KeybindsDrawerComponent } from '../keybinds-drawer/keybinds-drawer.component';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
 import { ShareDialogComponent } from '../share-dialog/share-dialog.component';
+import { VersionCopyDialogComponent, VersionCopyDialogData } from '../version-copy-dialog/version-copy-dialog.component';
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -88,6 +89,12 @@ export class MyKeybindingsComponent implements OnInit {
     currentUserId: string | null = null;
     keybindings: any[] = [];  // Initialize as empty array
     MAX_SIZE = 10;
+
+    // Version switching
+    keybindingVersions: Array<{ keybindingId: string; versionId: string; gameVersion: string; isCurrent: boolean }> = [];
+    availableVersions: Array<{ id: string; gameVersion: string }> = [];
+    versionsWithoutKeybinding: Array<{ id: string; gameVersion: string }> = [];
+    isCopyingToVersion = false;
 
     constructor(
         private keybindingService: KeybindingService,
@@ -298,6 +305,9 @@ export class MyKeybindingsComponent implements OnInit {
                             this.opened = false;
                             this.drawerOpen = false;
                         }
+
+                        // Load versions for version switching
+                        this.loadVersions(updatedKeybinding.keybindingId);
                     }
                 });
         }
@@ -305,6 +315,8 @@ export class MyKeybindingsComponent implements OnInit {
             this.selectedKeybinding = null;
             this.selectedKeybindingName = null;
             this.keybindingSelected = false;
+            this.keybindingVersions = [];
+            this.versionsWithoutKeybinding = [];
             this.nameForm.get('name')?.setValue('');
             this.selectedKeybindingClass = null;
             this.selectedKeybindingSpec = null;
@@ -727,5 +739,101 @@ export class MyKeybindingsComponent implements OnInit {
                 this.drawerOpen = true;
             }
         }
+    }
+
+    private loadVersions(keybindingId: string): void {
+        this.keybindingService.getKeybindingVersions(keybindingId)
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe({
+                next: (response) => {
+                    this.keybindingVersions = response.versions;
+                    this.availableVersions = response.availableVersions;
+                    // Find versions that don't have this keybinding yet
+                    const existingVersionIds = this.keybindingVersions.map(v => v.versionId);
+                    this.versionsWithoutKeybinding = this.availableVersions.filter(
+                        v => !existingVersionIds.includes(v.id)
+                    );
+                },
+                error: (error) => {
+                    console.error('Error loading keybinding versions:', error);
+                }
+            });
+    }
+
+    onVersionChange(keybindingId: string): void {
+        if (keybindingId && keybindingId !== this.selectedKeybinding?.keybindingId) {
+            // Find the keybinding in our list and select it
+            const keybinding = this.keybindings.find(kb => kb.keybindingId === keybindingId);
+            if (keybinding) {
+                this.onKeybindingSelected(keybinding);
+                if (this.keybindsDrawerComponent) {
+                    this.keybindsDrawerComponent.setSelectedKeybinding(keybinding);
+                }
+            } else {
+                // If not in our list, load it
+                this.keybindingService.getKeybinding(keybindingId).subscribe({
+                    next: (kb) => {
+                        this.onKeybindingSelected(kb);
+                    },
+                    error: (error) => {
+                        console.error('Error loading keybinding:', error);
+                    }
+                });
+            }
+        }
+    }
+
+    copyToVersion(versionId: string): void {
+        if (!this.selectedKeybinding || this.isCopyingToVersion) return;
+
+        this.isCopyingToVersion = true;
+        this.keybindingService.copyToVersion(this.selectedKeybinding.keybindingId, versionId)
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe({
+                next: (response) => {
+                    this.isCopyingToVersion = false;
+                    
+                    // Show the version copy dialog with changes
+                    const dialogData: VersionCopyDialogData = {
+                        targetVersion: response.targetVersion,
+                        changes: response.changes,
+                        keybindingId: response.keybinding.keybindingId
+                    };
+                    
+                    const dialogRef = this.dialog.open(VersionCopyDialogComponent, {
+                        data: dialogData,
+                        disableClose: false
+                    });
+                    
+                    dialogRef.afterClosed().subscribe(result => {
+                        if (result?.action === 'view') {
+                            // Refresh and select the new keybinding
+                            this.keybindingService.forceRefreshKeybindings().subscribe({
+                                next: () => {
+                                    this.keybindingService.getKeybinding(result.keybindingId).subscribe({
+                                        next: (kb) => {
+                                            this.onKeybindingSelected(kb);
+                                            if (this.keybindsDrawerComponent) {
+                                                this.keybindsDrawerComponent.loadKeybindings();
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        // Reload versions to show the new one
+                        if (this.selectedKeybinding) {
+                            this.loadVersions(this.selectedKeybinding.keybindingId);
+                        }
+                        // Refresh the keybindings list
+                        this.refreshChildKeybindings();
+                    });
+                },
+                error: (error) => {
+                    console.error('Error copying keybinding:', error);
+                    this.snackBar.open(error.error?.message || 'Error copying keybinding', 'Close', { duration: 5000 });
+                    this.isCopyingToVersion = false;
+                }
+            });
     }
 }

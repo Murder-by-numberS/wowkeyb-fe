@@ -221,8 +221,11 @@ export class AdminService {
         search?: string;
         class?: string;
         spec?: string;
+        hero_talent?: string;
         ability_type?: string;
         version?: string;
+        sort?: string;
+        order?: 'asc' | 'desc';
         includeInactive?: boolean;
     } = {}): Observable<{ abilities: AdminAbility[] } & PaginatedResponse<AdminAbility>> {
         let httpParams = new HttpParams();
@@ -231,8 +234,11 @@ export class AdminService {
         if (params.search) httpParams = httpParams.set('search', params.search);
         if (params.class) httpParams = httpParams.set('class', params.class);
         if (params.spec) httpParams = httpParams.set('spec', params.spec);
+        if (params.hero_talent) httpParams = httpParams.set('hero_talent', params.hero_talent);
         if (params.ability_type) httpParams = httpParams.set('ability_type', params.ability_type);
         if (params.version) httpParams = httpParams.set('version', params.version);
+        if (params.sort) httpParams = httpParams.set('sort', params.sort);
+        if (params.order) httpParams = httpParams.set('order', params.order);
         if (params.includeInactive !== undefined) {
             httpParams = httpParams.set('includeInactive', params.includeInactive.toString());
         }

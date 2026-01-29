@@ -11,9 +11,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSortModule, Sort } from '@angular/material/sort';
 
 import { AdminService, AdminAbility } from 'app/core/services/admin.service';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { fullClasses } from 'app/core/data/classes';
 
 @Component({
     selector: 'admin-abilities',
@@ -31,7 +33,8 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
         MatInputModule,
         MatSelectModule,
         MatProgressSpinnerModule,
-        MatTooltipModule
+        MatTooltipModule,
+        MatSortModule
     ]
 })
 export class AdminAbilitiesComponent implements OnInit {
@@ -49,24 +52,45 @@ export class AdminAbilitiesComponent implements OnInit {
     searchQuery = '';
     selectedClass = '';
     selectedSpec = '';
+    selectedHeroTalent = '';
     selectedAbilityType = '';
     selectedVersion = '';
     filtersExpanded = false;
     private searchSubject = new Subject<string>();
 
+    // Sorting
+    sortField = 'name';
+    sortDirection: 'asc' | 'desc' = 'asc';
+
     // Filter options
     classes = [
-        'deathknight', 'demonhunter', 'druid', 'evoker', 'hunter',
-        'mage', 'monk', 'paladin', 'priest', 'rogue', 'shaman', 'warlock', 'warrior'
+        { value: 'deathknight', label: 'Death Knight' },
+        { value: 'demonhunter', label: 'Demon Hunter' },
+        { value: 'druid', label: 'Druid' },
+        { value: 'evoker', label: 'Evoker' },
+        { value: 'hunter', label: 'Hunter' },
+        { value: 'mage', label: 'Mage' },
+        { value: 'monk', label: 'Monk' },
+        { value: 'paladin', label: 'Paladin' },
+        { value: 'priest', label: 'Priest' },
+        { value: 'rogue', label: 'Rogue' },
+        { value: 'shaman', label: 'Shaman' },
+        { value: 'warlock', label: 'Warlock' },
+        { value: 'warrior', label: 'Warrior' }
     ];
 
+    specs: string[] = [];
+    heroTalents: string[] = [];
     abilityTypes = ['class', 'spec', 'hero_talent'];
 
     versions: string[] = [];
 
+    // Class data for spec/hero talent lookups
+    fullClasses = fullClasses;
+
     displayedColumns = ['icon', 'name', 'class', 'spec', 'ability_type', 'version', 'actions'];
 
-    constructor(private adminService: AdminService) {}
+    constructor(private adminService: AdminService) { }
 
     ngOnInit(): void {
         this.loadVersions();
@@ -103,8 +127,11 @@ export class AdminAbilitiesComponent implements OnInit {
             search: this.searchQuery,
             class: this.selectedClass,
             spec: this.selectedSpec,
+            hero_talent: this.selectedHeroTalent,
             ability_type: this.selectedAbilityType,
             version: this.selectedVersion,
+            sort: this.sortField,
+            order: this.sortDirection,
             includeInactive: true
         }).subscribe({
             next: (response) => {
@@ -128,12 +155,23 @@ export class AdminAbilitiesComponent implements OnInit {
 
     onClassChange(classValue: string): void {
         this.selectedClass = classValue;
+        this.selectedSpec = '';
+        this.selectedHeroTalent = '';
+        this.updateSpecsAndHeroTalents();
         this.currentPage = 1;
         this.loadAbilities();
     }
 
     onSpecChange(specValue: string): void {
         this.selectedSpec = specValue;
+        this.selectedHeroTalent = '';
+        this.updateHeroTalents();
+        this.currentPage = 1;
+        this.loadAbilities();
+    }
+
+    onHeroTalentChange(heroTalentValue: string): void {
+        this.selectedHeroTalent = heroTalentValue;
         this.currentPage = 1;
         this.loadAbilities();
     }
@@ -150,20 +188,58 @@ export class AdminAbilitiesComponent implements OnInit {
         this.loadAbilities();
     }
 
+    onSortChange(sort: Sort): void {
+        this.sortField = sort.active || 'name';
+        this.sortDirection = (sort.direction as 'asc' | 'desc') || 'asc';
+        this.currentPage = 1;
+        this.loadAbilities();
+    }
+
+    updateSpecsAndHeroTalents(): void {
+        if (this.selectedClass && this.fullClasses[this.selectedClass]) {
+            const classData = this.fullClasses[this.selectedClass];
+            this.specs = Object.keys(classData.specs);
+            this.heroTalents = [];
+        } else {
+            this.specs = [];
+            this.heroTalents = [];
+        }
+    }
+
+    updateHeroTalents(): void {
+        if (this.selectedClass && this.selectedSpec && this.fullClasses[this.selectedClass]) {
+            const classData = this.fullClasses[this.selectedClass];
+            // Find the spec (case-insensitive match)
+            const specKey = Object.keys(classData.specs).find(
+                s => s.toLowerCase() === this.selectedSpec.toLowerCase()
+            );
+            if (specKey) {
+                this.heroTalents = classData.specs[specKey] || [];
+            } else {
+                this.heroTalents = [];
+            }
+        } else {
+            this.heroTalents = [];
+        }
+    }
+
     toggleFilters(): void {
         this.filtersExpanded = !this.filtersExpanded;
     }
 
     hasActiveFilters(): boolean {
-        return !!(this.selectedClass || this.selectedSpec || this.selectedAbilityType || this.selectedVersion || this.searchQuery);
+        return !!(this.selectedClass || this.selectedSpec || this.selectedHeroTalent || this.selectedAbilityType || this.selectedVersion || this.searchQuery);
     }
 
     clearAllFilters(): void {
         this.selectedClass = '';
         this.selectedSpec = '';
+        this.selectedHeroTalent = '';
         this.selectedAbilityType = '';
         this.selectedVersion = '';
         this.searchQuery = '';
+        this.specs = [];
+        this.heroTalents = [];
         this.currentPage = 1;
         this.loadAbilities();
     }

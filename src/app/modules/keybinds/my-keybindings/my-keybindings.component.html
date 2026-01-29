@@ -33,6 +33,37 @@
                     My Keybindings
                     }
                 </h2>
+                @if (selectedKeybinding?.version?.game_version) {
+                <div class="flex items-center gap-2 ml-2">
+                    <span class="text-sm text-gray-500">v</span>
+                    @if (keybindingVersions.length > 1) {
+                    <select class="text-sm font-medium border rounded px-2 py-1 bg-white cursor-pointer"
+                        [value]="selectedKeybinding.keybindingId" (change)="onVersionChange($any($event.target).value)">
+                        @for (version of keybindingVersions; track version.keybindingId) {
+                        <option [value]="version.keybindingId" [selected]="version.isCurrent">
+                            {{ version.gameVersion }}
+                        </option>
+                        }
+                    </select>
+                    } @else {
+                    <span class="text-sm font-medium">{{ selectedKeybinding.version.game_version }}</span>
+                    }
+                    @if (versionsWithoutKeybinding.length > 0) {
+                    <button mat-icon-button [matMenuTriggerFor]="versionMenu" matTooltip="Copy to another version"
+                        [disabled]="isCopyingToVersion" class="!w-8 !h-8">
+                        <mat-icon class="!text-lg">add</mat-icon>
+                    </button>
+                    <mat-menu #versionMenu="matMenu">
+                        <div class="px-3 py-2 text-sm text-gray-500 border-b">Copy to version:</div>
+                        @for (version of versionsWithoutKeybinding; track version.id) {
+                        <button mat-menu-item (click)="copyToVersion(version.id)">
+                            {{ version.gameVersion }}
+                        </button>
+                        }
+                    </mat-menu>
+                    }
+                </div>
+                }
             </div>
 
             @if (selectedKeybinding) {
