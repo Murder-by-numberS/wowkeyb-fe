@@ -255,62 +255,59 @@ export class MyKeybindingsComponent implements OnInit {
 
     onKeybindingSelected(keybinding: any) {
         if (keybinding) {
-            // Get the latest version of the keybinding from the service's current keybindings
-            this.keybindingService.currentKeybindings
-                .pipe(takeUntil(this._unsubscribeAll))
-                .subscribe(keybindings => {
-                    const updatedKeybinding = keybindings.find(kb => kb.keybindingId === keybinding.keybindingId);
-                    if (updatedKeybinding) {
-                        // Update the selected keybinding with the latest data
-                        this.selectedKeybinding = updatedKeybinding;
-                        this.selectedKeybindingName = this.selectedKeybinding.name;
-                        this.keybindingSelected = true;
-                        this.nameForm.get('name')?.setValue(this.selectedKeybindingName);
+            // Try to get the latest version from currentKeybindings, but fall back to the passed keybinding
+            // This prevents issues when a newly created keybinding hasn't been added to the service yet
+            const currentKeybindings = this.keybindingService.currentKeybindingsValue;
+            const updatedKeybinding = currentKeybindings.find(kb => kb.keybindingId === keybinding.keybindingId) || keybinding;
 
-                        // Update the class, spec, and heroTalent selections
-                        this.selectedKeybindingClass = updatedKeybinding.class;
-                        this.selectedKeybindingSpec = updatedKeybinding.spec;
-                        this.selectedKeybindingHeroTalent = updatedKeybinding.heroTalent;
+            // Update the selected keybinding with the latest data
+            this.selectedKeybinding = updatedKeybinding;
+            this.selectedKeybindingName = this.selectedKeybinding.name;
+            this.keybindingSelected = true;
+            this.nameForm.get('name')?.setValue(this.selectedKeybindingName);
 
-                        // If this is a new keybinding with random class details, use them to fetch abilities
-                        if (updatedKeybinding.randomClassDetails) {
-                            console.log('New keybinding with random class details:', updatedKeybinding.randomClassDetails);
+            // Update the class, spec, and heroTalent selections
+            this.selectedKeybindingClass = updatedKeybinding.class;
+            this.selectedKeybindingSpec = updatedKeybinding.spec;
+            this.selectedKeybindingHeroTalent = updatedKeybinding.heroTalent;
 
-                            // The abilities component will pick up the randomClassDetails from the selectedKeybinding
-                            // and use them in ngOnChanges to populate the abilities
-                            console.log('Selected keybinding with randomClassDetails:', this.selectedKeybinding);
+            // If this is a new keybinding with random class details, use them to fetch abilities
+            if (updatedKeybinding.randomClassDetails) {
+                console.log('New keybinding with random class details:', updatedKeybinding.randomClassDetails);
 
-                            // Force change detection by creating a new object reference
-                            // This ensures ngOnChanges is triggered in the abilities component
-                            this.selectedKeybinding = { ...this.selectedKeybinding };
-                        }
+                // The abilities component will pick up the randomClassDetails from the selectedKeybinding
+                // and use them in ngOnChanges to populate the abilities
+                console.log('Selected keybinding with randomClassDetails:', this.selectedKeybinding);
 
-                        // Update the drawer's selection
-                        if (this.keybindsDrawerComponent) {
-                            this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
-                        }
+                // Force change detection by creating a new object reference
+                // This ensures ngOnChanges is triggered in the abilities component
+                this.selectedKeybinding = { ...this.selectedKeybinding };
+            }
 
-                        // Trigger the change events to update the abilities component
-                        this.onSelectionClassChanged(updatedKeybinding.class);
+            // Update the drawer's selection
+            if (this.keybindsDrawerComponent) {
+                this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
+            }
 
-                        // Force change detection to ensure UI updates
-                        this.cdr.detectChanges();
+            // Trigger the change events to update the abilities component
+            this.onSelectionClassChanged(updatedKeybinding.class);
 
-                        // Additional trigger for keyboard component
-                        setTimeout(() => {
-                            this.cdr.detectChanges();
-                        }, 0);
+            // Force change detection to ensure UI updates
+            this.cdr.detectChanges();
 
-                        // Close drawer on mobile after selecting a keybinding
-                        if (this.isMobile) {
-                            this.opened = false;
-                            this.drawerOpen = false;
-                        }
+            // Additional trigger for keyboard component
+            setTimeout(() => {
+                this.cdr.detectChanges();
+            }, 0);
 
-                        // Load versions for version switching
-                        this.loadVersions(updatedKeybinding.keybindingId);
-                    }
-                });
+            // Close drawer on mobile after selecting a keybinding
+            if (this.isMobile) {
+                this.opened = false;
+                this.drawerOpen = false;
+            }
+
+            // Load versions for version switching
+            this.loadVersions(updatedKeybinding.keybindingId);
         }
         else {
             this.selectedKeybinding = null;

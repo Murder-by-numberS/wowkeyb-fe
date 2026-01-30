@@ -70,7 +70,7 @@
             <!-- Dynamic Action Buttons -->
             <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0 w-full lg:w-auto">
                 @if (!editingName) {
-                <button mat-stroked-button (click)="editName()" [disabled]="!isAuthenticated"
+                <button type="button" mat-stroked-button (click)="editName()" [disabled]="!isAuthenticated"
                     class="text-xs sm:text-sm">
                     <mat-icon class="text-base sm:text-lg">edit</mat-icon>
                     <span class="ml-1 hidden sm:inline">Edit</span>
@@ -94,7 +94,7 @@
                 </form>
                 }
 
-                <button mat-stroked-button (click)="duplicateKeybinding(selectedKeybinding)"
+                <button type="button" mat-stroked-button (click)="duplicateKeybinding(selectedKeybinding)"
                     [disabled]="!isAuthenticated || keybindings.length >= MAX_SIZE"
                     [matTooltip]="!isAuthenticated ? 'Create an account to duplicate keybindings' : keybindings.length >= MAX_SIZE ? 'Maximum number of keybindings reached' : 'Duplicate keybinding'"
                     class="text-xs sm:text-sm flex-shrink-0">
@@ -102,14 +102,14 @@
                     <span class="ml-1 hidden sm:inline">Duplicate</span>
                 </button>
 
-                <button mat-stroked-button (click)="deleteKeybinding(selectedKeybinding)" [disabled]="!isAuthenticated"
+                <button type="button" mat-stroked-button (click)="deleteKeybinding(selectedKeybinding)" [disabled]="!isAuthenticated"
                     [matTooltip]="!isAuthenticated ? 'Create an account to delete keybindings' : 'Delete keybinding'"
                     class="text-xs sm:text-sm flex-shrink-0">
                     <mat-icon class="text-base sm:text-lg">delete</mat-icon>
                     <span class="ml-1 hidden sm:inline">Delete</span>
                 </button>
 
-                <button mat-flat-button color="primary" (click)="shareKeybinding()" [disabled]="!isAuthenticated"
+                <button type="button" mat-flat-button color="primary" (click)="shareKeybinding()" [disabled]="!isAuthenticated"
                     [matTooltip]="!isAuthenticated ? 'Create an account to share keybindings' : 'Share keybinding'"
                     class="text-xs sm:text-sm flex-shrink-0">
                     <mat-icon class="text-base sm:text-lg">share</mat-icon>
@@ -117,14 +117,14 @@
                 </button>
 
                 @if (selectedKeybinding.isPublic) {
-                <button mat-stroked-button color="primary" (click)="togglePublic()" [disabled]="!isAuthenticated"
+                <button type="button" mat-stroked-button color="primary" (click)="togglePublic()" [disabled]="!isAuthenticated"
                     [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Private'"
                     class="text-xs sm:text-sm flex-shrink-0">
                     <mat-icon class="text-base sm:text-lg">public</mat-icon>
                     <span class="ml-1 hidden sm:inline">Public</span>
                 </button>
                 } @else {
-                <button mat-stroked-button (click)="togglePublic()" [disabled]="!isAuthenticated"
+                <button type="button" mat-stroked-button (click)="togglePublic()" [disabled]="!isAuthenticated"
                     [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Public'"
                     class="text-xs sm:text-sm flex-shrink-0">
                     <mat-icon class="text-base sm:text-lg">public_off</mat-icon>
