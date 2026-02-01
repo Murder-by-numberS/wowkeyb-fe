@@ -74,6 +74,9 @@ export class MyKeybindingsComponent implements OnInit {
     opened: boolean = true; // Show drawer by default for my-keybindings
     drawerOpen: boolean = true; // Drawer is open by default (matches my-macros)
 
+    /** Set to true to temporarily hide the keybinding list (full-width content for testing). */
+    drawerDisabled: boolean = false;
+
     selectedKeybinding: any = null;
     selectedKeybindingName: string;
     keybindingSelected: boolean;

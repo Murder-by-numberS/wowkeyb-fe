@@ -1,8 +1,10 @@
-<div class="pl-2 pt-1 flex flex-col sm:flex-row gap-1 lg:gap-4">
-    <div class="flex flex-col sm:flex-row gap-1 lg:gap-4">
+<!-- Class/Spec/Hero Talent Selectors (cap width on mobile so selects aren't too long) -->
+<div class="pl-2 pr-4 pt-1 flex flex-col sm:flex-row gap-1 lg:gap-4 w-full max-w-full min-w-0 max-sm:max-w-[calc(100vw-3rem)]">
+    <div class="flex flex-col sm:flex-row gap-1 lg:gap-4 min-w-0 flex-1">
+        <!-- Class Selector -->
         <div class="px-2 flex-col">
             @if (selectedKeybinding && selectedKeybindingClass) {
-            <mat-form-field appearance="fill" class="w-full sm:w-48">
+            <mat-form-field appearance="fill" class="w-full max-w-[calc(100vw-3rem)] min-w-0 sm:w-48 sm:max-w-none">
                 <mat-label>Class: </mat-label>
                 <mat-select [(value)]="selectedKeybindingClass" [disabled]="!keybindingSelected"
                     (selectionChange)="onClassChange($event)">
@@ -13,7 +15,7 @@
             </mat-form-field>
             }
             @if (!selectedKeybinding || !selectedKeybindingClass) {
-            <mat-form-field appearance="fill" class="w-full sm:w-48">
+            <mat-form-field appearance="fill" class="w-full max-w-[calc(100vw-3rem)] min-w-0 sm:w-48 sm:max-w-none">
                 <mat-label>Class: </mat-label>
                 <mat-select placeholder="Select a keybinding first" [disabled]="true">
                     <mat-option value="" disabled>Select a keybinding first</mat-option>
@@ -21,9 +23,11 @@
             </mat-form-field>
             }
         </div>
+
+        <!-- Spec Selector -->
         @if (selectedKeybinding && selectedKeybindingClass) {
         <div class="px-2 flex-col">
-            <mat-form-field appearance="fill" class="w-full sm:w-48">
+            <mat-form-field appearance="fill" class="w-full max-w-[calc(100vw-3rem)] min-w-0 sm:w-48 sm:max-w-none">
                 <mat-label>Spec: </mat-label>
                 <mat-select [(value)]="selectedKeybindingSpec" [disabled]="!keybindingSelected"
                     (selectionChange)="onSpecChange($event)">
@@ -34,9 +38,11 @@
             </mat-form-field>
         </div>
         }
+
+        <!-- Hero Talent Selector -->
         @if (selectedKeybinding && selectedKeybindingClass && selectedKeybindingSpec) {
         <div class="px-2 flex-col">
-            <mat-form-field appearance="fill" class="w-full sm:w-48">
+            <mat-form-field appearance="fill" class="w-full max-w-[calc(100vw-3rem)] min-w-0 sm:w-48 sm:max-w-none">
                 <mat-label>Hero Talent: </mat-label>
                 <mat-select [(value)]="selectedKeybindingHeroTalent" [disabled]="!keybindingSelected"
                     (selectionChange)="onHeroTalentChange($event)">
@@ -49,18 +55,28 @@
         }
     </div>
 </div>
-<div class="pl-4 pb-0 flex flex-row w-full items-center gap-1">
+
+<!-- Abilities Header with Pagination Info -->
+<div class="pl-4 pb-0 flex flex-row w-full items-center gap-2">
     @if (abilities?.length > 0) {
     <p class="text-sm lg:text-base font-medium">Abilities</p>
+    
     <!-- Mobile: Show total count only -->
     <p class="text-xs lg:text-sm text-gray-600 sm:hidden">
         {{ abilities.length }} abilities
     </p>
+    
     <!-- Desktop: Show pagination info -->
+    @if (showPagination) {
     <p class="hidden sm:block text-xs lg:text-sm text-gray-600">
-        Page {{ currentPage + 1 }} of {{ maxPage() + 1 }} |
-        Showing {{ getStartIndex() + 1 }} - {{ getEndIndex() }} of {{ abilities.length }}
+        Page {{ currentPage + 1 }} of {{ totalPages }} |
+        Showing {{ startIndex + 1 }} - {{ endIndex }} of {{ abilities.length }}
     </p>
+    } @else {
+    <p class="hidden sm:block text-xs lg:text-sm text-gray-600">
+        Showing {{ abilities.length }} of {{ abilities.length }}
+    </p>
+    }
     } @else if (selectedKeybinding) {
     <p class="text-sm lg:text-base text-gray-600">No abilities available for selected class/spec/hero talent</p>
     } @else {
@@ -68,40 +84,58 @@
     }
 </div>
 
-<div class="w-full pl-4 flex pb-0">
-    <!-- Mobile: Show all abilities -->
-    <div class="flex items-center overflow-x-auto gap-1 sm:hidden">
+<!-- Abilities Icon Row: cap at viewport on mobile so all 32 show in 4 rows, no horizontal scroll -->
+<div class="w-full min-w-0 px-4 pb-0 sm:overflow-visible max-sm:max-w-[100vw] max-sm:overflow-x-hidden">
+    <!-- Mobile: 8 per row, 4 rows for 32 abilities; no pagination; no horizontal scroll -->
+    <div class="grid gap-2 sm:hidden py-1 w-full min-w-0 max-w-full box-border" style="grid-template-columns: repeat(8, minmax(0, 1fr));">
         @if (abilities?.length > 0) {
         @for (ability of abilities; track $index) {
-        <div class="flex flex-col w-10 h-10 flex-shrink-0">
-            <div class="flex items-center" matTooltip="{{ ability.name }}: {{ ability.description }}"
-                matTooltipPosition="above" (click)="selectKey(ability)">
-                <img [src]="ability.icon" alt="{{ ability.name }} icon"
-                    class="w-10 h-10 object-contain cursor-pointer hover:scale-110 transition-transform"
-                    [class.grayscale]="ability.keybindings.length > 0" />
-            </div>
+        <div class="aspect-square min-w-0 flex items-center justify-center">
+            <img [src]="ability.icon" 
+                [alt]="ability.name"
+                [matTooltip]="ability.name + ': ' + ability.description"
+                matTooltipPosition="above"
+                (click)="selectKey(ability)"
+                class="w-full h-full max-w-10 max-h-10 object-contain cursor-pointer hover:scale-110 transition-transform"
+                [class.grayscale]="ability.keybindings?.length > 0" />
         </div>
         }
         }
     </div>
 
-    <!-- Desktop: Show paginated abilities -->
-    <div class="hidden sm:flex items-center overflow-x-auto gap-1">
+    <!-- Desktop: Paginated horizontal icon row (min-w-0 so row shrinks and right arrow stays visible) -->
+    <div class="hidden sm:flex items-center gap-2 w-full min-w-0 py-1">
         @if (abilities?.length > 0) {
-        <mat-icon class="text-gray-500 cursor-pointer flex-shrink-0" (click)="goToPreviousPage()"
-            [class.opacity-50]="currentPage === 0">arrow_back</mat-icon>
-        @for (ability of getAbilitiesForCurrentPage(); track $index) {
-        <div class="flex flex-col w-12 h-12 flex-shrink-0">
-            <div class="flex items-center" matTooltip="{{ ability.name }}: {{ ability.description }}"
-                matTooltipPosition="above" (click)="selectKey(ability)">
-                <img [src]="ability.icon" alt="{{ ability.name }} icon"
-                    class="w-12 h-12 object-contain cursor-pointer hover:scale-110 transition-transform"
-                    [class.grayscale]="ability.keybindings.length > 0" />
-            </div>
+        
+        <!-- Previous Page Button (always visible; disabled when no previous page) -->
+        <button type="button" 
+            class="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+            [disabled]="currentPage === 0"
+            (click)="goToPreviousPage()">
+            <mat-icon class="text-gray-600">chevron_left</mat-icon>
+        </button>
+        
+        <!-- Icons Container - width = icons only, so right arrow sits next to last icon (no gap) -->
+        <div #iconRowContainer class="flex items-center flex-grow-0 flex-shrink-0 overflow-hidden flex-nowrap gap-0" [style.width.px]="iconsPerPage * 48">
+            @for (ability of visibleAbilities; track $index) {
+            <img [src]="ability.icon" 
+                [alt]="ability.name"
+                [matTooltip]="ability.name + ': ' + ability.description"
+                matTooltipPosition="above"
+                (click)="selectKey(ability)"
+                class="w-[48px] h-[48px] m-0 p-0 flex-shrink-0 object-contain cursor-pointer hover:scale-110 transition-transform"
+                [class.grayscale]="ability.keybindings?.length > 0" />
+            }
         </div>
-        }
-        <mat-icon class="text-gray-500 cursor-pointer flex-shrink-0" (click)="goToNextPage()"
-            [class.opacity-50]="currentPage === maxPage()">arrow_forward</mat-icon>
+        
+        <!-- Next Page Button (always visible; disabled when no next page) -->
+        <button type="button"
+            class="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+            [disabled]="currentPage >= maxPage"
+            (click)="goToNextPage()">
+            <mat-icon class="text-gray-600">chevron_right</mat-icon>
+        </button>
+        
         }
     </div>
 </div>

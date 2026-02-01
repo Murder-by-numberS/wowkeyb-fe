@@ -1,10 +1,11 @@
 <div class="flex flex-row w-full h-full relative">
     <!-- Backdrop for mobile when drawer is open -->
-    @if (drawerOpen && isMobile) {
+    @if (!drawerDisabled && drawerOpen && isMobile) {
     <div class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity" (click)="toggleDrawer()"></div>
     }
 
-    <!-- Left Column: Keybinding List -->
+    <!-- Left Column: Keybinding List (hidden when drawerDisabled) -->
+    @if (!drawerDisabled) {
     <div class="w-80 flex flex-col border-r border-gray-200 bg-white transition-transform duration-300 ease-in-out"
         [class.fixed]="isMobile" [class.inset-y-0]="isMobile" [class.left-0]="isMobile" [class.z-50]="isMobile"
         [class.-translate-x-full]="isMobile && !drawerOpen" [class.translate-x-0]="isMobile && drawerOpen"
@@ -15,6 +16,7 @@
             (keybindingUpdated)="onKeybindingUpdated($event)">
         </keybinds-drawer>
     </div>
+    }
 
     <!-- Right Column: Keybinding Data -->
     <div class="flex-1 flex flex-col bg-gray-50">
@@ -22,10 +24,12 @@
         <div
             class="flex flex-col lg:flex-row lg:items-start xl:items-center gap-3 lg:gap-4 p-4 border-b bg-white min-w-0">
             <div class="flex items-center gap-3 lg:gap-4 min-w-0 flex-shrink">
+                @if (!drawerDisabled) {
                 <button mat-icon-button (click)="toggleDrawer()" matTooltip="Toggle Keybinding List"
                     class="flex-shrink-0">
                     <mat-icon>{{ drawerOpen ? 'chevron_left' : 'menu' }}</mat-icon>
                 </button>
+                }
                 <h2 class="text-lg font-semibold truncate min-w-0">
                     @if (selectedKeybinding) {
                     {{ selectedKeybindingName }}
@@ -135,12 +139,13 @@
             }
         </div>
 
-        <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto pb-16">
+        <!-- Scrollable Content (overflow-x-hidden on mobile so abilities grid doesn't cause horizontal scroll) -->
+        <div class="flex-1 overflow-y-auto overflow-x-hidden min-w-0 pb-16">
             @if (selectedKeybinding) {
-            <!-- Abilities Section -->
-            <div class="w-full bg-gray-300 min-h-[120px] sm:min-h-[150px] lg:min-h-[100px] flex-shrink-0">
+            <!-- Abilities Section (min-w-0 so mobile grid wraps and no abilities are cut off) -->
+            <div class="w-full min-w-0 bg-gray-300 min-h-[120px] sm:min-h-[150px] lg:min-h-[100px] flex-shrink-0">
                 <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
+                    [drawerOpen]="drawerOpen"
                     (selectionClassChanged)="onSelectionClassChanged($event)"
                     (keybindingUpdated)="updateKeybinding($event)">
                 </abilities>

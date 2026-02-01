@@ -3,6 +3,7 @@ import { initialDataResolver } from 'app/app.resolvers';
 import { AuthGuard } from 'app/core/auth/guards/auth.guard';
 import { NoAuthGuard } from 'app/core/auth/guards/noAuth.guard';
 import { LayoutComponent } from 'app/layout/layout.component';
+import { AbilitiesTestComponent } from 'app/modules/keybinds/abilities-test/abilities-test.component';
 
 // prettier-ignore
 /* eslint-disable max-len */
@@ -116,6 +117,26 @@ export const appRoutes: Route[] = [
             layout: 'modern'
         },
         children: [{ path: 'keybinds', loadChildren: () => import('app/modules/keybinds/keybinds.routes') },
+        ]
+    },
+
+    // Temp: abilities test page (component-size + pagination)
+    {
+        path: 'temp',
+        component: LayoutComponent,
+        data: {
+            layout: 'modern'
+        },
+        children: [
+            {
+                path: 'keybinds',
+                children: [
+                    {
+                        path: 'my-keybindings',
+                        component: AbilitiesTestComponent,
+                    },
+                ],
+            },
         ]
     },
     // Macros

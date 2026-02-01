@@ -1,6 +1,6 @@
-import { Component, ViewEncapsulation, OnInit, EventEmitter, Output, Input, SimpleChanges } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, EventEmitter, Output, Input, SimpleChanges, ViewChild, ElementRef, AfterViewInit, OnDestroy, NgZone, ChangeDetectorRef, HostListener } from '@angular/core';
 
-//Material
+// Material
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -10,19 +10,19 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-//Services
+// Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
 import { AbilitiesService } from 'app/core/services/abilities.service';
 import { VersionCompareService } from 'app/core/services/version-compare.service';
 
-//Components
+// Components
 import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog.component';
 import { AbilityDialogComponent } from './ability-dialog/ability-dialog.component';
 
-//Data
+// Data
 import { classes, fullClasses } from 'app/core/data/classes';
 
-//Interfaces
+// Interfaces
 import { Keybinding } from 'app/core/types/keybinding';
 import { Ability } from 'app/core/types/ability';
 
@@ -31,6 +31,9 @@ import { Ability } from 'app/core/types/ability';
     templateUrl: './abilities.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
+    host: {
+        class: 'block w-full min-w-0',
+    },
     imports: [
         MatButtonModule,
         MatIconModule,
@@ -42,59 +45,288 @@ import { Ability } from 'app/core/types/ability';
         MatTooltipModule
     ],
 })
-export class AbilitiesComponent implements OnInit {
+export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     isDisabled = true;
 
-    @Input()
-    keybindingSelected: boolean;
+    @Input() keybindingSelected: boolean = false;
+    @Input() selectedKeybinding: Keybinding;
+    @Input() drawerOpen: boolean = true;
 
-    @Input()
-    selectedKeybinding: Keybinding;
     selectedKeybindingClass: string;
     selectedKeybindingSpec: string;
     selectedKeybindingHeroTalent: string;
 
-    abilities: Ability[];
-    private isFetchingAbilities: boolean = false;
+    abilities: Ability[] = [];
+    private isFetchingAbilities = false;
     private currentFetchKeybindingId: string | null = null;
 
     classes = classes;
-    specs = [];
-    heroTalents = [];
+    specs: string[] = [];
+    heroTalents: string[] = [];
 
     @Output() selectionClassChanged = new EventEmitter<string>();
     @Output() keybindingUpdated = new EventEmitter<any>();
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Pagination State (same approach as abilities-test component)
+    // ─────────────────────────────────────────────────────────────────────────
     currentPage = 0;
-    abilitiesPerPage = 12; // Set the number of abilities per page
+    iconsPerPage = 1;
 
-    /**
-     * Constructor
-     */
+    @ViewChild('iconRowContainer') set iconRowContainerRef(el: ElementRef<HTMLDivElement> | undefined) {
+        if (el?.nativeElement) {
+            this._iconRowContainer = el.nativeElement;
+            this.setupResizeObserver();
+        } else {
+            this._iconRowContainer = null;
+            this.resizeObserver?.disconnect();
+            this.resizeObserver = null;
+        }
+    }
+    private _iconRowContainer: HTMLDivElement | null = null;
+
+    private readonly ICON_WIDTH = 48;
+    private resizeObserver: ResizeObserver | null = null;
+
+    /** Drawer width (Tailwind w-80 = 20rem = 320px) – used for viewport cap when drawer is open. */
+    private static readonly DRAWER_WIDTH_PX = 320;
+
+    /** sm breakpoint (600px): desktop abilities row appears; recalc so it resizes correctly. */
+    private static readonly SM_BREAKPOINT_PX = 600;
+    private smMediaQuery: MediaQueryList | null = null;
+    private smMediaQueryListener: (() => void) | null = null;
+
     constructor(
         private keybindingService: KeybindingService,
         private abilitiesService: AbilitiesService,
         private versionCompare: VersionCompareService,
-        private dialog: MatDialog
-    ) {
-        this.keybindingSelected = false;
+        private dialog: MatDialog,
+        private ngZone: NgZone,
+        private cdr: ChangeDetectorRef
+    ) {}
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Lifecycle Hooks
+    // ─────────────────────────────────────────────────────────────────────────
+
+    ngOnInit(): void {
+        // Pagination calculation happens after view init
     }
 
-    /**
-     * Convert display class name to lowercase key for fullClasses access
-     * @param className - Display class name (e.g., "Death Knight", "Hunter")
-     * @returns Lowercase key (e.g., "deathknight", "hunter")
-     */
+    ngAfterViewInit(): void {
+        this.setupSmBreakpointListener();
+    }
+
+    ngOnDestroy(): void {
+        this.resizeObserver?.disconnect();
+        this.resizeObserver = null;
+        if (this.smMediaQuery && this.smMediaQueryListener) {
+            this.smMediaQuery.removeEventListener('change', this.smMediaQueryListener);
+        }
+        this.smMediaQuery = null;
+        this.smMediaQueryListener = null;
+    }
+
+    /** When crossing 600px (sm), recalc so desktop abilities row resizes (e.g. from mobile back to desktop). */
+    private setupSmBreakpointListener(): void {
+        const bp = AbilitiesComponent.SM_BREAKPOINT_PX;
+        this.smMediaQuery = window.matchMedia(`(min-width: ${bp}px)`);
+        this.smMediaQueryListener = () => {
+            setTimeout(() => {
+                this.recalculateIconsPerPage();
+                this.cdr.detectChanges();
+            }, 100);
+        };
+        this.smMediaQuery.addEventListener('change', this.smMediaQueryListener);
+    }
+
+    @HostListener('window:resize')
+    onWindowResize(): void {
+        // Only recalc when desktop abilities row is visible (>= sm 600px); mobile uses horizontal scroll.
+        if (window.innerWidth < AbilitiesComponent.SM_BREAKPOINT_PX) return;
+        const runRecalc = () => {
+            this.recalculateIconsPerPage();
+            this.cdr.detectChanges();
+        };
+        // Run after layout settles so the arrow doesn't disappear during resize.
+        setTimeout(runRecalc, 0);
+        setTimeout(runRecalc, 150);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Resize Observer & Pagination (same as temp/keybinds/my-keybindings page)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private setupResizeObserver(): void {
+        const container = this._iconRowContainer;
+        if (!container) return;
+
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+        }
+
+        this.resizeObserver = new ResizeObserver(() => {
+            this.ngZone.run(() => {
+                this.recalculateIconsPerPage();
+                this.cdr.detectChanges();
+            });
+        });
+        this.resizeObserver.observe(container);
+    }
+
+    private recalculateIconsPerPage(): void {
+        // Only recalc when desktop abilities row is visible (>= sm 600px); mobile uses horizontal scroll.
+        if (window.innerWidth < AbilitiesComponent.SM_BREAKPOINT_PX) return;
+
+        const container = this._iconRowContainer;
+        if (!container || !this.abilities?.length) return;
+
+        const row = container.parentElement;
+        if (!row) return;
+
+        const rowWidth = row.getBoundingClientRect().width;
+        const viewportPx = window.innerWidth;
+        // Cap by viewport so we recalc on resize; when drawer is open, content area = viewport - drawer.
+        const paddingEtc = 80;
+        let viewportCap = this.drawerOpen
+            ? Math.max(0, viewportPx - AbilitiesComponent.DRAWER_WIDTH_PX - paddingEtc)
+            : Math.max(0, viewportPx - 100);
+        // Stricter cap when viewport is small; at 600px (mobile/sm) show a lot fewer abilities.
+        const tooSmallThresholdPx = 1100;
+        const mobileThresholdPx = 700; // sm breakpoint is 600px; desktop row appears there but show fewer abilities
+        let extraOffset = 0;
+        if (viewportPx < mobileThresholdPx) {
+            extraOffset = 280; // show a lot fewer abilities on mobile (600px range)
+        } else if (viewportPx < tooSmallThresholdPx) {
+            extraOffset = 120;
+        }
+        if (extraOffset > 0) {
+            viewportCap = Math.min(viewportCap, Math.max(0, viewportPx - extraOffset));
+        }
+        const effectiveRowWidth = rowWidth > 0 ? Math.min(rowWidth, viewportCap) : viewportCap;
+
+        const buttonsAndGaps = 32 + 8 + 32 + 8;
+        const roundingBuffer = viewportPx < tooSmallThresholdPx ? 8 : 0;
+        const arrowReserve = viewportPx < tooSmallThresholdPx ? this.ICON_WIDTH : 0;
+        const availableWidth = Math.max(0, effectiveRowWidth - buttonsAndGaps - roundingBuffer - arrowReserve);
+        if (availableWidth <= 0) return;
+
+        const firstVisibleIndex = this.currentPage * this.iconsPerPage;
+        const renderedIcons = container.querySelectorAll('img');
+        let iconWidth = this.ICON_WIDTH;
+        if (renderedIcons.length >= 2) {
+            const first = renderedIcons[0].getBoundingClientRect();
+            const second = renderedIcons[1].getBoundingClientRect();
+            iconWidth = second.left - first.left;
+        }
+
+        const maxPossible = Math.floor(availableWidth / iconWidth);
+        let newIconsPerPage = Math.max(1, maxPossible);
+        // Cap abilities per page on mobile (600px) so we don't overcrowd.
+        if (viewportPx < mobileThresholdPx) {
+            newIconsPerPage = Math.min(newIconsPerPage, 5);
+        }
+
+        // Only update when value actually changes (same as temp/keybinds/my-keybindings test page).
+        // This avoids resize loops and the count "resetting" when the container size flickers.
+        if (newIconsPerPage !== this.iconsPerPage) {
+            this.iconsPerPage = newIconsPerPage;
+            this.currentPage = Math.min(
+                Math.floor(firstVisibleIndex / this.iconsPerPage),
+                this.maxPage
+            );
+            this.cdr.detectChanges();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Pagination Computed Properties & Methods
+    // ─────────────────────────────────────────────────────────────────────────
+
+    get totalPages(): number {
+        if (!this.abilities?.length || !this.iconsPerPage) return 1;
+        return Math.ceil(this.abilities.length / this.iconsPerPage);
+    }
+
+    get maxPage(): number {
+        return Math.max(0, this.totalPages - 1);
+    }
+
+    get showPagination(): boolean {
+        return this.abilities?.length > this.iconsPerPage;
+    }
+
+    get visibleAbilities(): Ability[] {
+        if (!this.abilities?.length) return [];
+
+        const startIndex = this.currentPage * this.iconsPerPage;
+        const endIndex = startIndex + this.iconsPerPage;
+
+        this.syncKeybindingsToAbilities();
+        return this.abilities.slice(startIndex, endIndex);
+    }
+
+    get startIndex(): number {
+        return this.currentPage * this.iconsPerPage;
+    }
+
+    get endIndex(): number {
+        return Math.min((this.currentPage + 1) * this.iconsPerPage, this.abilities?.length || 0);
+    }
+
+    goToPreviousPage(): void {
+        if (this.currentPage > 0) {
+            this.currentPage--;
+        }
+    }
+
+    goToNextPage(): void {
+        if (this.currentPage < this.maxPage) {
+            this.currentPage++;
+        }
+    }
+
+    private syncKeybindingsToAbilities(): void {
+        if (!this.selectedKeybinding?.keybinds?.length) return;
+
+        this.selectedKeybinding.keybinds.forEach(keybind => {
+            const ability = this.abilities.find(a => a.spellId === keybind.spell.spellId);
+            if (ability) {
+                ability.keybindings = ability.keybindings || [];
+                if (!ability.keybindings.includes(keybind.key)) {
+                    ability.keybindings.push(keybind.key);
+                }
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helper Methods
+    // ─────────────────────────────────────────────────────────────────────────
+
     private getClassKey(className: string): string {
         return className.toLowerCase().replace(/\s+/g, '');
     }
 
-    ngOnInit(): void {
-
+    private triggerPaginationRecalculation(): void {
+        this.cdr.detectChanges();
+        // Container is inside @if (abilities?.length > 0); after detectChanges() the view
+        // updates and ViewChild setter runs with the new element, which calls setupResizeObserver().
+        // Run recalculate after a tick so the container is measured.
+        setTimeout(() => {
+            this.recalculateIconsPerPage();
+            this.cdr.detectChanges();
+        }, 50);
     }
 
     ngOnChanges(changes: SimpleChanges) {
+        if (changes['drawerOpen'] && this.abilities?.length) {
+            setTimeout(() => {
+                this.recalculateIconsPerPage();
+                this.cdr.detectChanges();
+            }, 100);
+        }
         if (changes['selectedKeybinding']) {
             console.log('abilities - ngOnChanges triggered');
             console.log('abilities - previous value:', changes['selectedKeybinding'].previousValue?.keybindingId);
@@ -621,6 +853,10 @@ export class AbilitiesComponent implements OnInit {
             this.abilities = data;
             console.log('Abilities set in component:', this.abilities.length);
             this.isFetchingAbilities = false;
+
+            // Recalculate pagination after abilities are loaded
+            this.currentPage = 0; // Reset to first page for new abilities
+            this.triggerPaginationRecalculation();
         }, (err) => {
             console.log('getAbilities - err', err);
             this.isFetchingAbilities = false;
@@ -684,63 +920,6 @@ export class AbilitiesComponent implements OnInit {
                 });
             }
         });
-    }
-
-    // Get the abilities for the current page
-    getAbilitiesForCurrentPage() {
-        const startIndex = this.currentPage * this.abilitiesPerPage;
-        const endIndex = startIndex + this.abilitiesPerPage;
-
-        if (this.selectedKeybinding?.keybinds.length > 0) {
-            // Loop through each keybinding in the selectedKeybinding.keybinds array
-            this.selectedKeybinding.keybinds.forEach(keybind => {
-                const spellId = keybind.spell.spellId;
-                const ability = this.abilities.find(ability => ability.spellId === spellId);
-
-                if (ability) {
-                    // Initialize keybindings array if it doesn't exist
-                    if (!ability.keybindings) {
-                        ability.keybindings = [];
-                    }
-                    // Add the key if it's not already in the keybindings array
-                    if (!ability.keybindings.includes(keybind.key)) {
-                        ability.keybindings.push(keybind.key);
-                    }
-                }
-            });
-        }
-
-        return this.abilities.slice(startIndex, endIndex);
-    }
-
-    // Go to the previous page
-    goToPreviousPage() {
-        if (this.currentPage > 0) {
-            this.currentPage--;
-        }
-    }
-
-    // Go to the next page
-    goToNextPage() {
-        if (this.currentPage < this.maxPage()) {
-            this.currentPage++;
-        }
-    }
-
-    // Calculate the maximum page index
-    maxPage() {
-        return Math.ceil(this.abilities.length / this.abilitiesPerPage) - 1;
-    }
-
-    // Get the start index of the current page
-    getStartIndex() {
-        return this.currentPage * this.abilitiesPerPage;
-    }
-
-    // Get the end index of the current page
-    getEndIndex() {
-        const endIndex = (this.currentPage + 1) * this.abilitiesPerPage;
-        return endIndex > this.abilities.length ? this.abilities.length : endIndex;
     }
 
 }
