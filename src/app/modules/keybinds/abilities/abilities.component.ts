@@ -69,7 +69,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
     @Output() keybindingUpdated = new EventEmitter<any>();
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Pagination State (same approach as abilities-test component)
+    // Pagination State
     // ─────────────────────────────────────────────────────────────────────────
     currentPage = 0;
     iconsPerPage = 1;
@@ -155,7 +155,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Resize Observer & Pagination (same as temp/keybinds/my-keybindings page)
+    // Resize Observer & Pagination
     // ─────────────────────────────────────────────────────────────────────────
 
     private setupResizeObserver(): void {
@@ -228,7 +228,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
             newIconsPerPage = Math.min(newIconsPerPage, 5);
         }
 
-        // Only update when value actually changes (same as temp/keybinds/my-keybindings test page).
+        // Only update when value actually changes.
         // This avoids resize loops and the count "resetting" when the container size flickers.
         if (newIconsPerPage !== this.iconsPerPage) {
             this.iconsPerPage = newIconsPerPage;
