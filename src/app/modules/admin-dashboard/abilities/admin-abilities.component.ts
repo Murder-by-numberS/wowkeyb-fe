@@ -12,8 +12,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSortModule, Sort } from '@angular/material/sort';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { AdminService, AdminAbility } from 'app/core/services/admin.service';
+import { AdminEditAbilityDialogComponent } from './edit-ability-dialog/edit-ability-dialog.component';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { fullClasses } from 'app/core/data/classes';
 
@@ -34,7 +36,8 @@ import { fullClasses } from 'app/core/data/classes';
         MatSelectModule,
         MatProgressSpinnerModule,
         MatTooltipModule,
-        MatSortModule
+        MatSortModule,
+        MatDialogModule
     ]
 })
 export class AdminAbilitiesComponent implements OnInit {
@@ -90,7 +93,10 @@ export class AdminAbilitiesComponent implements OnInit {
 
     displayedColumns = ['icon', 'name', 'class', 'spec', 'ability_type', 'version', 'actions'];
 
-    constructor(private adminService: AdminService) { }
+    constructor(
+        private adminService: AdminService,
+        private dialog: MatDialog
+    ) { }
 
     ngOnInit(): void {
         this.loadVersions();
@@ -261,5 +267,19 @@ export class AdminAbilitiesComponent implements OnInit {
             this.currentPage = page;
             this.loadAbilities();
         }
+    }
+
+    openEditDialog(ability: AdminAbility): void {
+        const dialogRef = this.dialog.open(AdminEditAbilityDialogComponent, {
+            width: 'min(640px, 95vw)',
+            maxHeight: '90vh',
+            data: { ability },
+            autoFocus: false
+        });
+        dialogRef.afterClosed().subscribe((result) => {
+            if (result) {
+                this.loadAbilities();
+            }
+        });
     }
 }

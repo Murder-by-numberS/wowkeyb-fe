@@ -219,7 +219,7 @@
                             <ng-container matColumnDef="actions">
                                 <th mat-header-cell *matHeaderCellDef>Actions</th>
                                 <td mat-cell *matCellDef="let ability">
-                                    <button mat-icon-button matTooltip="Edit">
+                                    <button mat-icon-button matTooltip="Edit" (click)="openEditDialog(ability)">
                                         <mat-icon>edit</mat-icon>
                                     </button>
                                 </td>
