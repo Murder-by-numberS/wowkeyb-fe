@@ -26,6 +26,12 @@
         <mat-icon [svgIcon]="'heroicons_outline:cog-8-tooth'"></mat-icon>
         <span>Settings</span>
     </button>
+    @if (isAdmin) {
+    <button mat-menu-item (click)="goToAdmin()">
+        <mat-icon [svgIcon]="'heroicons_outline:shield-check'"></mat-icon>
+        <span>Admin</span>
+    </button>
+    }
     <mat-divider class="my-2"></mat-divider>
     <button mat-menu-item (click)="signOut()">
         <mat-icon [svgIcon]="'heroicons_outline:arrow-right-on-rectangle'"></mat-icon>

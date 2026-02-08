@@ -1,0 +1,193 @@
+<div class="absolute inset-0 flex flex-col overflow-y-auto bg-gray-50">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-teal-600 to-teal-800 text-white px-6 py-6 w-full relative">
+        <button mat-icon-button class="!absolute left-4 top-1/2 -translate-y-1/2" routerLink="/admin/dashboard">
+            <mat-icon class="!text-white">arrow_back</mat-icon>
+        </button>
+        <div class="flex items-center justify-center gap-2 mb-2">
+            <mat-icon class="text-2xl">history</mat-icon>
+            <h1 class="text-2xl font-bold">Version Management</h1>
+        </div>
+        <p class="text-teal-100 text-center">Manage game versions and copy abilities between versions</p>
+    </div>
+
+    <div class="flex-1 w-full flex justify-center px-6 py-6">
+        <div class="w-full max-w-5xl">
+            <!-- Create New Version -->
+            <mat-card class="mb-6">
+                <mat-card-header>
+                    <mat-card-title class="flex items-center gap-2">
+                        <mat-icon>add_circle</mat-icon>
+                        <span>Create New Version</span>
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content class="pt-4">
+                    <div class="flex flex-col sm:flex-row gap-4 items-center">
+                        <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
+                            <mat-label>Version Number</mat-label>
+                            <input matInput placeholder="e.g., 11.2.0" [(ngModel)]="newVersion"
+                                (keyup.enter)="createVersion()">
+                            <mat-hint>Format: X.Y.Z (e.g., 11.2.0)</mat-hint>
+                        </mat-form-field>
+                        <button mat-raised-button color="primary" (click)="createVersion()" [disabled]="isCreating" class="mb-5">
+                            @if (isCreating) {
+                            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                            }
+                            <mat-icon>add</mat-icon>
+                            <span class="ml-1">Create Version</span>
+                        </button>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+
+            <!-- Copy Abilities Between Versions -->
+            <mat-card class="mb-6">
+                <mat-card-header>
+                    <mat-card-title class="flex items-center gap-2">
+                        <mat-icon>content_copy</mat-icon>
+                        <span>Copy Abilities Between Versions</span>
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content class="pt-4">
+                    <p class="text-sm text-gray-600 mb-4">
+                        Copy all abilities from one version to another. This is useful when a new game version is
+                        released and you want to start with the existing abilities.
+                    </p>
+
+                    @if (getVersionsWithoutAbilities().length === 0) {
+                    <div class="bg-gray-100 rounded-lg p-4 text-center text-gray-600">
+                        <mat-icon class="text-4xl mb-2">check_circle</mat-icon>
+                        <p>All versions have abilities. Create a new version first if you need to copy abilities.</p>
+                    </div>
+                    } @else {
+                    <div class="flex flex-col sm:flex-row gap-4 items-end">
+                        <!-- Source Version -->
+                        <mat-form-field appearance="outline" class="flex-1">
+                            <mat-label>Source Version (copy from)</mat-label>
+                            <mat-select [(value)]="selectedSourceVersion">
+                                <mat-option [value]="null">Select source version</mat-option>
+                                @for (version of getVersionsWithAbilities(); track version.id) {
+                                <mat-option [value]="version">
+                                    {{ version.game_version }} ({{ version.ability_count }} abilities)
+                                </mat-option>
+                                }
+                            </mat-select>
+                        </mat-form-field>
+
+                        <mat-icon class="text-gray-400 hidden sm:block mb-6">arrow_forward</mat-icon>
+
+                        <!-- Target Version -->
+                        <mat-form-field appearance="outline" class="flex-1">
+                            <mat-label>Target Version (copy to)</mat-label>
+                            <mat-select [(value)]="selectedTargetVersion">
+                                <mat-option [value]="null">Select target version</mat-option>
+                                @for (version of getVersionsWithoutAbilities(); track version.id) {
+                                <mat-option [value]="version">
+                                    {{ version.game_version }} (empty)
+                                </mat-option>
+                                }
+                            </mat-select>
+                        </mat-form-field>
+
+                        <button mat-raised-button color="accent" (click)="copyAbilities()"
+                            [disabled]="isCopying || !selectedSourceVersion || !selectedTargetVersion">
+                            @if (isCopying) {
+                            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+                            }
+                            <mat-icon>content_copy</mat-icon>
+                            <span class="ml-1">Copy Abilities</span>
+                        </button>
+                    </div>
+                    }
+                </mat-card-content>
+            </mat-card>
+
+            <!-- Loading -->
+            @if (isLoading) {
+            <div class="flex items-center justify-center py-12">
+                <mat-spinner diameter="48"></mat-spinner>
+            </div>
+            }
+
+            <!-- Error -->
+            @if (error) {
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center gap-2 text-red-600">
+                    <mat-icon>error</mat-icon>
+                    <span>{{ error }}</span>
+                </div>
+            </div>
+            }
+
+            <!-- Versions Table -->
+            @if (!isLoading && !error) {
+            <mat-card>
+                <mat-card-header>
+                    <mat-card-title class="flex items-center gap-2">
+                        <mat-icon>list</mat-icon>
+                        <span>All Versions</span>
+                        <span class="text-sm text-gray-500 font-normal">({{ versions.length }} total)</span>
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content class="p-0">
+                    @if (versions.length > 0) {
+                    <div class="overflow-x-auto">
+                        <table mat-table [dataSource]="versions" class="w-full">
+                            <ng-container matColumnDef="version">
+                                <th mat-header-cell *matHeaderCellDef>Version</th>
+                                <td mat-cell *matCellDef="let version">
+                                    <span class="font-medium text-lg">{{ version.game_version }}</span>
+                                </td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="abilities">
+                                <th mat-header-cell *matHeaderCellDef>Abilities</th>
+                                <td mat-cell *matCellDef="let version">
+                                    @if (version.ability_count > 0) {
+                                    <span class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">
+                                        {{ version.ability_count }} abilities
+                                    </span>
+                                    } @else {
+                                    <span class="px-3 py-1 text-sm rounded-full bg-yellow-100 text-yellow-800">
+                                        No abilities
+                                    </span>
+                                    }
+                                </td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="created">
+                                <th mat-header-cell *matHeaderCellDef>Created</th>
+                                <td mat-cell *matCellDef="let version">
+                                    <span class="text-sm text-gray-600">{{ formatDate(version.created_at) }}</span>
+                                </td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="actions">
+                                <th mat-header-cell *matHeaderCellDef>Actions</th>
+                                <td mat-cell *matCellDef="let version">
+                                    <button mat-icon-button color="warn" (click)="deleteVersion(version)"
+                                        [disabled]="version.ability_count > 0"
+                                        [matTooltip]="version.ability_count > 0 ? 'Cannot delete version with abilities' : 'Delete version'">
+                                        <mat-icon>delete</mat-icon>
+                                    </button>
+                                </td>
+                            </ng-container>
+
+                            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                                [class.bg-yellow-50]="row.ability_count === 0"></tr>
+                        </table>
+                    </div>
+                    } @else {
+                    <div class="text-center py-12">
+                        <mat-icon class="text-6xl text-gray-300 mb-4">history</mat-icon>
+                        <h3 class="text-xl font-medium text-gray-600 mb-2">No Versions Found</h3>
+                        <p class="text-gray-500">Create your first version to get started.</p>
+                    </div>
+                    }
+                </mat-card-content>
+            </mat-card>
+            }
+        </div>
+    </div>
+</div>

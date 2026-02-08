@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from 'environments/environment';
@@ -7,6 +7,24 @@ import { environment } from 'environments/environment';
 import { formatString, formatClassName } from '../util/util';
 
 import { Ability } from '../types/ability';
+
+// Interface for ability update payload
+export interface AbilityUpdatePayload {
+    name?: string;
+    spellId?: string;
+    description?: string;
+    icon?: string;
+    class?: string;
+    spec?: string;
+    heroTalent?: string;
+    abilityType?: string;
+    isActive?: boolean;
+    levelRequired?: number;
+    cooldown?: number;
+    range?: number;
+    cost?: string;
+    costAmount?: number;
+}
 
 @Injectable({
     providedIn: 'root',
@@ -106,6 +124,29 @@ export class AbilitiesService {
 
         console.log('🔍 AbilitiesService - Making API call to:', urlString);
         return this.http.get(urlString);
+    }
+
+    /**
+     * Get a single ability by ID
+     * @param abilityId - The ID of the ability to retrieve
+     */
+    getAbilityById(abilityId: string): Observable<Ability> {
+        const urlString = `${environment.apiUrl}/abilities/${abilityId}`;
+        return this.http.get<Ability>(urlString);
+    }
+
+    /**
+     * Update an ability (Admin only)
+     * @param abilityId - The ID of the ability to update
+     * @param updateData - The data to update
+     */
+    updateAbility(abilityId: string, updateData: AbilityUpdatePayload): Observable<Ability> {
+        const urlString = `${environment.apiUrl}/abilities/${abilityId}`;
+        const token = localStorage.getItem('accessToken');
+        const headers = new HttpHeaders({
+            'Authorization': `Bearer ${token}`
+        });
+        return this.http.put<Ability>(urlString, updateData, { headers });
     }
 
 }

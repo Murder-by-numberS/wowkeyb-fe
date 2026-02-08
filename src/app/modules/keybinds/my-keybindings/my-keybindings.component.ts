@@ -23,6 +23,8 @@ import { AbilitiesComponent } from '../abilities/abilities.component';
 import { KeybindsDrawerComponent } from '../keybinds-drawer/keybinds-drawer.component';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
 import { ShareDialogComponent } from '../share-dialog/share-dialog.component';
+import { VersionCopyDialogComponent, VersionCopyDialogData } from '../version-copy-dialog/version-copy-dialog.component';
+import { DeleteKeybindingDialogComponent, DeleteKeybindingDialogResult } from '../delete-keybinding-dialog/delete-keybinding-dialog.component';
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -72,6 +74,9 @@ export class MyKeybindingsComponent implements OnInit {
     opened: boolean = true; // Show drawer by default for my-keybindings
     drawerOpen: boolean = true; // Drawer is open by default (matches my-macros)
 
+    /** Set to true to temporarily hide the keybinding list (full-width content for testing). */
+    drawerDisabled: boolean = false;
+
     selectedKeybinding: any = null;
     selectedKeybindingName: string;
     keybindingSelected: boolean;
@@ -88,6 +93,12 @@ export class MyKeybindingsComponent implements OnInit {
     currentUserId: string | null = null;
     keybindings: any[] = [];  // Initialize as empty array
     MAX_SIZE = 10;
+
+    // Version switching
+    keybindingVersions: Array<{ keybindingId: string; versionId: string; gameVersion: string; isCurrent: boolean }> = [];
+    availableVersions: Array<{ id: string; gameVersion: string }> = [];
+    versionsWithoutKeybinding: Array<{ id: string; gameVersion: string }> = [];
+    isCopyingToVersion = false;
 
     constructor(
         private keybindingService: KeybindingService,
@@ -247,64 +258,66 @@ export class MyKeybindingsComponent implements OnInit {
 
     onKeybindingSelected(keybinding: any) {
         if (keybinding) {
-            // Get the latest version of the keybinding from the service's current keybindings
-            this.keybindingService.currentKeybindings
-                .pipe(takeUntil(this._unsubscribeAll))
-                .subscribe(keybindings => {
-                    const updatedKeybinding = keybindings.find(kb => kb.keybindingId === keybinding.keybindingId);
-                    if (updatedKeybinding) {
-                        // Update the selected keybinding with the latest data
-                        this.selectedKeybinding = updatedKeybinding;
-                        this.selectedKeybindingName = this.selectedKeybinding.name;
-                        this.keybindingSelected = true;
-                        this.nameForm.get('name')?.setValue(this.selectedKeybindingName);
+            // Try to get the latest version from currentKeybindings, but fall back to the passed keybinding
+            // This prevents issues when a newly created keybinding hasn't been added to the service yet
+            const currentKeybindings = this.keybindingService.currentKeybindingsValue;
+            const updatedKeybinding = currentKeybindings.find(kb => kb.keybindingId === keybinding.keybindingId) || keybinding;
 
-                        // Update the class, spec, and heroTalent selections
-                        this.selectedKeybindingClass = updatedKeybinding.class;
-                        this.selectedKeybindingSpec = updatedKeybinding.spec;
-                        this.selectedKeybindingHeroTalent = updatedKeybinding.heroTalent;
+            // Update the selected keybinding with the latest data
+            this.selectedKeybinding = updatedKeybinding;
+            this.selectedKeybindingName = this.selectedKeybinding.name;
+            this.keybindingSelected = true;
+            this.nameForm.get('name')?.setValue(this.selectedKeybindingName);
 
-                        // If this is a new keybinding with random class details, use them to fetch abilities
-                        if (updatedKeybinding.randomClassDetails) {
-                            console.log('New keybinding with random class details:', updatedKeybinding.randomClassDetails);
+            // Update the class, spec, and heroTalent selections
+            this.selectedKeybindingClass = updatedKeybinding.class;
+            this.selectedKeybindingSpec = updatedKeybinding.spec;
+            this.selectedKeybindingHeroTalent = updatedKeybinding.heroTalent;
 
-                            // The abilities component will pick up the randomClassDetails from the selectedKeybinding
-                            // and use them in ngOnChanges to populate the abilities
-                            console.log('Selected keybinding with randomClassDetails:', this.selectedKeybinding);
+            // If this is a new keybinding with random class details, use them to fetch abilities
+            if (updatedKeybinding.randomClassDetails) {
+                console.log('New keybinding with random class details:', updatedKeybinding.randomClassDetails);
 
-                            // Force change detection by creating a new object reference
-                            // This ensures ngOnChanges is triggered in the abilities component
-                            this.selectedKeybinding = { ...this.selectedKeybinding };
-                        }
+                // The abilities component will pick up the randomClassDetails from the selectedKeybinding
+                // and use them in ngOnChanges to populate the abilities
+                console.log('Selected keybinding with randomClassDetails:', this.selectedKeybinding);
 
-                        // Update the drawer's selection
-                        if (this.keybindsDrawerComponent) {
-                            this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
-                        }
+                // Force change detection by creating a new object reference
+                // This ensures ngOnChanges is triggered in the abilities component
+                this.selectedKeybinding = { ...this.selectedKeybinding };
+            }
 
-                        // Trigger the change events to update the abilities component
-                        this.onSelectionClassChanged(updatedKeybinding.class);
+            // Update the drawer's selection
+            if (this.keybindsDrawerComponent) {
+                this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
+            }
 
-                        // Force change detection to ensure UI updates
-                        this.cdr.detectChanges();
+            // Trigger the change events to update the abilities component
+            this.onSelectionClassChanged(updatedKeybinding.class);
 
-                        // Additional trigger for keyboard component
-                        setTimeout(() => {
-                            this.cdr.detectChanges();
-                        }, 0);
+            // Force change detection to ensure UI updates
+            this.cdr.detectChanges();
 
-                        // Close drawer on mobile after selecting a keybinding
-                        if (this.isMobile) {
-                            this.opened = false;
-                            this.drawerOpen = false;
-                        }
-                    }
-                });
+            // Additional trigger for keyboard component
+            setTimeout(() => {
+                this.cdr.detectChanges();
+            }, 0);
+
+            // Close drawer on mobile after selecting a keybinding
+            if (this.isMobile) {
+                this.opened = false;
+                this.drawerOpen = false;
+            }
+
+            // Load versions for version switching
+            this.loadVersions(updatedKeybinding.keybindingId);
         }
         else {
             this.selectedKeybinding = null;
             this.selectedKeybindingName = null;
             this.keybindingSelected = false;
+            this.keybindingVersions = [];
+            this.versionsWithoutKeybinding = [];
             this.nameForm.get('name')?.setValue('');
             this.selectedKeybindingClass = null;
             this.selectedKeybindingSpec = null;
@@ -367,54 +380,50 @@ export class MyKeybindingsComponent implements OnInit {
             return;
         }
 
-        const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-            data: { text: `Are you sure you want to delete "${keybinding.name}"?` }
+        // Get current keybindings to determine which one to select next
+        const currentKeybindings = this.keybindingService.currentKeybindingsValue;
+        const deletedIndex = currentKeybindings.findIndex(kb => kb.keybindingId === keybinding.keybindingId);
+
+        const dialogRef = this.dialog.open(DeleteKeybindingDialogComponent, {
+            data: { keybinding },
+            width: '500px',
+            disableClose: true
         });
 
-        dialogRef.afterClosed().subscribe(result => {
-            if (result) {
-                console.log('deleting keybinding', keybinding);
-                // Get current keybindings to determine which one to select next
-                const currentKeybindings = this.keybindingService.currentKeybindingsValue;
-                const deletedIndex = currentKeybindings.findIndex(kb => kb.keybindingId === keybinding.keybindingId);
+        dialogRef.afterClosed().subscribe((result: DeleteKeybindingDialogResult | undefined) => {
+            if (result?.confirmed) {
+                console.log('Deleted keybinding versions:', result.deletedVersionIds);
 
-                this.keybindingService.removeKeybinding(keybinding.keybindingId).subscribe({
-                    next: (response) => {
-                        console.log('Delete response:', response);
+                // Clear the selected keybinding immediately
+                this.selectedKeybinding = null;
+                this.keybindingSelected = false;
+                this.selectedKeybindingName = '';
+                this.nameForm.get('name')?.setValue('');
 
-                        // Clear the selected keybinding immediately
-                        this.selectedKeybinding = null;
-                        this.keybindingSelected = false;
-                        this.selectedKeybindingName = '';
-                        this.nameForm.get('name')?.setValue('');
+                // Clear the drawer selection as well
+                if (this.keybindsDrawerComponent) {
+                    this.keybindsDrawerComponent.clearSelection();
+                }
 
-                        // Clear the drawer selection as well
-                        if (this.keybindsDrawerComponent) {
-                            this.keybindsDrawerComponent.clearSelection();
-                        }
-
-                        // The keybinding service already updates local state in removeKeybinding()
-                        // The UI should update automatically via the BehaviorSubject subscription
-                        // No need to call loadKeybindings() as the subscription will handle the update
-                        console.log('Delete completed - UI should update automatically via BehaviorSubject subscription');
-
+                // Force refresh keybindings from server to update the list
+                this.keybindingService.forceRefreshKeybindings().subscribe({
+                    next: () => {
                         // Select the next keybinding after deletion
                         setTimeout(() => {
                             this.selectNextKeybindingAfterDeletion(deletedIndex, currentKeybindings.length);
-                        }, 100); // Small delay to ensure the UI has updated
-
-                        // Show appropriate message based on response
-                        if (response?.alreadyDeleted) {
-                            this.snackBar.open('Keybinding was already deleted', 'Close', { duration: 3000 });
-                        } else {
-                            this.snackBar.open('Keybinding deleted successfully', 'Close', { duration: 3000 });
-                        }
-                    },
-                    error: (error) => {
-                        console.error('Error deleting keybinding:', error);
-                        this.snackBar.open('Error deleting keybinding', 'Close', { duration: 3000 });
+                        }, 100);
                     }
                 });
+
+                // Show success message
+                const deletedCount = result.deletedVersionIds?.length || 1;
+                this.snackBar.open(
+                    deletedCount > 1
+                        ? `Deleted ${deletedCount} version(s) successfully`
+                        : 'Keybinding deleted successfully',
+                    'Close',
+                    { duration: 3000 }
+                );
             }
         });
     }
@@ -727,5 +736,117 @@ export class MyKeybindingsComponent implements OnInit {
                 this.drawerOpen = true;
             }
         }
+    }
+
+    private loadVersions(keybindingId: string): void {
+        this.keybindingService.getKeybindingVersions(keybindingId)
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe({
+                next: (response) => {
+                    this.keybindingVersions = response.versions;
+                    this.availableVersions = response.availableVersions;
+                    // Find versions that don't have this keybinding yet
+                    const existingVersionIds = this.keybindingVersions.map(v => v.versionId);
+                    this.versionsWithoutKeybinding = this.availableVersions.filter(
+                        v => !existingVersionIds.includes(v.id)
+                    );
+                },
+                error: (error) => {
+                    console.error('Error loading keybinding versions:', error);
+                }
+            });
+    }
+
+    onVersionChange(keybindingId: string): void {
+        if (keybindingId && keybindingId !== this.selectedKeybinding?.keybindingId) {
+            // Always fetch the keybinding fresh from server when switching versions
+            // This ensures we get the correct keybinds for that specific version
+            this.keybindingService.getKeybinding(keybindingId).subscribe({
+                next: (kb) => {
+                    // Directly update the selected keybinding without going through the stream
+                    // since the stream only contains the latest version of each keybinding
+                    this.selectedKeybinding = kb;
+                    this.selectedKeybindingName = kb.name;
+                    this.keybindingSelected = true;
+                    this.nameForm.get('name')?.setValue(kb.name);
+
+                    // Update the class, spec, and heroTalent selections
+                    this.selectedKeybindingClass = kb.class;
+                    this.selectedKeybindingSpec = kb.spec;
+                    this.selectedKeybindingHeroTalent = kb.heroTalent;
+
+                    // Update the drawer's selection
+                    if (this.keybindsDrawerComponent) {
+                        this.keybindsDrawerComponent.setSelectedKeybinding(kb);
+                    }
+
+                    // Trigger the change events to update the abilities component
+                    this.onSelectionClassChanged(kb.class);
+
+                    // Force change detection to ensure UI updates
+                    this.cdr.detectChanges();
+
+                    // Reload versions to update the dropdown
+                    this.loadVersions(keybindingId);
+                },
+                error: (error) => {
+                    console.error('Error loading keybinding:', error);
+                }
+            });
+        }
+    }
+
+    copyToVersion(versionId: string): void {
+        if (!this.selectedKeybinding || this.isCopyingToVersion) return;
+
+        this.isCopyingToVersion = true;
+        this.keybindingService.copyToVersion(this.selectedKeybinding.keybindingId, versionId)
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe({
+                next: (response) => {
+                    this.isCopyingToVersion = false;
+
+                    // Show the version copy dialog with changes
+                    const dialogData: VersionCopyDialogData = {
+                        targetVersion: response.targetVersion,
+                        changes: response.changes,
+                        keybindingId: response.keybinding.keybindingId
+                    };
+
+                    const dialogRef = this.dialog.open(VersionCopyDialogComponent, {
+                        data: dialogData,
+                        disableClose: false
+                    });
+
+                    dialogRef.afterClosed().subscribe(result => {
+                        if (result?.action === 'view') {
+                            // Refresh and select the new keybinding
+                            this.keybindingService.forceRefreshKeybindings().subscribe({
+                                next: () => {
+                                    this.keybindingService.getKeybinding(result.keybindingId).subscribe({
+                                        next: (kb) => {
+                                            this.onKeybindingSelected(kb);
+                                            if (this.keybindsDrawerComponent) {
+                                                this.keybindsDrawerComponent.loadKeybindings();
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        // Reload versions to show the new one
+                        if (this.selectedKeybinding) {
+                            this.loadVersions(this.selectedKeybinding.keybindingId);
+                        }
+                        // Refresh the keybindings list
+                        this.refreshChildKeybindings();
+                    });
+                },
+                error: (error) => {
+                    console.error('Error copying keybinding:', error);
+                    this.snackBar.open(error.error?.message || 'Error copying keybinding', 'Close', { duration: 5000 });
+                    this.isCopyingToVersion = false;
+                }
+            });
     }
 }

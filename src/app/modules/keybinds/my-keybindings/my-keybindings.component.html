@@ -1,10 +1,11 @@
 <div class="flex flex-row w-full h-full relative">
     <!-- Backdrop for mobile when drawer is open -->
-    @if (drawerOpen && isMobile) {
+    @if (!drawerDisabled && drawerOpen && isMobile) {
     <div class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity" (click)="toggleDrawer()"></div>
     }
 
-    <!-- Left Column: Keybinding List -->
+    <!-- Left Column: Keybinding List (hidden when drawerDisabled) -->
+    @if (!drawerDisabled) {
     <div class="w-80 flex flex-col border-r border-gray-200 bg-white transition-transform duration-300 ease-in-out"
         [class.fixed]="isMobile" [class.inset-y-0]="isMobile" [class.left-0]="isMobile" [class.z-50]="isMobile"
         [class.-translate-x-full]="isMobile && !drawerOpen" [class.translate-x-0]="isMobile && drawerOpen"
@@ -15,6 +16,7 @@
             (keybindingUpdated)="onKeybindingUpdated($event)">
         </keybinds-drawer>
     </div>
+    }
 
     <!-- Right Column: Keybinding Data -->
     <div class="flex-1 flex flex-col bg-gray-50">
@@ -22,10 +24,12 @@
         <div
             class="flex flex-col lg:flex-row lg:items-start xl:items-center gap-3 lg:gap-4 p-4 border-b bg-white min-w-0">
             <div class="flex items-center gap-3 lg:gap-4 min-w-0 flex-shrink">
+                @if (!drawerDisabled) {
                 <button mat-icon-button (click)="toggleDrawer()" matTooltip="Toggle Keybinding List"
                     class="flex-shrink-0">
                     <mat-icon>{{ drawerOpen ? 'chevron_left' : 'menu' }}</mat-icon>
                 </button>
+                }
                 <h2 class="text-lg font-semibold truncate min-w-0">
                     @if (selectedKeybinding) {
                     {{ selectedKeybindingName }}
@@ -33,13 +37,44 @@
                     My Keybindings
                     }
                 </h2>
+                @if (selectedKeybinding?.version?.game_version) {
+                <div class="flex items-center gap-2 ml-2">
+                    <span class="text-sm text-gray-500">v</span>
+                    @if (keybindingVersions.length > 1) {
+                    <select class="text-sm font-medium border rounded px-2 py-1 bg-white cursor-pointer"
+                        [value]="selectedKeybinding.keybindingId" (change)="onVersionChange($any($event.target).value)">
+                        @for (version of keybindingVersions; track version.keybindingId) {
+                        <option [value]="version.keybindingId" [selected]="version.isCurrent">
+                            {{ version.gameVersion }}
+                        </option>
+                        }
+                    </select>
+                    } @else {
+                    <span class="text-sm font-medium">{{ selectedKeybinding.version.game_version }}</span>
+                    }
+                    @if (versionsWithoutKeybinding.length > 0) {
+                    <button mat-icon-button [matMenuTriggerFor]="versionMenu" matTooltip="Copy to another version"
+                        [disabled]="isCopyingToVersion" class="!w-8 !h-8">
+                        <mat-icon class="!text-lg">add</mat-icon>
+                    </button>
+                    <mat-menu #versionMenu="matMenu">
+                        <div class="px-3 py-2 text-sm text-gray-500 border-b">Copy to version:</div>
+                        @for (version of versionsWithoutKeybinding; track version.id) {
+                        <button mat-menu-item (click)="copyToVersion(version.id)">
+                            {{ version.gameVersion }}
+                        </button>
+                        }
+                    </mat-menu>
+                    }
+                </div>
+                }
             </div>
 
             @if (selectedKeybinding) {
             <!-- Dynamic Action Buttons -->
             <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0 w-full lg:w-auto">
                 @if (!editingName) {
-                <button mat-stroked-button (click)="editName()" [disabled]="!isAuthenticated"
+                <button type="button" mat-stroked-button (click)="editName()" [disabled]="!isAuthenticated"
                     class="text-xs sm:text-sm">
                     <mat-icon class="text-base sm:text-lg">edit</mat-icon>
                     <span class="ml-1 hidden sm:inline">Edit</span>
@@ -63,7 +98,7 @@
                 </form>
                 }
 
-                <button mat-stroked-button (click)="duplicateKeybinding(selectedKeybinding)"
+                <button type="button" mat-stroked-button (click)="duplicateKeybinding(selectedKeybinding)"
                     [disabled]="!isAuthenticated || keybindings.length >= MAX_SIZE"
                     [matTooltip]="!isAuthenticated ? 'Create an account to duplicate keybindings' : keybindings.length >= MAX_SIZE ? 'Maximum number of keybindings reached' : 'Duplicate keybinding'"
                     class="text-xs sm:text-sm flex-shrink-0">
@@ -71,14 +106,14 @@
                     <span class="ml-1 hidden sm:inline">Duplicate</span>
                 </button>
 
-                <button mat-stroked-button (click)="deleteKeybinding(selectedKeybinding)" [disabled]="!isAuthenticated"
+                <button type="button" mat-stroked-button (click)="deleteKeybinding(selectedKeybinding)" [disabled]="!isAuthenticated"
                     [matTooltip]="!isAuthenticated ? 'Create an account to delete keybindings' : 'Delete keybinding'"
                     class="text-xs sm:text-sm flex-shrink-0">
                     <mat-icon class="text-base sm:text-lg">delete</mat-icon>
                     <span class="ml-1 hidden sm:inline">Delete</span>
                 </button>
 
-                <button mat-flat-button color="primary" (click)="shareKeybinding()" [disabled]="!isAuthenticated"
+                <button type="button" mat-flat-button color="primary" (click)="shareKeybinding()" [disabled]="!isAuthenticated"
                     [matTooltip]="!isAuthenticated ? 'Create an account to share keybindings' : 'Share keybinding'"
                     class="text-xs sm:text-sm flex-shrink-0">
                     <mat-icon class="text-base sm:text-lg">share</mat-icon>
@@ -86,14 +121,14 @@
                 </button>
 
                 @if (selectedKeybinding.isPublic) {
-                <button mat-stroked-button color="primary" (click)="togglePublic()" [disabled]="!isAuthenticated"
+                <button type="button" mat-stroked-button color="primary" (click)="togglePublic()" [disabled]="!isAuthenticated"
                     [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Private'"
                     class="text-xs sm:text-sm flex-shrink-0">
                     <mat-icon class="text-base sm:text-lg">public</mat-icon>
                     <span class="ml-1 hidden sm:inline">Public</span>
                 </button>
                 } @else {
-                <button mat-stroked-button (click)="togglePublic()" [disabled]="!isAuthenticated"
+                <button type="button" mat-stroked-button (click)="togglePublic()" [disabled]="!isAuthenticated"
                     [matTooltip]="!isAuthenticated ? 'Create an account to change visibility' : 'Make Public'"
                     class="text-xs sm:text-sm flex-shrink-0">
                     <mat-icon class="text-base sm:text-lg">public_off</mat-icon>
@@ -104,12 +139,13 @@
             }
         </div>
 
-        <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto pb-16">
+        <!-- Scrollable Content (overflow-x-hidden on mobile so abilities grid doesn't cause horizontal scroll) -->
+        <div class="flex-1 overflow-y-auto overflow-x-hidden min-w-0 pb-16">
             @if (selectedKeybinding) {
-            <!-- Abilities Section -->
-            <div class="w-full bg-gray-300 min-h-[120px] sm:min-h-[150px] lg:min-h-[100px] flex-shrink-0">
+            <!-- Abilities Section (min-w-0 so mobile grid wraps and no abilities are cut off) -->
+            <div class="w-full min-w-0 bg-gray-300 min-h-[120px] sm:min-h-[150px] lg:min-h-[100px] flex-shrink-0">
                 <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
+                    [drawerOpen]="drawerOpen"
                     (selectionClassChanged)="onSelectionClassChanged($event)"
                     (keybindingUpdated)="updateKeybinding($event)">
                 </abilities>

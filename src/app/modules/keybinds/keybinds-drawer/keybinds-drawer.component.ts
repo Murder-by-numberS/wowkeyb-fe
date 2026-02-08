@@ -20,6 +20,7 @@ import { ClickOutsideDirective } from 'app/core/directives/click-outside/click-o
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
+import { VersionCompareService } from 'app/core/services/version-compare.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { Keybinding } from 'app/core/types/keybinding';
@@ -77,7 +78,9 @@ export class KeybindsDrawerComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>();
 
     keybindingService = inject(KeybindingService);
+    versionCompareService = inject(VersionCompareService);
     snackBar = inject(MatSnackBar);
+    latestVersion: string | null = null;
 
     /**
      * Constructor
@@ -93,6 +96,18 @@ export class KeybindsDrawerComponent implements OnInit, OnDestroy {
             const parsedSettings = JSON.parse(settings);
             this.favoriteClass = parsedSettings.favoriteClass || null;
         }
+
+        // Fetch the latest version for upgrade notifications
+        this.versionCompareService.getLatestVersion()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (version) => {
+                    this.latestVersion = version;
+                },
+                error: (error) => {
+                    console.error('Error fetching latest version:', error);
+                }
+            });
 
         // Force refresh keybindings from server on component initialization
         this.forceRefreshKeybindings();
@@ -342,5 +357,13 @@ export class KeybindsDrawerComponent implements OnInit, OnDestroy {
     getClassIcon(className: string): string {
         const classData = this.classList.find(c => c.name === className);
         return classData?.icon || '';
+    }
+
+    // Check if a keybinding can be upgraded to a newer version
+    canUpgrade(keybinding: Keybinding): boolean {
+        if (!this.latestVersion || !keybinding.version?.game_version) {
+            return false;
+        }
+        return this.versionCompareService.compareVersions(keybinding.version.game_version, this.latestVersion) < 0;
     }
 }

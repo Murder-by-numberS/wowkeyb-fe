@@ -13,7 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -141,7 +141,6 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     constructor(
         private abilitiesService: AbilitiesService,
         private versionCompare: VersionCompareService,
-        private dialog: MatDialog,
         private router: Router,
         private route: ActivatedRoute,
         private cdr: ChangeDetectorRef

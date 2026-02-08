@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
+import { NavigationService } from '../navigation/navigation.service';
 import { environment } from 'environments/environment';
 
 @Injectable({
@@ -12,7 +13,12 @@ export class BackendService {
     apiUrl: string;
     pinger: any;
 
-    constructor(private http: HttpClient, private _authService: AuthService, private _router: Router) {
+    constructor(
+        private http: HttpClient,
+        private _authService: AuthService,
+        private _router: Router,
+        private _navigationService: NavigationService
+    ) {
         this.getBackendURL();
 
         console.log('BackendService - this.apiUrl', this.apiUrl);
@@ -52,9 +58,21 @@ export class BackendService {
         console.log('check localStorage', localStorage.getItem('accessToken'));
         const token = localStorage.getItem('accessToken');
 
+        // Get current access_level from localStorage to send to backend for validation
+        let clientAccessLevel: number | undefined;
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            try {
+                const user = JSON.parse(storedUser);
+                clientAccessLevel = user.access_level;
+            } catch (e) {
+                console.error('Error parsing stored user:', e);
+            }
+        }
+
         console.log('ping url - ', urlString);
 
-        return this.http.post(urlString, { token });
+        return this.http.post(urlString, { token, access_level: clientAccessLevel });
     }
 
     startPing(): void {
@@ -76,7 +94,12 @@ export class BackendService {
     backendPinger(): void {
         console.log('pinging backend');
         this.ping().subscribe({
-            next: (health) => {
+            next: (response) => {
+                // Sync access_level from backend to ensure it hasn't been tampered with
+                if (response.access_level !== undefined) {
+                    this.syncAccessLevel(response.access_level);
+                }
+
                 this._authService.check().subscribe((authenticated) => {
                     console.log('Auth Check Result:', {
                         authenticated,
@@ -95,6 +118,32 @@ export class BackendService {
                 });
             }
         });
+    }
+
+    /**
+     * Sync access_level from backend to localStorage
+     * This prevents users from manipulating their access_level client-side
+     */
+    private syncAccessLevel(backendAccessLevel: number): void {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            try {
+                const user = JSON.parse(storedUser);
+                const clientAccessLevel = user.access_level || 1;
+
+                // If there's a mismatch, update localStorage with the correct value
+                if (clientAccessLevel !== backendAccessLevel) {
+                    console.warn(`Access level mismatch detected! Client: ${clientAccessLevel}, Backend: ${backendAccessLevel}. Syncing to backend value.`);
+                    user.access_level = backendAccessLevel;
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+
+                    // Refresh navigation to show/hide admin menu based on new access level
+                    this._navigationService.refresh();
+                }
+            } catch (e) {
+                console.error('Error syncing access level:', e);
+            }
+        }
     }
 
 }

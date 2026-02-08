@@ -79,6 +79,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     usernameForm: FormGroup;
     isChangingUsername: boolean = false;
     showUsernameForm: boolean = false;
+    usernameChangesRemaining: number = 2;
+    nextUsernameChangeDate: Date | null = null;
 
     classes = classes;
     favoriteClass: string | null = null;
@@ -139,9 +141,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
                 console.log('Profile - user data:', user);
                 this.user = user;
                 // Load favorite class from user object first, then fallback to localStorage
+                // Handle both camelCase (favoriteClass) and snake_case (favorite_class) for backward compatibility
                 if (user?.favoriteClass) {
                     this.favoriteClass = user.favoriteClass;
+                } else if ((user as any)?.favorite_class) {
+                    this.favoriteClass = (user as any).favorite_class;
                 }
+                this.computeUsernameChangesRemaining(user);
                 this.cdr.markForCheck();
             },
             error: (error) => {
@@ -312,6 +318,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
                         }
                     }
 
+                    // Update remaining changes from response
+                    if (response.user?.usernameChangesRemaining !== undefined) {
+                        this.usernameChangesRemaining = response.user.usernameChangesRemaining;
+                    } else {
+                        this.usernameChangesRemaining = Math.max(0, this.usernameChangesRemaining - 1);
+                    }
+
                     this.usernameForm.reset();
                     this.showUsernameForm = false;
                     this.isChangingUsername = false;
@@ -319,15 +332,41 @@ export class ProfileComponent implements OnInit, OnDestroy {
                 },
                 error: (error) => {
                     console.error('Error changing username:', error);
-                    this.snackBar.open(
-                        error.error?.message || 'Failed to change username. It may already be taken.',
-                        'Close',
-                        { duration: 5000 }
-                    );
+                    const message = error.error?.message || 'Failed to change username. It may already be taken.';
+                    this.snackBar.open(message, 'Close', { duration: 5000 });
+
+                    // If rate limited, update next available date from response
+                    if (error.status === 429 && error.error?.next_change_available) {
+                        this.usernameChangesRemaining = 0;
+                        this.nextUsernameChangeDate = new Date(error.error.next_change_available);
+                    }
+
                     this.isChangingUsername = false;
                     this.cdr.markForCheck();
                 }
             });
+    }
+
+    private computeUsernameChangesRemaining(user: any): void {
+        if (!user) return;
+        const changes: string[] = user.username_changes || [];
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const recentChanges = changes
+            .map(d => new Date(d))
+            .filter(d => d > oneYearAgo)
+            .sort((a, b) => a.getTime() - b.getTime());
+
+        this.usernameChangesRemaining = Math.max(0, 2 - recentChanges.length);
+
+        if (this.usernameChangesRemaining === 0 && recentChanges.length > 0) {
+            const earliest = recentChanges[0];
+            this.nextUsernameChangeDate = new Date(earliest);
+            this.nextUsernameChangeDate.setFullYear(this.nextUsernameChangeDate.getFullYear() + 1);
+        } else {
+            this.nextUsernameChangeDate = null;
+        }
     }
 
     loadFileCount(): void {

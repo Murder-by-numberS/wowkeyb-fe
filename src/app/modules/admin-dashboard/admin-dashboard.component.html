@@ -1,0 +1,211 @@
+<div class="absolute inset-0 flex flex-col overflow-y-auto bg-gray-50">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-8 w-full">
+        <div class="flex items-center justify-center gap-3 mb-2">
+            <mat-icon class="text-3xl">admin_panel_settings</mat-icon>
+            <h1 class="text-3xl font-bold">Admin Dashboard</h1>
+        </div>
+        <p class="text-slate-300 text-center">Manage users, content, and support tickets</p>
+    </div>
+
+    <div class="flex-1 w-full flex justify-center px-6 py-8">
+        <div class="w-full max-w-5xl">
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="flex items-center justify-center py-12">
+                <mat-spinner diameter="48"></mat-spinner>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (error) {
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center gap-2 text-red-600">
+                    <mat-icon>error</mat-icon>
+                    <span>{{ error }}</span>
+                </div>
+                <button mat-button color="primary" (click)="loadStats()" class="mt-2">
+                    <mat-icon>refresh</mat-icon>
+                    Retry
+                </button>
+            </div>
+            }
+
+            <!-- System Status -->
+            <mat-card class="mb-6">
+                <mat-card-content class="p-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-6">
+                            <!-- Backend Status -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">Backend:</span>
+                                @if (backendStatus) {
+                                <span class="flex items-center gap-1">
+                                    @if (backendStatus.dbStatus === 'UP') {
+                                    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                    <span class="text-sm text-green-600">Connected</span>
+                                    } @else {
+                                    <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                                    <span class="text-sm text-red-600">Disconnected</span>
+                                    }
+                                </span>
+                                } @else {
+                                <span class="flex items-center gap-1">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                                    <span class="text-sm text-red-600">Unreachable</span>
+                                </span>
+                                }
+                            </div>
+
+                            <!-- Frontend Version -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">FE:</span>
+                                <span class="text-sm font-medium">v{{ frontendVersion }}</span>
+                            </div>
+
+                            <!-- Backend Version -->
+                            @if (backendStatus?.version) {
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">BE:</span>
+                                <span class="text-sm font-medium">v{{ backendStatus.version }}</span>
+                            </div>
+                            }
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <!-- Frontend Environment -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">Frontend:</span>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded {{ getEnvColor(frontendEnv) }}">
+                                    {{ frontendEnv | uppercase }}
+                                </span>
+                            </div>
+
+                            <!-- Backend Environment -->
+                            @if (backendStatus?.environment) {
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">Backend:</span>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded {{ getEnvColor(backendStatus.environment) }}">
+                                    {{ backendStatus.environment | uppercase }}
+                                </span>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+
+            <!-- Stats Cards -->
+            @if (stats) {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <!-- Users Stats -->
+                <mat-card class="hover:shadow-lg transition-shadow">
+                    <mat-card-content class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide">Total Users</p>
+                                <p class="text-3xl font-bold text-gray-800">{{ stats.users.total }}</p>
+                                <p class="text-sm text-blue-600 mt-1">{{ stats.users.admins }} admins</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <mat-icon class="text-blue-600">people</mat-icon>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+
+                <!-- Abilities Stats -->
+                <mat-card class="hover:shadow-lg transition-shadow">
+                    <mat-card-content class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide">Abilities</p>
+                                <p class="text-3xl font-bold text-gray-800">{{ stats.abilities.total }}</p>
+                                <p class="text-sm text-green-600 mt-1">{{ stats.abilities.active }} active</p>
+                            </div>
+                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                <mat-icon class="text-purple-600">auto_awesome</mat-icon>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+
+                <!-- Keybindings Stats -->
+                <mat-card class="hover:shadow-lg transition-shadow">
+                    <mat-card-content class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide">Keybindings</p>
+                                <p class="text-3xl font-bold text-gray-800">{{ stats.keybindings.total }}</p>
+                                <p class="text-sm text-orange-600 mt-1">{{ stats.keybindings.deleted }} deleted</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <mat-icon class="text-green-600">keyboard</mat-icon>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+
+                <!-- Macros Stats -->
+                <mat-card class="hover:shadow-lg transition-shadow">
+                    <mat-card-content class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide">Macros</p>
+                                <p class="text-3xl font-bold text-gray-800">{{ stats.macros.total }}</p>
+                                <p class="text-sm text-orange-600 mt-1">{{ stats.macros.deleted }} deleted</p>
+                            </div>
+                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                <mat-icon class="text-orange-600">code</mat-icon>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+
+                <!-- Tickets Stats -->
+                <mat-card class="hover:shadow-lg transition-shadow">
+                    <mat-card-content class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide">Tickets</p>
+                                @if (stats.tickets && !stats.tickets.jiraDisabled) {
+                                <p class="text-3xl font-bold text-gray-800">{{ stats.tickets.total }}</p>
+                                <p class="text-sm text-red-600 mt-1">{{ stats.tickets.recentlyCreated }} this week</p>
+                                } @else {
+                                <p class="text-lg font-medium text-gray-400 mt-2">Jira not configured</p>
+                                }
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <mat-icon class="text-red-600">support_agent</mat-icon>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            }
+
+            <!-- Navigation Cards -->
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Quick Access</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @for (item of menuItems; track item.link) {
+                <a [routerLink]="item.link" class="block">
+                    <mat-card class="hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer h-full">
+                        <mat-card-content class="p-6">
+                            <div class="flex items-start gap-4">
+                                <div class="w-14 h-14 rounded-lg flex items-center justify-center {{ item.color }}">
+                                    <mat-icon class="text-white text-2xl">{{ item.icon }}</mat-icon>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ item.title }}</h3>
+                                    <p class="text-sm text-gray-500">{{ item.description }}</p>
+                                </div>
+                                <mat-icon class="text-gray-400">arrow_forward</mat-icon>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

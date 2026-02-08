@@ -118,6 +118,7 @@ export const appRoutes: Route[] = [
         children: [{ path: 'keybinds', loadChildren: () => import('app/modules/keybinds/keybinds.routes') },
         ]
     },
+
     // Macros
     {
         path: '',
@@ -152,6 +153,20 @@ export const appRoutes: Route[] = [
         },
         children: [
             { path: 'abilities', loadChildren: () => import('app/modules/abilities/abilities.routes') },
+        ]
+    },
+
+    // Admin Dashboard (for admin users)
+    {
+        path: '',
+        canActivate: [AuthGuard],
+        canActivateChild: [AuthGuard],
+        component: LayoutComponent,
+        data: {
+            layout: 'modern'
+        },
+        children: [
+            { path: 'admin', loadChildren: () => import('app/modules/admin-dashboard/admin-dashboard.routes') },
         ]
     },
 

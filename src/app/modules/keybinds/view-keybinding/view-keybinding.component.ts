@@ -1,10 +1,15 @@
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil } from 'rxjs';
 import { KeybindingService } from '../../../core/services/keybinding.service';
 import { Keybinding } from '../../../core/types/keybinding';
@@ -12,6 +17,7 @@ import { ViewKeyboardComponent } from '../view-keyboard/view-keyboard.component'
 import { AuthService } from '../../../core/services/auth.service';
 import { KeybindDetailsDialogComponent } from './keybind-details-dialog/keybind-details-dialog.component';
 import { ExpandedKeyboardComponent } from '../expanded-keyboard/expanded-keyboard.component';
+import { VersionCopyDialogComponent, VersionCopyDialogData } from '../version-copy-dialog/version-copy-dialog.component';
 
 @Component({
     selector: 'app-view-keybinding',
@@ -19,8 +25,13 @@ import { ExpandedKeyboardComponent } from '../expanded-keyboard/expanded-keyboar
     imports: [
         CommonModule,
         RouterModule,
+        FormsModule,
         MatButtonModule,
         MatIconModule,
+        MatSelectModule,
+        MatFormFieldModule,
+        MatMenuModule,
+        MatTooltipModule,
         ViewKeyboardComponent,
         ExpandedKeyboardComponent
     ],
@@ -33,6 +44,12 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
     isExpanded = false;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
     @ViewChild('expandedKeyboard') expandedKeyboardComponent?: ExpandedKeyboardComponent;
+
+    // Version switching
+    keybindingVersions: Array<{ keybindingId: string; versionId: string; gameVersion: string; isCurrent: boolean }> = [];
+    availableVersions: Array<{ id: string; gameVersion: string }> = [];
+    versionsWithoutKeybinding: Array<{ id: string; gameVersion: string }> = [];
+    isCopyingToVersion = false;
 
     constructor(
         private route: ActivatedRoute,
@@ -65,10 +82,30 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
             next: (keybinding) => {
                 this.keybinding = keybinding;
                 this.checkOwnership();
+                this.loadVersions(id);
             },
             error: (error) => {
                 console.error('Error loading keybinding:', error);
                 this.snackBar.open('Error loading keybinding', 'Close', { duration: 3000 });
+            }
+        });
+    }
+
+    private loadVersions(id: string): void {
+        this.keybindingService.getKeybindingVersions(id).pipe(
+            takeUntil(this._unsubscribeAll)
+        ).subscribe({
+            next: (response) => {
+                this.keybindingVersions = response.versions;
+                this.availableVersions = response.availableVersions;
+                // Find versions that don't have this keybinding yet
+                const existingVersionIds = this.keybindingVersions.map(v => v.versionId);
+                this.versionsWithoutKeybinding = this.availableVersions.filter(
+                    v => !existingVersionIds.includes(v.id)
+                );
+            },
+            error: (error) => {
+                console.error('Error loading keybinding versions:', error);
             }
         });
     }
@@ -131,5 +168,51 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
 
     onCollapse(): void {
         this.isExpanded = false;
+    }
+
+    onVersionChange(keybindingId: string): void {
+        if (keybindingId && keybindingId !== this.keybinding?.keybindingId) {
+            this.router.navigate(['/keybinds', keybindingId]);
+        }
+    }
+
+    copyToVersion(versionId: string): void {
+        if (!this.keybinding || this.isCopyingToVersion) return;
+
+        this.isCopyingToVersion = true;
+        this.keybindingService.copyToVersion(this.keybinding.keybindingId, versionId).pipe(
+            takeUntil(this._unsubscribeAll)
+        ).subscribe({
+            next: (response) => {
+                this.isCopyingToVersion = false;
+                
+                // Show the version copy dialog with changes
+                const dialogData: VersionCopyDialogData = {
+                    targetVersion: response.targetVersion,
+                    changes: response.changes,
+                    keybindingId: response.keybinding.keybindingId
+                };
+                
+                const dialogRef = this.dialog.open(VersionCopyDialogComponent, {
+                    data: dialogData,
+                    disableClose: false
+                });
+                
+                dialogRef.afterClosed().subscribe(result => {
+                    if (result?.action === 'view') {
+                        this.router.navigate(['/keybinds', result.keybindingId]);
+                    }
+                    // Reload versions to show the new one
+                    if (this.keybinding) {
+                        this.loadVersions(this.keybinding.keybindingId);
+                    }
+                });
+            },
+            error: (error) => {
+                console.error('Error copying keybinding:', error);
+                this.snackBar.open(error.error?.message || 'Error copying keybinding', 'Close', { duration: 5000 });
+                this.isCopyingToVersion = false;
+            }
+        });
     }
 }

@@ -398,4 +398,51 @@ export class KeybindingService {
         console.log('KeybindingService - updated keybinding in place, no list emission needed');
     }
 
+    getKeybindingVersions(keybindingId: string): Observable<{
+        currentKeybinding: Keybinding;
+        versions: Array<{
+            keybindingId: string;
+            versionId: string;
+            gameVersion: string;
+            isCurrent: boolean;
+        }>;
+        availableVersions: Array<{
+            id: string;
+            gameVersion: string;
+        }>;
+    }> {
+        return this.http.get<any>(`${environment.apiUrl}/keybindings/${keybindingId}/versions`);
+    }
+
+    copyToVersion(keybindingId: string, versionId: string): Observable<{
+        keybinding: Keybinding;
+        message: string;
+        targetVersion: string;
+        changes: {
+            removedAbilities: Array<{
+                key: string;
+                spell: { name: string; icon: string; spell_id: string };
+            }>;
+            originalCount: number;
+            newCount: number;
+        };
+    }> {
+        return this.http.post<{
+            keybinding: Keybinding;
+            message: string;
+            targetVersion: string;
+            changes: {
+                removedAbilities: Array<{
+                    key: string;
+                    spell: { name: string; icon: string; spell_id: string };
+                }>;
+                originalCount: number;
+                newCount: number;
+            };
+        }>(
+            `${environment.apiUrl}/keybindings/${keybindingId}/copy-to-version`,
+            { version_id: versionId }
+        );
+    }
+
 }

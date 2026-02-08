@@ -2,6 +2,7 @@ import { FuseNavigationItem } from '@fuse/components/navigation';
 
 interface NavigationItemWithAuth extends FuseNavigationItem {
     requiresAuth?: boolean;
+    requiresAdmin?: boolean;
     children?: NavigationItemWithAuth[];
 }
 
@@ -61,7 +62,7 @@ export const navigationConfig: NavigationItemWithAuth[] = [
     }
 ];
 
-export const getNavigationForAuthState = (isAuthenticated: boolean, forHorizontal: boolean = false): FuseNavigationItem[] => {
+export const getNavigationForAuthState = (isAuthenticated: boolean, forHorizontal: boolean = false, isAdmin: boolean = false): FuseNavigationItem[] => {
     return navigationConfig.map(item => {
         // Special handling for Abilities based on navigation type
         if (item.id === 'abilities') {
@@ -87,9 +88,13 @@ export const getNavigationForAuthState = (isAuthenticated: boolean, forHorizonta
         }
 
         if (item.type === 'group' && item.children) {
-            const filteredChildren = item.children.filter(child =>
-                !child.requiresAuth || isAuthenticated
-            );
+            const filteredChildren = item.children.filter(child => {
+                // Check auth requirement
+                if (child.requiresAuth && !isAuthenticated) return false;
+                // Check admin requirement
+                if (child.requiresAdmin && !isAdmin) return false;
+                return true;
+            });
 
             // If only one child remains, convert group to basic link
             if (filteredChildren.length === 1) {
@@ -115,6 +120,11 @@ export const getNavigationForAuthState = (isAuthenticated: boolean, forHorizonta
 
         // Filter basic items that require authentication
         if (item.type === 'basic' && (item as NavigationItemWithAuth).requiresAuth && !isAuthenticated) {
+            return null;
+        }
+
+        // Filter basic items that require admin access
+        if (item.type === 'basic' && (item as NavigationItemWithAuth).requiresAdmin && !isAdmin) {
             return null;
         }
 
