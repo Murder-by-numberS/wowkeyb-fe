@@ -255,6 +255,7 @@ export class AdminService {
         sort?: string;
         order?: 'asc' | 'desc';
         includeInactive?: boolean;
+        filterMode?: 'inclusion' | 'exact';
     } = {}): Observable<{ abilities: AdminAbility[] } & PaginatedResponse<AdminAbility>> {
         let httpParams = new HttpParams();
         if (params.page) httpParams = httpParams.set('page', params.page.toString());
@@ -270,6 +271,7 @@ export class AdminService {
         if (params.includeInactive !== undefined) {
             httpParams = httpParams.set('includeInactive', params.includeInactive.toString());
         }
+        if (params.filterMode) httpParams = httpParams.set('filterMode', params.filterMode);
 
         return this.http.get<{ abilities: AdminAbility[] } & PaginatedResponse<AdminAbility>>(
             `${this.apiUrl}/admin/abilities`,

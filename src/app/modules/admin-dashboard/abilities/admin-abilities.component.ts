@@ -99,8 +99,7 @@ export class AdminAbilitiesComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        this.loadVersions();
-        this.loadAbilities();
+        this.loadVersionsThenAbilities();
 
         this.searchSubject.pipe(
             debounceTime(300),
@@ -112,13 +111,19 @@ export class AdminAbilitiesComponent implements OnInit {
         });
     }
 
-    loadVersions(): void {
+    loadVersionsThenAbilities(): void {
         this.adminService.getVersions().subscribe({
             next: (response) => {
                 this.versions = response.versions.map(v => v.game_version);
+                // Default to the latest (first) version
+                if (this.versions.length > 0 && !this.selectedVersion) {
+                    this.selectedVersion = this.versions[0];
+                }
+                this.loadAbilities();
             },
             error: (err) => {
                 console.error('Error loading versions:', err);
+                this.loadAbilities();
             }
         });
     }
@@ -138,7 +143,8 @@ export class AdminAbilitiesComponent implements OnInit {
             version: this.selectedVersion,
             sort: this.sortField,
             order: this.sortDirection,
-            includeInactive: true
+            includeInactive: true,
+            filterMode: this.selectedClass ? 'inclusion' : 'exact'
         }).subscribe({
             next: (response) => {
                 this.abilities = response.abilities;

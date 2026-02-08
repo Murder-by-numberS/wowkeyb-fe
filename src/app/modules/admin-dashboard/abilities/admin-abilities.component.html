@@ -195,7 +195,7 @@
 
                             <ng-container matColumnDef="spec">
                                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Spec</th>
-                                <td mat-cell *matCellDef="let ability">{{ ability.spec || '-' }}</td>
+                                <td mat-cell *matCellDef="let ability" class="capitalize">{{ ability.spec || '-' }}</td>
                             </ng-container>
 
                             <ng-container matColumnDef="ability_type">

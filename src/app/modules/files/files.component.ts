@@ -360,24 +360,38 @@ export class FilesComponent implements OnInit, OnDestroy {
         });
     }
 
-    deleteUpload(upload: any): void {
-        const uploadId = upload.id || upload._id;
-        if (!uploadId) {
-            console.error('Upload object missing id:', upload);
-            this.snackBar.open('Error: Upload ID not found', 'Close', { duration: 3000 });
+    /**
+     * Whether the file can be deleted from the UI.
+     * - Uploads: always deletable
+     * - Generated files: always deletable (including those that have been downloaded)
+     */
+    canDeleteFile(file: any): boolean {
+        if (!file) return false;
+        return file.source === 'upload' || file.source === 'generated' || !file.source;
+    }
+
+    deleteFile(file: any): void {
+        const fileId = file.id || file._id;
+        if (!fileId) {
+            console.error('File object missing id:', file);
+            this.snackBar.open('Error: File ID not found', 'Close', { duration: 3000 });
             return;
         }
 
-        if (this.deletingUploadId === uploadId) {
-            console.log('Delete already in progress for this upload');
+        if (this.deletingUploadId === fileId) {
             return;
         }
+
+        const isUpload = file.source === 'upload';
+        const message = isUpload
+            ? `Are you sure you want to delete "${file.file_name}"? This will not delete the macros created from this file.`
+            : `Are you sure you want to delete "${file.file_name}"? This will remove the file from your history. Your macros will not be affected.`;
 
         const dialogRef = this.dialog.open(ConfirmDialogComponent, {
             width: '400px',
             data: {
-                title: 'Delete Upload',
-                message: `Are you sure you want to delete "${upload.file_name}"? This will not delete the macros created from this file.`,
+                title: isUpload ? 'Delete Upload' : 'Delete File',
+                message,
                 confirmText: 'Delete',
                 cancelText: 'Cancel'
             }
@@ -385,35 +399,48 @@ export class FilesComponent implements OnInit, OnDestroy {
 
         dialogRef.afterClosed().subscribe(confirmed => {
             if (confirmed === true) {
-                this.deletingUploadId = uploadId;
-                console.log('Deleting upload:', { id: uploadId, fileName: upload.file_name });
+                this.deletingUploadId = fileId;
 
-                this.macroFileService.deleteDownloadRecord(uploadId).subscribe({
-                    next: (response) => {
-                        console.log('Upload deleted successfully:', response);
+                this.macroFileService.deleteDownloadRecord(fileId).subscribe({
+                    next: () => {
                         this.deletingUploadId = null;
-                        this.snackBar.open('Upload deleted successfully', 'Close', { duration: 3000 });
+                        this.snackBar.open('File deleted successfully', 'Close', { duration: 3000 });
+                        if (this.currentSelectedFile?.id === fileId) {
+                            this.currentSelectedFile = null;
+                        }
+                        // Remove from local state immediately for instant UI update
+                        this.uploads = this.uploads.filter(u => (u.id || u._id) !== fileId);
+                        this.downloads = this.downloads.filter(d => (d.id ?? (d as { _id?: string })._id) !== fileId);
+                        this.loadAllFiles();
+                        // Refresh from server to stay in sync
                         this.loadUploads();
+                        this.loadDownloads();
                     },
                     error: (error) => {
-                        console.error('Error deleting upload:', error);
+                        console.error('Error deleting file:', error);
                         this.deletingUploadId = null;
 
-                        // Self-heal: If record not found (404), just remove it from the list
                         if (error.status === 404 || error.error?.message?.includes('not found')) {
-                            console.log('Upload record not found, removing from list (self-healing)');
-                            this.uploads = this.uploads.filter(u => (u.id || u._id) !== uploadId);
-                            this.snackBar.open('Upload removed', 'Close', { duration: 2000 });
+                            if (this.currentSelectedFile?.id === fileId) {
+                                this.currentSelectedFile = null;
+                            }
+                            this.uploads = this.uploads.filter(u => (u.id || u._id) !== fileId);
+                            this.downloads = this.downloads.filter(d => (d.id ?? (d as { _id?: string })._id) !== fileId);
+                            this.loadAllFiles();
+                            this.snackBar.open('File removed', 'Close', { duration: 2000 });
                         } else {
-                            const errorMessage = error.error?.message || error.message || 'Failed to delete upload';
+                            const errorMessage = error.error?.message || error.message || 'Failed to delete file';
                             this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
                         }
                     }
                 });
-            } else {
-                console.log('Delete cancelled by user, confirmed value:', confirmed);
             }
         });
+    }
+
+    /** @deprecated Use deleteFile instead. Kept for backwards compatibility. */
+    deleteUpload(upload: any): void {
+        this.deleteFile(upload);
     }
 
     redownloadFile(download: MacroDownload): void {

@@ -357,8 +357,8 @@
                             <mat-icon class="mr-1">download</mat-icon>
                             Download
                         </button>
-                        @if (currentSelectedFile.source === 'upload') {
-                        <button mat-icon-button color="warn" (click)="deleteUpload(currentSelectedFile)"
+                        @if (canDeleteFile(currentSelectedFile)) {
+                        <button mat-icon-button color="warn" (click)="deleteFile(currentSelectedFile)"
                             matTooltip="Delete">
                             <mat-icon>delete</mat-icon>
                         </button>
