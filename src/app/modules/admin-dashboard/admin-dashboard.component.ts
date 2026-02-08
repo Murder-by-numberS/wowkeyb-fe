@@ -31,7 +31,7 @@ export class AdminDashboardComponent implements OnInit {
     // Frontend environment info
     frontendEnv = environment.envName || 'unknown';
     frontendProduction = environment.production;
-    frontendVersion = environment.version || 'unknown';
+    frontendVersion = (environment as any).version || 'unknown';
 
     // Dashboard menu items
     menuItems = [
