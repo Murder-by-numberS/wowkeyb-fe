@@ -44,7 +44,3 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
-# Local temp/test (not part of app)
-stepper-form.html
-temp-create-section.html
-test-icon-id-approach.js
