@@ -32,6 +32,9 @@
                     <div class="flex-1">
                         <h3 class="text-lg font-semibold">{{ user?.username || user?.name || 'User' }}</h3>
                         <p class="text-secondary">{{ user?.email }}</p>
+                        <p class="text-secondary text-sm mt-1" *ngIf="favoriteClass">
+                            Favorite Class: <span class="font-medium text-default">{{ favoriteClass }}</span>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -126,134 +129,6 @@
                     </mat-select>
                     <mat-hint>Your macros and keybindings will be ordered with this class first</mat-hint>
                 </mat-form-field>
-            </div>
-        </fuse-card>
-
-        <!-- Security Card -->
-        <fuse-card class="flex flex-col">
-            <div class="px-6 py-4 border-b">
-                <h2 class="text-xl font-semibold">Account Settings</h2>
-            </div>
-            <div class="p-6">
-                <!-- Change Username Toggle -->
-                <button mat-stroked-button class="mb-2" (click)="toggleUsernameForm()"
-                    [disabled]="usernameChangesRemaining <= 0">
-                    <mat-icon [svgIcon]="'heroicons_outline:user'"></mat-icon>
-                    <span class="ml-2">{{ showUsernameForm ? 'Cancel' : 'Change Username' }}</span>
-                </button>
-
-                <!-- Username change limit info -->
-                <div class="mb-4">
-                    <p *ngIf="usernameChangesRemaining > 0" class="text-sm text-secondary">
-                        {{ usernameChangesRemaining }} username change{{ usernameChangesRemaining === 1 ? '' : 's' }} remaining this year
-                    </p>
-                    <p *ngIf="usernameChangesRemaining <= 0" class="text-sm text-amber-600 dark:text-amber-400">
-                        You've used both username changes for this year.
-                        <span *ngIf="nextUsernameChangeDate">
-                            Next change available {{ nextUsernameChangeDate | date:'mediumDate' }}.
-                        </span>
-                    </p>
-                </div>
-
-                <!-- Username Change Form -->
-                <div *ngIf="showUsernameForm" class="mt-4 mb-6">
-                    <form [formGroup]="usernameForm" (ngSubmit)="changeUsername()">
-                        <div class="flex flex-col gap-4">
-                            <!-- Current Username Display -->
-                            <div class="p-3 bg-gray-100 dark:bg-gray-800 rounded">
-                                <p class="text-sm text-secondary">Current Username</p>
-                                <p class="font-medium">{{ user?.username || 'N/A' }}</p>
-                            </div>
-
-                            <!-- New Username -->
-                            <mat-form-field class="w-full">
-                                <mat-label>New Username</mat-label>
-                                <input matInput type="text" formControlName="newUsername" required>
-                                <mat-icon matPrefix class="icon-size-5" [svgIcon]="'heroicons_solid:user'">
-                                </mat-icon>
-                                <mat-error *ngIf="usernameForm.get('newUsername')?.hasError('required')">
-                                    Username is required
-                                </mat-error>
-                                <mat-error *ngIf="usernameForm.get('newUsername')?.hasError('minlength')">
-                                    Username must be at least 3 characters
-                                </mat-error>
-                            </mat-form-field>
-
-                            <!-- Submit Button -->
-                            <div class="flex items-center gap-2">
-                                <button mat-flat-button color="primary" type="submit"
-                                    [disabled]="usernameForm.invalid || isChangingUsername">
-                                    <mat-spinner *ngIf="isChangingUsername" [diameter]="20" class="mr-2">
-                                    </mat-spinner>
-                                    <span>{{ isChangingUsername ? 'Changing Username...' : 'Change Username' }}</span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Change Password Toggle -->
-                <button mat-stroked-button class="mb-4" (click)="togglePasswordForm()">
-                    <mat-icon [svgIcon]="'heroicons_outline:lock-closed'"></mat-icon>
-                    <span class="ml-2">{{ showPasswordForm ? 'Cancel' : 'Change Password' }}</span>
-                </button>
-
-                <!-- Password Change Form -->
-                <div *ngIf="showPasswordForm" class="mt-4">
-                    <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
-                        <div class="flex flex-col gap-4">
-                            <!-- Current Password -->
-                            <mat-form-field class="w-full">
-                                <mat-label>Current Password</mat-label>
-                                <input matInput type="password" formControlName="currentPassword" required>
-                                <mat-icon matPrefix class="icon-size-5" [svgIcon]="'heroicons_solid:lock-closed'">
-                                </mat-icon>
-                                <mat-error *ngIf="passwordForm.get('currentPassword')?.hasError('required')">
-                                    Current password is required
-                                </mat-error>
-                            </mat-form-field>
-
-                            <!-- New Password -->
-                            <mat-form-field class="w-full">
-                                <mat-label>New Password</mat-label>
-                                <input matInput type="password" formControlName="newPassword" required>
-                                <mat-icon matPrefix class="icon-size-5" [svgIcon]="'heroicons_solid:lock-closed'">
-                                </mat-icon>
-                                <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('required')">
-                                    New password is required
-                                </mat-error>
-                                <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('minlength')">
-                                    Password must be at least 8 characters
-                                </mat-error>
-                            </mat-form-field>
-
-                            <!-- Confirm Password -->
-                            <mat-form-field class="w-full">
-                                <mat-label>Confirm New Password</mat-label>
-                                <input matInput type="password" formControlName="confirmPassword" required>
-                                <mat-icon matPrefix class="icon-size-5" [svgIcon]="'heroicons_solid:lock-closed'">
-                                </mat-icon>
-                                <mat-error *ngIf="passwordForm.get('confirmPassword')?.hasError('required')">
-                                    Please confirm your new password
-                                </mat-error>
-                                <mat-error
-                                    *ngIf="passwordForm.hasError('passwordMismatch') && !passwordForm.get('confirmPassword')?.hasError('required')">
-                                    Passwords do not match
-                                </mat-error>
-                            </mat-form-field>
-
-                            <!-- Submit Button -->
-                            <div class="flex items-center gap-2">
-                                <button mat-flat-button color="primary" type="submit"
-                                    [disabled]="passwordForm.invalid || isChangingPassword">
-                                    <mat-spinner *ngIf="isChangingPassword" [diameter]="20" class="mr-2">
-                                    </mat-spinner>
-                                    <span>{{ isChangingPassword ? 'Changing Password...' : 'Change Password' }}</span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
             </div>
         </fuse-card>
 

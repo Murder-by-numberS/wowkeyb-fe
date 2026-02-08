@@ -69,27 +69,11 @@
                 <!-- Load settings panel -->
                 <div class="mt-8">
                     @switch (selectedPanel) {
-                    <!-- Account -->
-                    @case ('account') {
-                    <settings-account></settings-account>
-                    }
                     <!-- Security -->
                     @case ('security') {
                     <settings-security></settings-security>
                     }
-                    <!-- Plan & Billing -->
-                    @case ('plan-billing') {
-                    <settings-plan-billing></settings-plan-billing>
-                    }
-                    <!-- Notifications -->
-                    @case ('notifications') {
-                    <settings-notifications></settings-notifications>
-                    }
-                    <!-- Team -->
-                    @case ('team') {
-                    <settings-team></settings-team>
-                    }
-                    <!-- Team -->
+                    <!-- App Settings -->
                     @case ('app-settings') {
                     <settings-app></settings-app>
                     }

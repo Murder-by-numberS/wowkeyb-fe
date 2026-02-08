@@ -99,7 +99,7 @@ export class UserComponent implements OnInit, OnDestroy {
     }
 
     goToSettings(): void {
-        this._router.navigate(['/pages/settings']);
+        this._router.navigate(['/settings']);
     }
 
     goToAdmin(): void {

@@ -14,11 +14,7 @@ import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FuseMediaWatcherService } from '@fuse/services/media-watcher';
 import { Subject, takeUntil } from 'rxjs';
-import { SettingsAccountComponent } from './account/account.component';
-import { SettingsNotificationsComponent } from './notifications/notifications.component';
-import { SettingsPlanBillingComponent } from './plan-billing/plan-billing.component';
 import { SettingsSecurityComponent } from './security/security.component';
-import { SettingsTeamComponent } from './team/team.component';
 import { SettingsAppComponent } from './app-settings/app-settings.component';
 
 @Component({
@@ -33,11 +29,7 @@ import { SettingsAppComponent } from './app-settings/app-settings.component';
         MatIconModule,
         MatSnackBarModule,
         NgClass,
-        SettingsAccountComponent,
         SettingsSecurityComponent,
-        SettingsPlanBillingComponent,
-        SettingsNotificationsComponent,
-        SettingsTeamComponent,
         SettingsAppComponent,
     ],
 })
@@ -46,7 +38,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     drawerMode: 'over' | 'side' = 'side';
     drawerOpened: boolean = true;
     panels: any[] = [];
-    selectedPanel: string = 'account';
+    selectedPanel: string = 'security';
     private _unsubscribeAll: Subject<any> = new Subject<any>();
 
     /**
@@ -68,38 +60,15 @@ export class SettingsComponent implements OnInit, OnDestroy {
         // Setup available panels
         this.panels = [
             {
-                id: 'account',
-                icon: 'heroicons_outline:user-circle',
-                title: 'Account',
-                description:
-                    'Manage your profile',
-            },
-            {
                 id: 'security',
                 icon: 'heroicons_outline:lock-closed',
                 title: 'Security',
                 description:
                     'Manage your password',
-                // description:
-
-                //     'Manage your password and 2-step verification preferences',
             },
-            // {
-            //     id: 'notifications',
-            //     icon: 'heroicons_outline:bell',
-            //     title: 'Notifications',
-            //     description: "Manage when you'll be notified on which channels",
-            // },
-            // {
-            //     id: 'team',
-            //     icon: 'heroicons_outline:user-group',
-            //     title: 'Team',
-            //     description:
-            //         'Manage your existing team and change roles/permissions',
-            // },
             {
                 id: 'app-settings',
-                icon: 'heroicons_outline:user-group',
+                icon: 'heroicons_outline:cog-8-tooth',
                 title: 'App Settings',
                 description:
                     'Manage your app settings',

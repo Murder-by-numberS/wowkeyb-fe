@@ -1,4 +1,3 @@
-import { TextFieldModule } from '@angular/cdk/text-field';
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -8,23 +7,16 @@ import {
     OnInit,
     ViewEncapsulation,
 } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterLink } from '@angular/router';
 import { FuseCardComponent } from '@fuse/components/card';
 import { MacroService } from 'app/modules/macros/services/macro.service';
 import { KeybindingService } from 'app/core/services/keybinding.service';
-import { AuthService } from 'app/core/auth/auth.service';
 import { UserService } from 'app/core/user/user.service';
 import { SettingsService } from 'app/core/services/user/settings.service';
 import { User } from 'app/core/user/user.types';
@@ -45,17 +37,11 @@ import { MacroFileService } from 'app/modules/macros/services/macro-file.service
     },
     imports: [
         CommonModule,
-        ReactiveFormsModule,
         FuseCardComponent,
         MatIconModule,
         MatButtonModule,
-        MatMenuModule,
         MatFormFieldModule,
-        MatInputModule,
         MatSelectModule,
-        TextFieldModule,
-        MatDividerModule,
-        MatTooltipModule,
         MatProgressSpinnerModule,
         MatSnackBarModule,
         RouterLink,
@@ -72,16 +58,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     readonly macroLimit: number = 200;
     readonly keybindingLimit: number = 10;
 
-    passwordForm: FormGroup;
-    isChangingPassword: boolean = false;
-    showPasswordForm: boolean = false;
-
-    usernameForm: FormGroup;
-    isChangingUsername: boolean = false;
-    showUsernameForm: boolean = false;
-    usernameChangesRemaining: number = 2;
-    nextUsernameChangeDate: Date | null = null;
-
     classes = classes;
     favoriteClass: string | null = null;
     isSavingClass: boolean = false;
@@ -94,25 +70,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
     constructor(
         private macroService: MacroService,
         private keybindingService: KeybindingService,
-        private authService: AuthService,
         private userService: UserService,
         private settingsService: SettingsService,
         private macroFileService: MacroFileService,
         private router: Router,
         private cdr: ChangeDetectorRef,
-        private fb: FormBuilder,
         private snackBar: MatSnackBar
-    ) {
-        this.passwordForm = this.fb.group({
-            currentPassword: ['', Validators.required],
-            newPassword: ['', [Validators.required, Validators.minLength(8)]],
-            confirmPassword: ['', Validators.required]
-        }, { validators: this.passwordMatchValidator });
-
-        this.usernameForm = this.fb.group({
-            newUsername: ['', [Validators.required, Validators.minLength(3)]],
-        });
-    }
+    ) { }
 
     ngOnInit(): void {
         this.loadData();
@@ -122,12 +86,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next();
         this.destroy$.complete();
-    }
-
-    passwordMatchValidator(form: FormGroup) {
-        const newPassword = form.get('newPassword')?.value;
-        const confirmPassword = form.get('confirmPassword')?.value;
-        return newPassword === confirmPassword ? null : { passwordMismatch: true };
     }
 
     loadData(): void {
@@ -147,7 +105,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
                 } else if ((user as any)?.favorite_class) {
                     this.favoriteClass = (user as any).favorite_class;
                 }
-                this.computeUsernameChangesRemaining(user);
                 this.cdr.markForCheck();
             },
             error: (error) => {
@@ -201,49 +158,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.router.navigate(['/keybinds/my-keybindings']);
     }
 
-    togglePasswordForm(): void {
-        this.showPasswordForm = !this.showPasswordForm;
-        if (!this.showPasswordForm) {
-            this.passwordForm.reset();
-        }
-        this.cdr.markForCheck();
-    }
-
-    changePassword(): void {
-        if (this.passwordForm.invalid) {
-            this.snackBar.open('Please fill in all fields correctly', 'Close', { duration: 3000 });
-            return;
-        }
-
-        this.isChangingPassword = true;
-        const formValue = this.passwordForm.value;
-
-        this.authService.changePassword({
-            currentPassword: formValue.currentPassword,
-            newPassword: formValue.newPassword
-        })
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: () => {
-                    this.snackBar.open('Password changed successfully', 'Close', { duration: 3000 });
-                    this.passwordForm.reset();
-                    this.showPasswordForm = false;
-                    this.isChangingPassword = false;
-                    this.cdr.markForCheck();
-                },
-                error: (error) => {
-                    console.error('Error changing password:', error);
-                    this.snackBar.open(
-                        error.error?.message || 'Failed to change password. Please check your current password.',
-                        'Close',
-                        { duration: 5000 }
-                    );
-                    this.isChangingPassword = false;
-                    this.cdr.markForCheck();
-                }
-            });
-    }
-
     onFavoriteClassChange(className: string): void {
         this.isSavingClass = true;
 
@@ -279,94 +193,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
                     this.cdr.markForCheck();
                 }
             });
-    }
-
-    toggleUsernameForm(): void {
-        this.showUsernameForm = !this.showUsernameForm;
-        if (!this.showUsernameForm) {
-            this.usernameForm.reset();
-        }
-        this.cdr.markForCheck();
-    }
-
-    changeUsername(): void {
-        if (this.usernameForm.invalid) {
-            this.snackBar.open('Please enter a valid username', 'Close', { duration: 3000 });
-            return;
-        }
-
-        this.isChangingUsername = true;
-        const newUsername = this.usernameForm.get('newUsername')?.value;
-
-        this.authService.updateProfile({ username: newUsername })
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (response) => {
-                    this.snackBar.open('Username changed successfully', 'Close', { duration: 3000 });
-
-                    // Update the user object with new username
-                    if (this.user && response.user) {
-                        this.user = { ...this.user, ...response.user };
-
-                        // Update the user in the service and localStorage
-                        this.userService.user = this.user;
-                        const currentUser = localStorage.getItem('currentUser');
-                        if (currentUser) {
-                            const userData = JSON.parse(currentUser);
-                            userData.username = response.user.username;
-                            localStorage.setItem('currentUser', JSON.stringify(userData));
-                        }
-                    }
-
-                    // Update remaining changes from response
-                    if (response.user?.usernameChangesRemaining !== undefined) {
-                        this.usernameChangesRemaining = response.user.usernameChangesRemaining;
-                    } else {
-                        this.usernameChangesRemaining = Math.max(0, this.usernameChangesRemaining - 1);
-                    }
-
-                    this.usernameForm.reset();
-                    this.showUsernameForm = false;
-                    this.isChangingUsername = false;
-                    this.cdr.markForCheck();
-                },
-                error: (error) => {
-                    console.error('Error changing username:', error);
-                    const message = error.error?.message || 'Failed to change username. It may already be taken.';
-                    this.snackBar.open(message, 'Close', { duration: 5000 });
-
-                    // If rate limited, update next available date from response
-                    if (error.status === 429 && error.error?.next_change_available) {
-                        this.usernameChangesRemaining = 0;
-                        this.nextUsernameChangeDate = new Date(error.error.next_change_available);
-                    }
-
-                    this.isChangingUsername = false;
-                    this.cdr.markForCheck();
-                }
-            });
-    }
-
-    private computeUsernameChangesRemaining(user: any): void {
-        if (!user) return;
-        const changes: string[] = user.username_changes || [];
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
-        const recentChanges = changes
-            .map(d => new Date(d))
-            .filter(d => d > oneYearAgo)
-            .sort((a, b) => a.getTime() - b.getTime());
-
-        this.usernameChangesRemaining = Math.max(0, 2 - recentChanges.length);
-
-        if (this.usernameChangesRemaining === 0 && recentChanges.length > 0) {
-            const earliest = recentChanges[0];
-            this.nextUsernameChangeDate = new Date(earliest);
-            this.nextUsernameChangeDate.setFullYear(this.nextUsernameChangeDate.getFullYear() + 1);
-        } else {
-            this.nextUsernameChangeDate = null;
-        }
     }
 
     loadFileCount(): void {

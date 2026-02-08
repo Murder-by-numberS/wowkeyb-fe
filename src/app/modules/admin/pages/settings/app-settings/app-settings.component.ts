@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewEncapsulation, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,13 +11,10 @@ import {
     Validators,
     FormControl,
 } from '@angular/forms';
-import { FuseDrawerComponent } from '@fuse/components/drawer';
 import {
     FuseConfig,
     FuseConfigService,
     Scheme,
-    Theme,
-    Themes,
 } from '@fuse/services/config';
 import { FuseAlertType } from '@fuse/components/alert';
 import { Subject, takeUntil, finalize } from 'rxjs';
@@ -48,9 +44,7 @@ import { SettingsService } from 'app/core/services/user/settings.service';
     standalone: true,
     imports: [
         MatIconModule,
-        FuseDrawerComponent,
         MatButtonModule,
-        NgClass,
         MatTooltipModule,
     ],
 })
@@ -58,15 +52,10 @@ export class SettingsAppComponent implements OnInit, OnDestroy {
     @ViewChild('saveSettingsNgForm') saveSettingsNgForm: NgForm;
 
     config: FuseConfig;
-    layout: string;
     scheme: 'dark' | 'light';
-    theme: string;
-    themes: Themes;
     settingsScheme: string;
-    settingsTheme: string;
 
     toggledScheme: boolean = false;
-    toggledTheme: boolean = false;
 
     alert: { type: FuseAlertType; message: string } = {
         type: 'success',
@@ -78,7 +67,6 @@ export class SettingsAppComponent implements OnInit, OnDestroy {
 
     saveSettingsForm = new FormGroup({
         scheme: new FormControl('', Validators.required),
-        theme: new FormControl('', Validators.required),
     });
 
     private _unsubscribeAll: Subject<any> = new Subject<any>();
@@ -113,7 +101,6 @@ export class SettingsAppComponent implements OnInit, OnDestroy {
         // Create the form
         this.saveSettingsForm = this._formBuilder.group({
             scheme: ['', [Validators.required]],
-            theme: ['', [Validators.required]],
         });
 
     }
@@ -186,53 +173,6 @@ export class SettingsAppComponent implements OnInit, OnDestroy {
         this._snackBar.open(alert.message, 'OK', {
             duration: this.durationInSeconds * 1000,
         });
-    }
-
-    /**
-     * Set the theme on the config
-     *
-     * @param theme
-     */
-    setTheme(theme: Theme): void {
-        this._fuseConfigService.config = { theme };
-        this.showAlert = false;
-        this.settingsTheme = theme;
-        this.toggledTheme = true;
-    }
-
-    saveTheme(): void {
-        console.log('saveTheme');
-        this.alert.message = 'saving';
-        this.showAlert = true;
-        this.toggledTheme = false;
-
-        const payload = {
-            theme: this.settingsTheme,
-        };
-        //make a call to the service
-        this._settingsService
-            .saveSettings(payload)
-            .pipe(
-                finalize(() => {
-                    this.openSnackBar(this.alert);
-                })
-            )
-            .subscribe(
-                (response) => {
-                    // Set the alert
-                    this.alert = {
-                        type: 'success',
-                        message: response.message,
-                    };
-                },
-                (response) => {
-                    // Set the alert
-                    this.alert = {
-                        type: 'error',
-                        message: response.error.message,
-                    };
-                }
-            )
     }
 
 }

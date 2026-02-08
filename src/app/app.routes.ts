@@ -94,6 +94,19 @@ export const appRoutes: Route[] = [
             { path: 'profile', loadChildren: () => import('app/modules/admin/pages/profile/profile.routes') },
         ]
     },
+    // Settings route (without initialDataResolver to avoid hanging)
+    {
+        path: '',
+        canActivate: [AuthGuard],
+        canActivateChild: [AuthGuard],
+        component: LayoutComponent,
+        data: {
+            layout: 'modern'
+        },
+        children: [
+            { path: 'settings', loadChildren: () => import('app/modules/admin/pages/settings/settings.routes') },
+        ]
+    },
     // View user profile (public)
     {
         path: '',
