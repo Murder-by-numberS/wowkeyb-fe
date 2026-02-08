@@ -136,10 +136,24 @@
             </div>
             <div class="p-6">
                 <!-- Change Username Toggle -->
-                <button mat-stroked-button class="mb-4" (click)="toggleUsernameForm()">
+                <button mat-stroked-button class="mb-2" (click)="toggleUsernameForm()"
+                    [disabled]="usernameChangesRemaining <= 0">
                     <mat-icon [svgIcon]="'heroicons_outline:user'"></mat-icon>
                     <span class="ml-2">{{ showUsernameForm ? 'Cancel' : 'Change Username' }}</span>
                 </button>
+
+                <!-- Username change limit info -->
+                <div class="mb-4">
+                    <p *ngIf="usernameChangesRemaining > 0" class="text-sm text-secondary">
+                        {{ usernameChangesRemaining }} username change{{ usernameChangesRemaining === 1 ? '' : 's' }} remaining this year
+                    </p>
+                    <p *ngIf="usernameChangesRemaining <= 0" class="text-sm text-amber-600 dark:text-amber-400">
+                        You've used both username changes for this year.
+                        <span *ngIf="nextUsernameChangeDate">
+                            Next change available {{ nextUsernameChangeDate | date:'mediumDate' }}.
+                        </span>
+                    </p>
+                </div>
 
                 <!-- Username Change Form -->
                 <div *ngIf="showUsernameForm" class="mt-4 mb-6">
