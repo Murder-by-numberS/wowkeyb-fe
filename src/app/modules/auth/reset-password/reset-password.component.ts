@@ -20,6 +20,7 @@ import { FuseValidators } from '@fuse/validators';
 import { AuthService } from 'app/core/auth/auth.service';
 import { finalize, Subject, takeUntil, takeWhile, tap, timer } from 'rxjs';
 import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
+import { SchemeToggleComponent } from 'app/shared/scheme-toggle/scheme-toggle.component';
 @Component({
     selector: 'auth-reset-password',
     templateUrl: './reset-password.component.html',
@@ -37,6 +38,7 @@ import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-backgro
         MatProgressSpinnerModule,
         RouterLink,
         AuthBackgroundComponent,
+        SchemeToggleComponent,
     ],
 })
 export class AuthResetPasswordComponent implements OnInit {

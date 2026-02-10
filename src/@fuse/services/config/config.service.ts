@@ -3,9 +3,23 @@ import { FUSE_CONFIG } from '@fuse/services/config/config.constants';
 import { merge } from 'lodash-es';
 import { BehaviorSubject, Observable } from 'rxjs';
 
+const SCHEME_STORAGE_KEY = 'wowkeyb_scheme';
+
 @Injectable({ providedIn: 'root' })
 export class FuseConfigService {
-    private _config = new BehaviorSubject(inject(FUSE_CONFIG));
+    private _config: BehaviorSubject<any>;
+
+    constructor() {
+        const defaultConfig = inject(FUSE_CONFIG);
+
+        // Restore scheme from localStorage if available
+        const savedScheme = localStorage.getItem(SCHEME_STORAGE_KEY);
+        if (savedScheme && ['light', 'dark', 'auto'].includes(savedScheme)) {
+            defaultConfig.scheme = savedScheme;
+        }
+
+        this._config = new BehaviorSubject(defaultConfig);
+    }
 
     // -----------------------------------------------------------------------------------------------------
     // @ Accessors
@@ -17,6 +31,11 @@ export class FuseConfigService {
     set config(value: any) {
         // Merge the new config over to the current config
         const config = merge({}, this._config.getValue(), value);
+
+        // Persist scheme to localStorage
+        if (value.scheme) {
+            localStorage.setItem(SCHEME_STORAGE_KEY, value.scheme);
+        }
 
         // Execute the observable
         this._config.next(config);

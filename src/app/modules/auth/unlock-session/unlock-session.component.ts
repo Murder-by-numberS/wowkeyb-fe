@@ -18,6 +18,7 @@ import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
 import { AuthService } from 'app/core/auth/auth.service';
 import { UserService } from 'app/core/user/user.service';
 import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
+import { SchemeToggleComponent } from 'app/shared/scheme-toggle/scheme-toggle.component';
 
 @Component({
     selector: 'auth-unlock-session',
@@ -36,6 +37,7 @@ import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-backgro
         MatProgressSpinnerModule,
         RouterLink,
         AuthBackgroundComponent,
+        SchemeToggleComponent,
     ],
 })
 export class AuthUnlockSessionComponent implements OnInit {

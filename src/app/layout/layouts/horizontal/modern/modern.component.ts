@@ -23,6 +23,7 @@ import { ShortcutsComponent } from 'app/layout/common/shortcuts/shortcuts.compon
 import { UserComponent } from 'app/layout/common/user/user.component';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from 'app/core/auth/auth.service';
+import { SchemeToggleComponent } from 'app/shared/scheme-toggle/scheme-toggle.component';
 
 import packageJson from '../../../../../../package.json'
 
@@ -48,6 +49,7 @@ import packageJson from '../../../../../../package.json'
         UserComponent,
         RouterOutlet,
         QuickChatComponent,
+        SchemeToggleComponent,
     ],
 })
 export class ModernLayoutComponent implements OnInit, OnDestroy {

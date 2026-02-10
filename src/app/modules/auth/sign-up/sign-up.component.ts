@@ -18,6 +18,7 @@ import { fuseAnimations } from '@fuse/animations';
 import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
 import { AuthService } from 'app/core/auth/auth.service';
 import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
+import { SchemeToggleComponent } from 'app/shared/scheme-toggle/scheme-toggle.component';
 
 @Component({
     selector: 'auth-sign-up',
@@ -37,6 +38,7 @@ import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-backgro
         MatCheckboxModule,
         MatProgressSpinnerModule,
         AuthBackgroundComponent,
+        SchemeToggleComponent,
     ],
 })
 export class AuthSignUpComponent implements OnInit {

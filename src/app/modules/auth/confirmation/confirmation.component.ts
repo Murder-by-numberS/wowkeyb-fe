@@ -3,6 +3,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { fuseAnimations } from '@fuse/animations';
 import { AuthService } from 'app/core/auth/auth.service';
 import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
+import { SchemeToggleComponent } from 'app/shared/scheme-toggle/scheme-toggle.component';
 
 @Component({
     selector: 'auth-confirmation',
@@ -10,7 +11,7 @@ import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-backgro
     encapsulation: ViewEncapsulation.None,
     animations: fuseAnimations,
     standalone: true,
-    imports: [RouterLink, AuthBackgroundComponent],
+    imports: [RouterLink, AuthBackgroundComponent, SchemeToggleComponent],
 })
 export class AuthConfirmationComponent implements OnInit {
 

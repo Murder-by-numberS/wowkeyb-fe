@@ -18,6 +18,7 @@ import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
 import { AuthService } from 'app/core/auth/auth.service';
 import { finalize } from 'rxjs';
 import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
+import { SchemeToggleComponent } from 'app/shared/scheme-toggle/scheme-toggle.component';
 
 @Component({
     selector: 'auth-forgot-password',
@@ -36,6 +37,7 @@ import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-backgro
         MatProgressSpinnerModule,
         RouterLink,
         AuthBackgroundComponent,
+        SchemeToggleComponent,
     ],
 })
 export class AuthForgotPasswordComponent implements OnInit {

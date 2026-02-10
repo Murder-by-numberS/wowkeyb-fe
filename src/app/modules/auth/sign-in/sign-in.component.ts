@@ -24,6 +24,7 @@ import { AuthService } from 'app/core/auth/auth.service';
 import { BackendService } from 'app/core/services/backend.service';
 import { KeybindingService } from 'app/core/services/keybinding.service';
 import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
+import { SchemeToggleComponent } from 'app/shared/scheme-toggle/scheme-toggle.component';
 
 @Component({
     selector: 'auth-sign-in',
@@ -43,6 +44,7 @@ import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-backgro
         MatCheckboxModule,
         MatProgressSpinnerModule,
         AuthBackgroundComponent,
+        SchemeToggleComponent,
     ],
 })
 export class AuthSignInComponent implements OnInit {
