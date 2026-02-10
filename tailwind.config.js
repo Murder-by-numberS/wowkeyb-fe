@@ -11,22 +11,27 @@ const generatePalette = require(
  * Tailwind-like color palettes automatically
  */
 const customPalettes = {
-    brand: generatePalette('#2196F3'),
+    wowGold: generatePalette('#F5A623'),
+    royalBlue: generatePalette('#3B82F6'),
 };
 
 /**
  * Themes
+ *
+ * WoW-inspired color scheme:
+ * - Primary: WoW Gold (#F5A623)
+ * - Accent: Royal Blue (#3B82F6)
  */
 const themes = {
     // Default theme is required for theming system to work correctly!
     default: {
         primary: {
-            ...colors.indigo,
-            DEFAULT: colors.indigo[600],
+            ...customPalettes.wowGold,
+            DEFAULT: '#F5A623',
         },
         accent: {
-            ...colors.slate,
-            DEFAULT: colors.slate[800],
+            ...customPalettes.royalBlue,
+            DEFAULT: '#3B82F6',
         },
         warn: {
             ...colors.red,
@@ -35,29 +40,6 @@ const themes = {
         'on-warn': {
             500: colors.red['50'],
         },
-    },
-    // Rest of the themes will use the 'default' as the base
-    // theme and will extend it with their given configuration.
-    brand: {
-        primary: customPalettes.brand,
-    },
-    teal: {
-        primary: {
-            ...colors.teal,
-            DEFAULT: colors.teal[600],
-        },
-    },
-    rose: {
-        primary: colors.rose,
-    },
-    purple: {
-        primary: {
-            ...colors.purple,
-            DEFAULT: colors.purple[600],
-        },
-    },
-    amber: {
-        primary: colors.amber,
     },
 };
 

@@ -8,9 +8,9 @@
     <ng-container fuseVerticalNavigationContentHeader>
         <!-- Logo -->
         <div class="flex h-20 items-center px-8 pt-6">
-            <button mat-button routerLink="/home" fxHide="false">
-                LOGO
-            </button>
+            <a routerLink="/home">
+                <img class="w-32" src="images/logo/logo-text-on-dark.svg" alt="WoWKeyb" />
+            </a>
         </div>
     </ng-container>
 </fuse-vertical-navigation>
@@ -24,16 +24,13 @@
         @if (!isScreenSmall && navigation?.horizontal) {
         <!-- Logo -->
         <div class="mx-2 flex items-center lg:mr-8">
-            <div class="hidden lg:flex">
-                <!-- <img class="w-24 dark:hidden" src="images/logo/logo-text.svg" />
-                <img class="hidden w-24 dark:flex" src="images/logo/logo-text-on-dark.svg" /> -->
-                <button mat-button routerLink="/home" fxHide="false">
-                    LOGO
-                </button>
-            </div>
-            <button class="flex w-8 lg:hidden" mat-button routerLink="/home" fxHide="false">
-                LOGO
-            </button>
+            <a class="hidden lg:flex" routerLink="/home">
+                <img class="w-32 dark:hidden" src="images/logo/logo-text.svg" alt="WoWKeyb" />
+                <img class="hidden w-32 dark:flex" src="images/logo/logo-text-on-dark.svg" alt="WoWKeyb" />
+            </a>
+            <a class="flex lg:hidden" routerLink="/home">
+                <img class="w-8" src="images/logo/logo.svg" alt="WoWKeyb" />
+            </a>
         </div>
         <!-- Horizontal navigation -->
         <fuse-horizontal-navigation class="mr-2" [name]="'mainNavigation'"
@@ -83,5 +80,6 @@
         <router-outlet></router-outlet>
         }
     </div>
+
 
 </div>

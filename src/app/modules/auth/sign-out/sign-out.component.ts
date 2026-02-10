@@ -48,7 +48,7 @@ export class AuthSignOutComponent implements OnInit, OnDestroy {
                 finalize(() => {
                     // Only navigate if we haven't been destroyed
                     if (!this._unsubscribeAll.closed) {
-                        this._router.navigate(['home']);
+                        this._router.navigate(['sign-in']);
                     }
                 }),
                 takeWhile(() => this.countdown > 0),

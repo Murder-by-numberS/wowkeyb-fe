@@ -7,8 +7,13 @@ import packageJson from '../../../../package.json';
     standalone: true,
     imports: [CommonModule],
     template: `
-        <div class="flex items-center justify-center py-6 text-sm text-gray-400">
-            <span>WOWKEYB © {{ currentYear }} - {{ version }}</span>
+        <div class="flex flex-col items-center justify-center py-6 text-center">
+            <span class="text-sm text-gray-400">WOWKEYB &copy; {{ currentYear }} &mdash; v{{ version }}</span>
+            <p class="mt-2 max-w-2xl text-xs leading-relaxed text-gray-500">
+                World of Warcraft&reg; and Warcraft&reg; are trademarks or registered trademarks of
+                Blizzard Entertainment, Inc., in the U.S. and/or other countries. WoWKeyb is not
+                affiliated with or endorsed by Blizzard Entertainment.
+            </p>
         </div>
     `
 })
