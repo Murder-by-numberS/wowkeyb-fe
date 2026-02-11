@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AdminService, DashboardStats, BackendStatus } from 'app/core/services/admin.service';
 import { environment } from 'environments/environment';
+import packageJson from '../../../../package.json';
 
 @Component({
     selector: 'admin-dashboard',
@@ -31,7 +32,7 @@ export class AdminDashboardComponent implements OnInit {
     // Frontend environment info
     frontendEnv = environment.envName || 'unknown';
     frontendProduction = environment.production;
-    frontendVersion = (environment as any).version || 'unknown';
+    frontendVersion = packageJson.version;
 
     // Dashboard menu items
     menuItems = [
