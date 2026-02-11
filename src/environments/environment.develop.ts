@@ -5,5 +5,5 @@ export const environment = {
     hmr: false,
     // Force rebuild to ensure correct API URL is used
     debugFlag: 'DEVELOP_ENV_ACTIVE_2024',
-    version: '1.42.0'
+    version: '1.42.1'
 };

@@ -67,8 +67,8 @@
                 <mat-icon [svgIcon]="'heroicons_outline:question-mark-circle'"></mat-icon>
             </button>
             <app-scheme-toggle></app-scheme-toggle>
-            <button mat-flat-button (click)="goToLogin()">
-                Login
+            <button mat-icon-button (click)="goToLogin()" matTooltip="Login">
+                <mat-icon [svgIcon]="'heroicons_outline:user-circle'"></mat-icon>
             </button>
         </div>
         }
