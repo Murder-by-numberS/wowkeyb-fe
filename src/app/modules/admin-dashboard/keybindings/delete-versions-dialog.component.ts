@@ -55,16 +55,16 @@ export interface DeleteVersionsDialogResult {
                 </div>
             } @else {
                 <div class="mb-4">
-                    <p class="text-gray-600 mb-2">
-                        Select which versions of <strong class="text-gray-800">"{{ keybindingInfo?.name }}"</strong> you want to permanently delete:
+                    <p class="text-gray-600 dark:text-gray-400 mb-2">
+                        Select which versions of <strong>"{{ keybindingInfo?.name }}"</strong> you want to permanently delete:
                     </p>
                 </div>
 
                 <!-- Version List -->
-                <div class="border rounded-lg divide-y max-h-64 overflow-y-auto mb-4">
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700 max-h-64 overflow-y-auto mb-4">
                     @for (version of versions; track version.keybinding_id) {
-                        <div class="p-3 hover:bg-gray-50 flex items-center gap-3"
-                             [class.bg-red-50]="version.is_deleted">
+                        <div class="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3"
+                             [ngClass]="{'bg-red-50 dark:bg-red-900/20': version.is_deleted}">
                             <mat-checkbox
                                 [(ngModel)]="selectedVersions[version.keybinding_id]"
                                 (change)="onVersionToggle()">
@@ -73,13 +73,13 @@ export interface DeleteVersionsDialogResult {
                                 <div class="flex items-center gap-2">
                                     <span class="font-medium">Version {{ version.game_version }}</span>
                                     @if (version.is_current) {
-                                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">Current</span>
+                                        <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-xs rounded-full">Current</span>
                                     }
                                     @if (version.is_deleted) {
-                                        <span class="px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">Deleted</span>
+                                        <span class="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 text-xs rounded-full">Deleted</span>
                                     }
                                 </div>
-                                <div class="text-sm text-gray-500">
+                                <div class="text-sm text-gray-500 dark:text-gray-400">
                                     {{ version.keybind_count }} keybinds
                                 </div>
                             </div>

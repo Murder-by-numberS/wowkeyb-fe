@@ -6,7 +6,7 @@
 
     <!-- Left Column: Keybinding List (hidden when drawerDisabled) -->
     @if (!drawerDisabled) {
-    <div class="w-80 flex flex-col border-r border-gray-200 bg-white transition-transform duration-300 ease-in-out"
+    <div class="w-80 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-transform duration-300 ease-in-out"
         [class.fixed]="isMobile" [class.inset-y-0]="isMobile" [class.left-0]="isMobile" [class.z-50]="isMobile"
         [class.-translate-x-full]="isMobile && !drawerOpen" [class.translate-x-0]="isMobile && drawerOpen"
         [class.hidden]="!isMobile && !drawerOpen" [class.static]="!isMobile"
@@ -19,10 +19,10 @@
     }
 
     <!-- Right Column: Keybinding Data -->
-    <div class="flex-1 flex flex-col bg-gray-50">
+    <div class="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
         <!-- Header with Toggle Button -->
         <div
-            class="flex flex-col lg:flex-row lg:items-start xl:items-center gap-3 lg:gap-4 p-4 border-b bg-white min-w-0">
+            class="flex flex-col lg:flex-row lg:items-start xl:items-center gap-3 lg:gap-4 p-4 border-b bg-white dark:bg-gray-800 min-w-0">
             <div class="flex items-center gap-3 lg:gap-4 min-w-0 flex-shrink">
                 @if (!drawerDisabled) {
                 <button mat-icon-button (click)="toggleDrawer()" matTooltip="Toggle Keybinding List"
@@ -41,7 +41,7 @@
                 <div class="flex items-center gap-2 ml-2">
                     <span class="text-sm text-gray-500">v</span>
                     @if (keybindingVersions.length > 1) {
-                    <select class="text-sm font-medium border rounded px-2 py-1 bg-white cursor-pointer"
+                    <select class="text-sm font-medium border rounded px-2 py-1 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 cursor-pointer"
                         [value]="selectedKeybinding.keybindingId" (change)="onVersionChange($any($event.target).value)">
                         @for (version of keybindingVersions; track version.keybindingId) {
                         <option [value]="version.keybindingId" [selected]="version.isCurrent">
@@ -143,7 +143,7 @@
         <div class="flex-1 overflow-y-auto overflow-x-hidden min-w-0 pb-16">
             @if (selectedKeybinding) {
             <!-- Abilities Section (min-w-0 so mobile grid wraps and no abilities are cut off) -->
-            <div class="w-full min-w-0 bg-gray-300 min-h-[120px] sm:min-h-[150px] lg:min-h-[100px] flex-shrink-0">
+            <div class="w-full min-w-0 bg-gray-300 dark:bg-gray-600 min-h-[120px] sm:min-h-[150px] lg:min-h-[100px] flex-shrink-0">
                 <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
                     [drawerOpen]="drawerOpen"
                     (selectionClassChanged)="onSelectionClassChanged($event)"
@@ -160,11 +160,11 @@
             } @else {
             <!-- Empty State -->
             <div class="flex flex-col items-center justify-center h-full text-center p-8">
-                <mat-icon class="text-6xl text-gray-300 mb-4">keyboard</mat-icon>
-                <h3 class="text-xl font-medium text-gray-600 mb-2">No Keybinding Selected</h3>
-                <p class="text-gray-500 mb-4">Select a keybinding from the sidebar to view and edit it.</p>
+                <mat-icon class="text-6xl text-gray-300 dark:text-gray-600 mb-4">keyboard</mat-icon>
+                <h3 class="text-xl font-medium text-gray-600 dark:text-gray-400 mb-2">No Keybinding Selected</h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-4">Select a keybinding from the sidebar to view and edit it.</p>
                 @if (keybindings.length === 0) {
-                <p class="text-gray-500">You don't have any keybindings yet. Create your first one!</p>
+                <p class="text-gray-500 dark:text-gray-400">You don't have any keybindings yet. Create your first one!</p>
                 }
             </div>
             }

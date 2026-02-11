@@ -1,6 +1,6 @@
 <div class="flex flex-col w-full min-h-0 sm:h-full">
     <div
-        class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-gray-100 gap-2 sm:gap-0">
+        class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-gray-100 dark:bg-gray-800 gap-2 sm:gap-0">
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <h1 class="text-xl sm:text-2xl font-bold">{{ keybinding?.name }}</h1>
             @if (isAuthenticated) {
@@ -31,11 +31,11 @@
         </div>
     </div>
 
-    <div class="flex flex-col sm:flex-row p-3 sm:p-4 bg-gray-100 border-t border-gray-200">
+    <div class="flex flex-col sm:flex-row p-3 sm:p-4 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 flex-wrap">
             @if (keybinding?.creatorUsername) {
             <div class="flex items-center gap-2">
-                <span class="text-sm sm:text-base text-gray-600">Created by:</span>
+                <span class="text-sm sm:text-base text-gray-600 dark:text-gray-400">Created by:</span>
                 <a [routerLink]="['/user', keybinding.creatorUsername]"
                     class="text-sm sm:text-base font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer">
                     {{ keybinding.creatorUsername }}
@@ -44,27 +44,27 @@
             }
             @if (keybinding?.class) {
             <div class="flex items-center gap-2">
-                <span class="text-sm sm:text-base text-gray-600">Class:</span>
+                <span class="text-sm sm:text-base text-gray-600 dark:text-gray-400">Class:</span>
                 <span class="text-sm sm:text-base font-medium">{{ keybinding.class }}</span>
             </div>
             }
             @if (keybinding?.spec) {
             <div class="flex items-center gap-2">
-                <span class="text-sm sm:text-base text-gray-600">Spec:</span>
+                <span class="text-sm sm:text-base text-gray-600 dark:text-gray-400">Spec:</span>
                 <span class="text-sm sm:text-base font-medium">{{ keybinding.spec }}</span>
             </div>
             }
             @if (keybinding?.heroTalent) {
             <div class="flex items-center gap-2">
-                <span class="text-sm sm:text-base text-gray-600">Hero Talent:</span>
+                <span class="text-sm sm:text-base text-gray-600 dark:text-gray-400">Hero Talent:</span>
                 <span class="text-sm sm:text-base font-medium">{{ keybinding.heroTalent }}</span>
             </div>
             }
             @if (keybinding?.version?.game_version) {
             <div class="flex items-center gap-2">
-                <span class="text-sm sm:text-base text-gray-600">Version:</span>
+                <span class="text-sm sm:text-base text-gray-600 dark:text-gray-400">Version:</span>
                 @if (keybindingVersions.length > 1) {
-                <select class="text-sm font-medium border rounded px-2 py-1 bg-white cursor-pointer"
+                <select class="text-sm font-medium border rounded px-2 py-1 bg-white dark:bg-gray-800 cursor-pointer"
                     [value]="keybinding.keybindingId" (change)="onVersionChange($any($event.target).value)">
                     @for (version of keybindingVersions; track version.keybindingId) {
                     <option [value]="version.keybindingId" [selected]="version.isCurrent">
@@ -81,7 +81,7 @@
                     <mat-icon>add</mat-icon>
                 </button>
                 <mat-menu #versionMenu="matMenu">
-                    <div class="px-3 py-2 text-sm text-gray-500 border-b">Copy to version:</div>
+                    <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 border-b">Copy to version:</div>
                     @for (version of versionsWithoutKeybinding; track version.id) {
                     <button mat-menu-item (click)="copyToVersion(version.id)">
                         {{ version.gameVersion }}

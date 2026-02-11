@@ -7,7 +7,7 @@ export const environment = {
     envName: 'develop',
     apiUrl: 'http://localhost:1337/api',
     debugFlag: 'BASE_ENV_ACTIVE_2024',
-    version: '1.36.0'
+    version: '1.42.0'
 };
 
 /*

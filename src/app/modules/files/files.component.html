@@ -1,13 +1,13 @@
-<div class="flex flex-row w-full" style="height: calc(100vh - 96px);">
+<div class="absolute inset-0 flex flex-row w-full">
     <!-- Left Column: File List -->
-    <div class="w-80 flex flex-col border-r border-gray-200 bg-white" *ngIf="drawerOpen">
+    <div class="w-80 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" *ngIf="drawerOpen">
         <!-- Header -->
-        <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200">
+        <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <h2 class="text-lg font-semibold text-center">Files</h2>
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex-shrink-0 px-4 py-2 border-b border-gray-200 flex flex-col gap-2">
+        <div class="flex-shrink-0 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex flex-col gap-2">
             <button type="button" class="w-full" mat-flat-button color="primary" (click)="onCreateFile()"
                 [disabled]="isCreatingFile">
                 <mat-icon class="icon-size-5">file_download</mat-icon>
@@ -29,13 +29,13 @@
             </div>
             } @else {
             @for (file of allFiles; track file.id || file.file_name) {
-            <div class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 flex items-center gap-3"
-                [class.bg-blue-50]="currentSelectedFile?.id === file.id" (click)="selectFile(file)"
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3"
+                [ngClass]="{'bg-blue-50 dark:bg-blue-900/30': currentSelectedFile?.id === file.id}" (click)="selectFile(file)"
                 [class.opacity-50]="isCreatingFile">
                 <mat-icon class="text-gray-400 text-2xl">description</mat-icon>
                 <div class="flex-1 min-w-0">
                     <div class="font-medium truncate">{{ file.file_name }}</div>
-                    <div class="text-sm text-gray-500 truncate">
+                    <div class="text-sm text-gray-500 dark:text-gray-400 truncate">
                         {{ file.file_type === 'account' ? 'Account-Wide' : 'Character' }}
                         @if (file.character_class) {
                         • {{ getClassName(file.character_class) }}
@@ -45,7 +45,7 @@
             </div>
             }
             @if (allFiles.length === 0) {
-            <div class="px-4 py-8 text-center text-gray-500">
+            <div class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                 No files yet
             </div>
             }
@@ -54,9 +54,9 @@
     </div>
 
     <!-- Right Column: File Details / Creation -->
-    <div class="flex-1 flex flex-col bg-gray-50">
+    <div class="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
         <!-- Header with Toggle Button -->
-        <div class="flex items-center gap-4 p-4 border-b bg-white">
+        <div class="flex items-center gap-4 p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <button mat-icon-button (click)="toggleDrawer()" matTooltip="Toggle File List">
                 <mat-icon>{{ drawerOpen ? 'chevron_left' : 'menu' }}</mat-icon>
             </button>
@@ -73,7 +73,7 @@
         <div class="flex-1 overflow-y-auto p-6">
             @if (isCreatingFile) {
             <!-- File Creation View -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-bold">Create Macro File</h3>
                     <button mat-icon-button (click)="onCancelCreateFile()" matTooltip="Cancel">
@@ -116,7 +116,7 @@
 
                 <!-- Selection Controls -->
                 <div class="flex items-center justify-between mb-4">
-                    <div class="text-sm text-gray-600">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
                         Selected: {{ getSelectedMacrosCount() }} / {{ availableMacrosForFile.length }} macros
                     </div>
                     <div class="flex gap-2">
@@ -137,9 +137,9 @@
                 </div>
                 } @else {
                 <!-- Macro Selection List -->
-                <div class="max-h-[400px] overflow-y-auto border border-gray-200 rounded-lg mb-6">
+                <div class="max-h-[400px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg mb-6">
                     @for (macro of availableMacrosForFile; track macro.id) {
-                    <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 flex items-center gap-3 last:border-b-0"
+                    <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 last:border-b-0"
                         [class.opacity-50]="!isMacroSelectedForFile(macro) && !canSelectMacroForFile(macro)">
                         <mat-checkbox [checked]="isMacroSelectedForFile(macro)"
                             [disabled]="!isMacroSelectedForFile(macro) && !canSelectMacroForFile(macro)"
@@ -148,13 +148,13 @@
                         @if (getMacroIcon(macro)) {
                         <img [src]="getMacroIcon(macro)" [alt]="macro.name" class="w-8 h-8 flex-shrink-0 rounded">
                         } @else {
-                        <div class="w-8 h-8 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+                        <div class="w-8 h-8 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
                             <mat-icon class="text-gray-400 text-lg">auto_awesome</mat-icon>
                         </div>
                         }
                         <div class="flex-1 min-w-0">
                             <div class="font-medium truncate">{{ macro.name }}</div>
-                            <div class="text-sm text-gray-500 truncate">
+                            <div class="text-sm text-gray-500 dark:text-gray-400 truncate">
                                 {{ getClassDisplayName(macro.class) }}
                                 @if (macro.creatorUsername && macro.userId !== currentUserId) {
                                 <span class="text-xs"> • By {{ macro.creatorUsername }}</span>
@@ -171,7 +171,7 @@
                     </div>
                     }
                     @if (availableMacrosForFile.length === 0) {
-                    <div class="px-4 py-8 text-center text-gray-500">
+                    <div class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                         @if (fileCreationClass === null) {
                         No non-class-specific macros found
                         } @else if (fileCreationClass) {
@@ -201,7 +201,7 @@
             } @else if (currentSelectedFile) {
             @if (isEditingFile) {
             <!-- File Edit View -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-bold">Edit File</h3>
                     <button mat-icon-button (click)="onCancelEditFile()" matTooltip="Cancel">
@@ -210,8 +210,8 @@
                 </div>
 
                 <!-- File Settings Section -->
-                <div class="mb-6 pb-6 border-b border-gray-200">
-                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">File Settings</h4>
+                <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-4">File Settings</h4>
                     
                     <!-- File Name -->
                     <div class="mb-4">
@@ -220,7 +220,7 @@
                             <input matInput [(ngModel)]="editingFileName" [ngModelOptions]="{standalone: true}"
                                 placeholder="Enter file name...">
                             <mat-icon matPrefix>description</mat-icon>
-                            <span matSuffix class="text-gray-500 pr-3">.txt</span>
+                            <span matSuffix class="text-gray-500 dark:text-gray-400 pr-3">.txt</span>
                         </mat-form-field>
                     </div>
 
@@ -242,7 +242,7 @@
 
                 <!-- Macro Selection Section -->
                 <div class="mb-6">
-                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Select Macros</h4>
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-4">Select Macros</h4>
                     
                     <!-- Search Macros -->
                     <div class="mb-4">
@@ -258,7 +258,7 @@
 
                 <!-- Selection Controls -->
                 <div class="flex items-center justify-between mb-4">
-                    <div class="text-sm text-gray-600">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
                         Selected: {{ editingFileMacros.size }} / {{ editingFileAvailableMacros.length }} macros
                     </div>
                     <div class="flex gap-2">
@@ -279,9 +279,9 @@
                 </div>
                 } @else {
                 <!-- Macro Selection List -->
-                <div class="max-h-[400px] overflow-y-auto border border-gray-200 rounded-lg mb-6">
+                <div class="max-h-[400px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg mb-6">
                     @for (macro of editingFileAvailableMacros; track macro.id) {
-                    <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 flex items-center gap-3 last:border-b-0"
+                    <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 last:border-b-0"
                         [class.opacity-50]="!isMacroSelectedForEditing(macro) && !canSelectMacroForEditing(macro)">
                         <mat-checkbox [checked]="isMacroSelectedForEditing(macro)"
                             [disabled]="!isMacroSelectedForEditing(macro) && !canSelectMacroForEditing(macro)"
@@ -290,13 +290,13 @@
                         @if (getMacroIcon(macro)) {
                         <img [src]="getMacroIcon(macro)" [alt]="macro.name" class="w-8 h-8 flex-shrink-0 rounded">
                         } @else {
-                        <div class="w-8 h-8 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+                        <div class="w-8 h-8 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
                             <mat-icon class="text-gray-400 text-lg">auto_awesome</mat-icon>
                         </div>
                         }
                         <div class="flex-1 min-w-0">
                             <div class="font-medium truncate">{{ macro.name }}</div>
-                            <div class="text-sm text-gray-500 truncate">
+                            <div class="text-sm text-gray-500 dark:text-gray-400 truncate">
                                 {{ getClassDisplayName(macro.class) }}
                                 @if (macro.creatorUsername && macro.userId !== currentUserId) {
                                 <span class="text-xs"> • By {{ macro.creatorUsername }}</span>
@@ -313,7 +313,7 @@
                     </div>
                     }
                     @if (editingFileAvailableMacros.length === 0) {
-                    <div class="px-4 py-8 text-center text-gray-500">
+                    <div class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                         No macros match your search
                     </div>
                     }
@@ -336,7 +336,7 @@
             </div>
             } @else {
             <!-- File Details View (not editing) -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-xl font-bold">{{ currentSelectedFile.file_name }}</h3>
                     <div class="flex gap-2">
@@ -378,7 +378,7 @@
                         }
                     </div>
 
-                    <div class="text-sm text-gray-600">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
                         @if (currentSelectedFile.source === 'upload') {
                         <p><strong>Uploaded:</strong> {{ formatDate(currentSelectedFile.downloaded_at) }}</p>
                         } @else {
@@ -405,10 +405,10 @@
                         <h4 class="font-semibold mb-3">Macros in this file:</h4>
                         <div class="space-y-2">
                             @for (macro of currentSelectedFile.macros; track macro.id) {
-                            <div class="p-3 bg-gray-50 rounded border border-gray-200">
+                            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
                                 <div class="font-medium">{{ macro.name }}</div>
                                 @if (macro.class) {
-                                <div class="text-sm text-gray-600">{{ getClassDisplayName(macro.class) }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">{{ getClassDisplayName(macro.class) }}</div>
                                 }
                             </div>
                             }
@@ -420,10 +420,10 @@
             }
             } @else {
             <!-- Empty State -->
-            <div class="bg-white rounded-lg shadow p-12 text-center">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
                 <mat-icon class="text-6xl text-gray-400 mb-4">description</mat-icon>
-                <h3 class="text-lg font-medium text-gray-700 mb-2">No File Selected</h3>
-                <p class="text-gray-500 mb-4">
+                <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">No File Selected</h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-4">
                     Select a file from the list to view details, or create a new file from macros
                 </p>
                 <button mat-raised-button color="primary" (click)="onCreateFile()">

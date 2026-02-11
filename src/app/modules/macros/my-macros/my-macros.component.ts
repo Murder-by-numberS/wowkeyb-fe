@@ -46,6 +46,33 @@ interface ExpandableMacro extends Macro {
     selectedIcon?: Icon;
 }
 
+// Draft macro state to persist creation form data when switching macros
+interface DraftMacroState {
+    formData: {
+        name: string;
+        description: string;
+        macro_text: string;
+        tags: string[];
+    };
+    selectedIcon: Icon | null;
+    selectedAbility: AbilitySelection | null;
+    addTooltip: boolean;
+    validationPassed: boolean;
+    useMacroBuilder: boolean;
+    useManualMode: boolean;
+    showManualValidation: boolean;
+    macroBuilderTargetModifier: string;
+    macroBuilderKeyModifiers: string[];
+    macroBuilderConditionals: string[];
+    macroBuilderIncludeTooltip: boolean;
+    macroBuilderSpellName: string;
+    macroBuilderClass: string;
+    macroBuilderSpec: string;
+    macroBuilderHeroTalent: string;
+    macroBuilderModifierKey: string;
+    selectedMacroBuilderTemplate: MacroTemplate | null;
+}
+
 @Component({
     selector: 'my-macros',
     templateUrl: './my-macros.component.html',
@@ -131,6 +158,9 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     createSelectedAbility: AbilitySelection | null = null;
     createAddTooltip: boolean = false;
     createMacroValidationPassed: boolean = true; // Track validation status
+
+    // Draft macro state - persists creation form data when switching to another macro
+    draftMacro: DraftMacroState | null = null;
 
     // Integrated macro builder properties
     useMacroBuilder: boolean = false;
@@ -435,18 +465,17 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
 
     selectMacro(macro: ExpandableMacro): void {
+        // If we're currently in creation mode, save the draft state before switching
+        if (this.isCreating) {
+            this.saveDraftState();
+        }
+
         this.currentSelectedMacro = macro;
         this.isEditing = false;
         this.isCreating = false;
         this.editForm.reset();
         this.originalMacroData = null;
         this.hasChanges = false;
-
-        // Reset create form if we were creating
-        this.createForm.reset();
-        this.createSelectedIcon = null;
-        this.createSelectedAbility = null;
-        this.createAddTooltip = false;
 
         // Reset edit ability
         this.editSelectedAbility = null;
@@ -1155,10 +1184,24 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
     // Create macro methods
     onCreateNewMacro(): void {
-        this.isCreating = true;
         this.isEditing = false;
         this.currentSelectedMacro = null;
-        this.resetCreateForm();
+
+        // If a draft exists, restore it instead of starting fresh
+        if (this.draftMacro) {
+            this.isCreating = true;
+            this.restoreDraftState();
+        } else {
+            this.isCreating = true;
+            this.resetCreateForm();
+            // Create an initial empty draft so it appears in the list
+            this.saveDraftState();
+        }
+
+        // Update drawer selection to clear any selected macro
+        if (this.macrosDrawerComponent) {
+            this.macrosDrawerComponent.clearSelection();
+        }
 
         // Close drawer on mobile after creating new macro
         if (this.isMobile) {
@@ -1168,6 +1211,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
     onCancelCreate(): void {
         this.isCreating = false;
+        this.clearDraft();
         this.resetCreateForm();
     }
 
@@ -1197,6 +1241,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
                 this.snackBar.open('Macro created successfully!', 'Close', { duration: 3000 });
                 this.isLoading = false;
                 this.isCreating = false;
+                this.clearDraft();
                 this.resetCreateForm();
 
                 // Emit event to notify parent components (like macro drawer) to refresh
@@ -1331,6 +1376,105 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.macroBuilderAvailableHeroTalents = [];
         this.isGeneratingMacro = false;
         this.showManualValidation = false;
+    }
+
+    /**
+     * Save the current creation form state into the draft so it can be restored later
+     */
+    private saveDraftState(): void {
+        const formData = this.createForm.value;
+        this.draftMacro = {
+            formData: {
+                name: formData.name || '',
+                description: formData.description || '',
+                macro_text: formData.macro_text || '',
+                tags: formData.tags || []
+            },
+            selectedIcon: this.createSelectedIcon,
+            selectedAbility: this.createSelectedAbility,
+            addTooltip: this.createAddTooltip,
+            validationPassed: this.createMacroValidationPassed,
+            useMacroBuilder: this.useMacroBuilder,
+            useManualMode: this.useManualMode,
+            showManualValidation: this.showManualValidation,
+            macroBuilderTargetModifier: this.macroBuilderTargetModifier,
+            macroBuilderKeyModifiers: [...this.macroBuilderKeyModifiers],
+            macroBuilderConditionals: [...this.macroBuilderConditionals],
+            macroBuilderIncludeTooltip: this.macroBuilderIncludeTooltip,
+            macroBuilderSpellName: this.macroBuilderSpellName,
+            macroBuilderClass: this.macroBuilderClass,
+            macroBuilderSpec: this.macroBuilderSpec,
+            macroBuilderHeroTalent: this.macroBuilderHeroTalent,
+            macroBuilderModifierKey: this.macroBuilderModifierKey,
+            selectedMacroBuilderTemplate: this.selectedMacroBuilderTemplate
+        };
+    }
+
+    /**
+     * Restore the draft state back into the creation form
+     */
+    private restoreDraftState(): void {
+        if (!this.draftMacro) return;
+
+        const draft = this.draftMacro;
+
+        // Restore form data
+        this.createForm.patchValue({
+            name: draft.formData.name,
+            description: draft.formData.description,
+            macro_text: draft.formData.macro_text,
+            tags: draft.formData.tags
+        });
+
+        // Restore component state
+        this.createSelectedIcon = draft.selectedIcon;
+        this.createSelectedAbility = draft.selectedAbility;
+        this.createAddTooltip = draft.addTooltip;
+        this.createMacroValidationPassed = draft.validationPassed;
+        this.useMacroBuilder = draft.useMacroBuilder;
+        this.useManualMode = draft.useManualMode;
+        this.showManualValidation = draft.showManualValidation;
+        this.macroBuilderTargetModifier = draft.macroBuilderTargetModifier;
+        this.macroBuilderKeyModifiers = [...draft.macroBuilderKeyModifiers];
+        this.macroBuilderConditionals = [...draft.macroBuilderConditionals];
+        this.macroBuilderIncludeTooltip = draft.macroBuilderIncludeTooltip;
+        this.macroBuilderSpellName = draft.macroBuilderSpellName;
+        this.macroBuilderClass = draft.macroBuilderClass;
+        this.macroBuilderSpec = draft.macroBuilderSpec;
+        this.macroBuilderHeroTalent = draft.macroBuilderHeroTalent;
+        this.macroBuilderModifierKey = draft.macroBuilderModifierKey;
+        this.selectedMacroBuilderTemplate = draft.selectedMacroBuilderTemplate;
+    }
+
+    /**
+     * Clear the draft macro state
+     */
+    clearDraft(): void {
+        this.draftMacro = null;
+    }
+
+    /**
+     * Select the draft macro from the list - restores creation mode with saved state
+     */
+    selectDraft(): void {
+        if (!this.draftMacro) return;
+
+        this.currentSelectedMacro = null;
+        this.isEditing = false;
+        this.isCreating = true;
+
+        // Restore the saved draft state
+        this.restoreDraftState();
+
+        // Update drawer selection to clear any selected macro
+        if (this.macrosDrawerComponent) {
+            this.macrosDrawerComponent.clearSelection();
+        }
+
+        // Close drawer on mobile
+        if (this.isMobile) {
+            this.drawerOpen = false;
+        }
     }
 
     selectManualMode(): void {

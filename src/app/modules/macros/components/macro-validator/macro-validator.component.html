@@ -1,12 +1,12 @@
-<div class="mt-4 p-4 bg-gray-50 rounded-lg" *ngIf="macroText && macroText.trim()">
+<div class="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg" *ngIf="macroText && macroText.trim()">
     <!-- Loading State -->
     <div class="flex items-center gap-3 py-2" *ngIf="loading">
         <mat-progress-bar mode="indeterminate" class="flex-1"></mat-progress-bar>
-        <span class="text-sm text-gray-600">Validating macro...</span>
+        <span class="text-sm text-gray-600 dark:text-gray-400">Validating macro...</span>
     </div>
 
     <!-- Error State -->
-    <div class="flex items-center gap-2 p-3 bg-red-50 border border-red-300 rounded text-red-800"
+    <div class="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-300 rounded text-red-800"
         *ngIf="error && !loading">
         <mat-icon class="text-red-500">error_outline</mat-icon>
         <span>{{ error }}</span>
@@ -22,21 +22,21 @@
         </div>
 
         <!-- Errors -->
-        <div class="bg-white rounded-lg p-4 border border-gray-200 border-l-4 border-l-red-500"
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 border-l-4 border-l-red-500"
             *ngIf="validation.errors.length > 0">
             <div class="flex items-center gap-2 mb-3">
                 <mat-icon class="text-red-500">error</mat-icon>
                 <h4 class="m-0 text-base font-medium text-gray-900">Errors ({{ validation.errors.length }})</h4>
             </div>
             <div class="flex flex-col gap-3">
-                <div *ngFor="let error of validation.errors" class="p-3 bg-red-50 rounded border-l-3 border-red-500">
+                <div *ngFor="let error of validation.errors" class="p-3 bg-red-50 dark:bg-red-900/20 rounded border-l-3 border-red-500">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="text-xs font-semibold px-2 py-0.5 bg-black/10 rounded">Line {{ error.line }}</span>
                         <code class="text-xs font-mono px-2 py-0.5 bg-black/5 rounded">{{ error.command }}</code>
                     </div>
                     <div class="text-sm text-gray-900 leading-relaxed">{{ error.message }}</div>
                     <div class="mt-2" *ngIf="error.suggestions && error.suggestions.length > 0">
-                        <span class="block text-xs text-gray-600 mb-2">Did you mean:</span>
+                        <span class="block text-xs text-gray-600 dark:text-gray-400 mb-2">Did you mean:</span>
                         <mat-chip-set class="flex flex-wrap gap-2">
                             <mat-chip *ngFor="let suggestion of error.suggestions" class="text-xs h-6">
                                 {{ suggestion }}
@@ -48,7 +48,7 @@
         </div>
 
         <!-- Warnings -->
-        <div class="bg-white rounded-lg p-4 border border-gray-200 border-l-4 border-l-orange-500"
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 border-l-4 border-l-orange-500"
             *ngIf="validation.warnings.length > 0">
             <div class="flex items-center gap-2 mb-3">
                 <mat-icon class="text-orange-500">warning</mat-icon>
@@ -56,14 +56,14 @@
             </div>
             <div class="flex flex-col gap-3">
                 <div *ngFor="let warning of validation.warnings"
-                    class="p-3 bg-orange-50 rounded border-l-3 border-orange-500">
+                    class="p-3 bg-orange-50 dark:bg-orange-900/20 rounded border-l-3 border-orange-500 dark:border-orange-800">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="text-xs font-semibold px-2 py-0.5 bg-black/10 rounded">Line {{ warning.line
                             }}</span>
                         <code class="text-xs font-mono px-2 py-0.5 bg-black/5 rounded">{{ warning.command }}</code>
                     </div>
                     <div class="text-sm text-gray-900 leading-relaxed">{{ warning.message }}</div>
-                    <div class="flex items-start gap-2 mt-2 p-2 bg-white/50 rounded text-xs text-gray-600"
+                    <div class="flex items-start gap-2 mt-2 p-2 bg-white/50 dark:bg-gray-800/50 rounded text-xs text-gray-600 dark:text-gray-400"
                         *ngIf="warning.detail">
                         <mat-icon class="text-blue-500 text-base w-4 h-4">info</mat-icon>
                         {{ warning.detail }}
@@ -73,7 +73,7 @@
         </div>
 
         <!-- Suggestions -->
-        <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500"
+        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border-l-4 border-blue-500 dark:border-blue-800"
             *ngIf="validation.suggestions && validation.suggestions.length > 0">
             <h4 class="flex items-center gap-2 m-0 mb-3 text-sm font-medium text-blue-900">
                 <mat-icon class="text-blue-500">tips_and_updates</mat-icon>
@@ -87,7 +87,7 @@
         </div>
 
         <!-- Suggested Tags -->
-        <div class="bg-white rounded-lg p-4 border border-gray-200" *ngIf="suggestedTags.length > 0">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200" *ngIf="suggestedTags.length > 0">
             <h4 class="flex items-center gap-2 m-0 mb-3 text-sm font-medium text-gray-900">
                 <mat-icon class="text-purple-600">label</mat-icon>
                 Suggested Tags:

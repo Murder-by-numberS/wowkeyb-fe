@@ -33,7 +33,7 @@
     <div class="flex justify-center items-center py-8">
         <div class="text-center">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p class="text-gray-600">Loading keybindings...</p>
+            <p class="text-gray-600 dark:text-gray-400">Loading keybindings...</p>
         </div>
     </div>
     }
@@ -42,8 +42,8 @@
     @if (!isLoading && Object.keys(classKeybindings).length === 0) {
     <div class="text-center py-8">
         <mat-icon class="text-6xl text-gray-300 mb-4">keyboard</mat-icon>
-        <h3 class="text-xl font-medium text-gray-600 mb-2">No Keybindings Available</h3>
-        <p class="text-gray-500 mb-4">No public keybindings have been created yet.</p>
+        <h3 class="text-xl font-medium text-gray-600 dark:text-gray-400 mb-2">No Keybindings Available</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">No public keybindings have been created yet.</p>
         @if (isAuthenticated) {
         <button mat-flat-button color="primary" routerLink="/keybinds/my-keybindings">
             <mat-icon>add</mat-icon>
@@ -65,25 +65,25 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-12">
                 <!-- Recent Keybindings -->
-                <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6">
                     <h3 class="text-base sm:text-lg font-semibold mb-4 pb-2 border-b">Recent Keybindings</h3>
                     @if ((classKeybindings[class.name]?.recent || []).length > 0) {
                     @for (keybinding of classKeybindings[class.name]?.recent || []; track keybinding.keybindingId) {
-                    <div class="p-4 hover:bg-gray-50 rounded cursor-pointer" (click)="navigateToKeybinding(keybinding)">
+                    <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer" (click)="navigateToKeybinding(keybinding)">
                         <div>
                             <div class="font-medium">{{keybinding.name}}</div>
-                            <div class="text-sm text-gray-600">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
                                 {{keybinding.class | titlecase}}
                             </div>
                             @if (keybinding.creatorUsername) {
-                            <div class="text-xs text-gray-500 mt-1">
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 By <a [routerLink]="['/user', keybinding.creatorUsername]"
                                     class="text-blue-600 hover:underline" (click)="$event.stopPropagation()">
                                     {{keybinding.creatorUsername}}
                                 </a>
                             </div>
                             }
-                            <div class="text-xs text-gray-500 mt-1">
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Created: {{keybinding.createdAt | date:'medium'}}
                             </div>
                         </div>
@@ -93,7 +93,7 @@
                     }
                     }
                     } @else {
-                    <div class="text-center py-4 text-gray-500">
+                    <div class="text-center py-4 text-gray-500 dark:text-gray-400">
                         <mat-icon class="text-2xl mb-2">inbox</mat-icon>
                         <p>No recent keybindings</p>
                     </div>
@@ -101,25 +101,25 @@
                 </div>
 
                 <!-- Popular Keybindings -->
-                <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6">
                     <h3 class="text-base sm:text-lg font-semibold mb-4 pb-2 border-b">Popular Keybindings</h3>
                     @if ((classKeybindings[class.name]?.popular || []).length > 0) {
                     @for (keybinding of classKeybindings[class.name]?.popular || []; track keybinding.keybindingId) {
-                    <div class="p-4 hover:bg-gray-50 rounded cursor-pointer" (click)="navigateToKeybinding(keybinding)">
+                    <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer" (click)="navigateToKeybinding(keybinding)">
                         <div>
                             <div class="font-medium">{{keybinding.name}}</div>
-                            <div class="text-sm text-gray-600">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
                                 {{keybinding.class | titlecase}}
                             </div>
                             @if (keybinding.creatorUsername) {
-                            <div class="text-xs text-gray-500 mt-1">
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 By <a [routerLink]="['/user', keybinding.creatorUsername]"
                                     class="text-blue-600 hover:underline" (click)="$event.stopPropagation()">
                                     {{keybinding.creatorUsername}}
                                 </a>
                             </div>
                             }
-                            <div class="text-xs text-gray-500 mt-1">
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Created: {{keybinding.createdAt | date:'medium'}}
                             </div>
                         </div>
@@ -129,7 +129,7 @@
                     }
                     }
                     } @else {
-                    <div class="text-center py-4 text-gray-500">
+                    <div class="text-center py-4 text-gray-500 dark:text-gray-400">
                         <mat-icon class="text-2xl mb-2">inbox</mat-icon>
                         <p>No popular keybindings</p>
                     </div>

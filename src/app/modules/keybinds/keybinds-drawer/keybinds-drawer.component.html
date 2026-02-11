@@ -1,11 +1,11 @@
 <div class="flex flex-col h-full">
     <!-- Header -->
-    <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200">
+    <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <h2 class="text-lg font-semibold text-center">Keybindings List</h2>
     </div>
 
     <!-- Filter -->
-    <div class="flex-shrink-0 border-b border-gray-200">
+    <div class="flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
         <mat-accordion appClickOutside (clickOutside)="closeAccordion()">
             <mat-expansion-panel hideToggle>
                 <mat-expansion-panel-header>
@@ -32,7 +32,7 @@
                                 @if ((selectedClasses.value?.length || 0) > 0) {
                                 {{selectedClasses.value?.[0]?.name || ''}}
                                 @if ((selectedClasses.value?.length || 0) > 1) {
-                                <span class="text-gray-500">
+                                <span class="text-gray-500 dark:text-gray-400">
                                     (+{{(selectedClasses.value?.length || 0) - 1}}
                                     {{selectedClasses.value?.length === 2 ? 'other' : 'others'}})
                                 </span>
@@ -52,7 +52,7 @@
     </div>
 
     <!-- Create Button -->
-    @if (keybindings.length < MAX_SIZE) { <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200">
+    @if (keybindings.length < MAX_SIZE) { <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <button type="button" class="w-full" mat-flat-button [color]="'primary'" (click)="createKeybinding()">
             <mat-icon class="icon-size-5" [svgIcon]="'heroicons_solid:plus'"></mat-icon>
             <span class="ml-2">Create Keybinding</span>
@@ -63,12 +63,12 @@
 <!-- Scrollable Keybindings List -->
 <div class="flex-1 overflow-y-auto">
     @for (keybinding of filteredKeybindings; track trackByKeybindingId($index, keybinding)) {
-    <div class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 flex items-center gap-3"
-        [class.bg-blue-50]="isSelected(keybinding.keybindingId)" (click)="selectKeybinding(keybinding)">
+    <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3"
+        [ngClass]="{'bg-blue-50 dark:bg-blue-900/30': isSelected(keybinding.keybindingId)}" (click)="selectKeybinding(keybinding)">
         @if (getClassIcon(keybinding.class)) {
         <img [src]="getClassIcon(keybinding.class)" [alt]="keybinding.class" class="w-8 h-8 flex-shrink-0 rounded">
         } @else {
-        <div class="w-8 h-8 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+        <div class="w-8 h-8 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
             <mat-icon class="text-gray-400 text-lg">keyboard</mat-icon>
         </div>
         }
@@ -77,14 +77,14 @@
                 {{ keybinding.name }}
                 @if (canUpgrade(keybinding)) {
                 <span
-                    class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800"
+                    class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400"
                     matTooltip="Update available: v{{ latestVersion }}">
                     <mat-icon class="!text-sm !w-3.5 !h-3.5 mr-0.5">update</mat-icon>
                     Update
                 </span>
                 }
             </div>
-            <div class="text-sm text-gray-500 truncate">
+            <div class="text-sm text-gray-500 dark:text-gray-400 truncate">
                 {{ keybinding.class }}
                 @if (keybinding.version?.game_version) {
                 <span class="text-gray-400">• v{{ keybinding.version.game_version }}</span>
@@ -101,7 +101,7 @@
     </div>
     }
     @if (filteredKeybindings.length === 0) {
-    <div class="px-4 py-8 text-center text-gray-500">
+    <div class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
         @if (keybindings.length === 0) {
         No keybindings found
         } @else {

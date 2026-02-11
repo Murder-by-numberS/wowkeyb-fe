@@ -1,15 +1,15 @@
-<div class="absolute inset-0 flex min-w-0 flex-col overflow-y-auto">
-    <!-- Header and Filters (Sticky Together) -->
-    <div class="sticky top-0 z-20 bg-white">
+<div class="absolute inset-0 flex min-w-0 flex-col">
+    <!-- Header and Filters (Fixed at top) -->
+    <div class="flex-shrink-0 z-20 bg-card">
         <!-- Header -->
         <div class="pb-2 pt-3 sm:pt-6 px-3 sm:px-6 mb-2 sm:mb-6">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2">Abilities Database</h1>
-                    <p class="hidden sm:block text-base sm:text-xl text-gray-600">
+                    <p class="hidden sm:block text-base sm:text-xl text-gray-600 dark:text-gray-400">
                         Browse and explore World of Warcraft abilities by class, specialization, and hero talent
                     </p>
-                    <p class="hidden sm:block text-xs sm:text-sm text-gray-500 mt-2">
+                    <p class="hidden sm:block text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2">
                         Select a class, spec, and hero talent to see all abilities available to that combination
                     </p>
                 </div>
@@ -18,13 +18,13 @@
 
         <!-- Filters -->
         <div class="px-3 sm:px-6 pb-3 sm:pb-6">
-            <mat-card class="mb-3 sm:mb-6">
+            <mat-card class="mb-3 sm:mb-6 dark:border dark:border-gray-700">
                 <mat-card-header class="!pb-4">
                     <mat-card-title class="flex items-center justify-between w-full">
                         <div class="flex items-center gap-3">
                             <span class="text-lg font-medium">Filters</span>
                             @if (selectedGameVersion) {
-                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                            <span class="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-medium rounded-full">
                                 v{{ selectedGameVersion }}
                             </span>
                             }
@@ -124,11 +124,14 @@
         </div>
     </div>
 
+    <!-- Scrollable content area -->
+    <div class="flex-1 overflow-y-auto min-h-0">
+
     <!-- Mobile Filter Modal Overlay -->
     @if (filtersExpanded) {
     <div class="lg:hidden fixed top-0 left-0 right-0 bottom-14 z-50 bg-black bg-opacity-50 flex items-start justify-center pt-16 px-4"
         (click)="toggleFilters()">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[calc(100vh-10rem)] overflow-y-auto"
+        <div class="bg-card rounded-lg shadow-xl w-full max-w-md max-h-[calc(100vh-10rem)] overflow-y-auto"
             (click)="$event.stopPropagation()">
             <div class="p-4 border-b">
                 <div class="flex items-center justify-between">
@@ -208,7 +211,7 @@
 
                 <!-- Column Filters Section -->
                 <div class="border-t pt-4 mt-4">
-                    <h4 class="text-md font-semibold mb-3 text-gray-700">Advanced Filters</h4>
+                    <h4 class="text-md font-semibold mb-3 text-gray-700 dark:text-gray-300">Advanced Filters</h4>
 
                     <!-- Name Filter -->
                     <mat-form-field appearance="fill" class="w-full">
@@ -342,12 +345,12 @@
             </div>
         </div>
         } @else if (selectedGameVersion && (selectedClass || selectedSpec || selectedHeroTalent)) {
-        <p class="text-gray-600 text-base">No abilities available for the selected combination in version {{
+        <p class="text-gray-600 dark:text-gray-400 text-base">No abilities available for the selected combination in version {{
             selectedGameVersion }}</p>
         } @else if (selectedGameVersion) {
-        <p class="text-gray-600 text-base">No abilities available for version {{ selectedGameVersion }}</p>
+        <p class="text-gray-600 dark:text-gray-400 text-base">No abilities available for version {{ selectedGameVersion }}</p>
         } @else {
-        <p class="text-gray-600 text-base">Select a class to view abilities</p>
+        <p class="text-gray-600 dark:text-gray-400 text-base">Select a class to view abilities</p>
         }
     </div>
 
@@ -385,12 +388,12 @@
             </div>
         </div>
         } @else if (selectedGameVersion && (selectedClass || selectedSpec || selectedHeroTalent)) {
-        <p class="text-gray-600 text-base">No abilities available for the selected combination in version {{
+        <p class="text-gray-600 dark:text-gray-400 text-base">No abilities available for the selected combination in version {{
             selectedGameVersion }}</p>
         } @else if (selectedGameVersion) {
-        <p class="text-gray-600 text-base">No abilities available for version {{ selectedGameVersion }}</p>
+        <p class="text-gray-600 dark:text-gray-400 text-base">No abilities available for version {{ selectedGameVersion }}</p>
         } @else {
-        <p class="text-gray-600 text-base">Select a class to view abilities</p>
+        <p class="text-gray-600 dark:text-gray-400 text-base">Select a class to view abilities</p>
         }
     </div>
 
@@ -409,19 +412,19 @@
                                 class="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0" />
                             <div class="flex-1 min-w-0">
                                 <h3 class="font-semibold text-sm sm:text-base mb-1 sm:mb-2">{{ability.name}}</h3>
-                                <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-3">
+                                <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 line-clamp-3">
                                     {{ability.description}}</p>
                                 <div class="flex flex-wrap gap-0.5 sm:gap-1">
-                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                    <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs rounded-full">
                                         {{formatClassName(ability.class)}}
                                     </span>
                                     @if (ability.abilityType === 'spec') {
-                                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                    <span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs rounded-full">
                                         {{formatSpecName(ability.spec)}}
                                     </span>
                                     }
                                     @if (ability.abilityType === 'hero_talent') {
-                                    <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                                    <span class="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 text-xs rounded-full">
                                         {{formatHeroTalentName(ability.heroTalent)}}
                                     </span>
                                     }
@@ -456,7 +459,7 @@
                     <ng-container matColumnDef="name">
                         <th mat-header-cell *matHeaderCellDef>
                             <div class="flex flex-col gap-2">
-                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded"
                                     (click)="toggleColumnFilter('name')" matTooltip="Click to filter by name">
                                     <span>Name</span>
                                     @if (columnFilters.name) {
@@ -489,7 +492,7 @@
                     <ng-container matColumnDef="class">
                         <th mat-header-cell *matHeaderCellDef>
                             <div class="flex flex-col gap-2">
-                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded"
                                     (click)="toggleColumnFilter('class')" matTooltip="Click to filter by class">
                                     <span>Class</span>
                                     @if (columnFilters.class) {
@@ -525,7 +528,7 @@
                     <ng-container matColumnDef="spec">
                         <th mat-header-cell *matHeaderCellDef>
                             <div class="flex flex-col gap-2">
-                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded"
                                     (click)="toggleColumnFilter('spec')" matTooltip="Click to filter by spec">
                                     <span>Spec</span>
                                     @if (columnFilters.spec) {
@@ -564,7 +567,7 @@
                     <ng-container matColumnDef="heroTalent">
                         <th mat-header-cell *matHeaderCellDef>
                             <div class="flex flex-col gap-2">
-                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded"
                                     (click)="toggleColumnFilter('heroTalent')"
                                     matTooltip="Click to filter by hero talent">
                                     <span>Hero Talent</span>
@@ -604,7 +607,7 @@
                     <ng-container matColumnDef="description">
                         <th mat-header-cell *matHeaderCellDef>
                             <div class="flex flex-col gap-2">
-                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded"
                                     (click)="toggleColumnFilter('description')"
                                     matTooltip="Click to filter by description">
                                     <span>Description</span>
@@ -654,7 +657,7 @@
             }
 
             <!-- Bottom Pagination -->
-            <div class="flex items-center justify-center gap-2 pt-4 border-t border-gray-200 mt-4">
+            <div class="flex items-center justify-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
                 <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPreviousPage()">
                     <mat-icon>arrow_back</mat-icon>
                 </button>
@@ -672,9 +675,9 @@
     <!-- Empty State -->
     <mat-card class="mx-3 sm:mx-6 mb-3 sm:mb-6">
         <mat-card-content class="text-center py-6 sm:py-12">
-            <mat-icon class="text-4xl sm:text-6xl text-gray-300 mb-2 sm:mb-4">auto_awesome</mat-icon>
-            <h3 class="text-lg sm:text-xl font-medium text-gray-600 mb-1 sm:mb-2">No Abilities Found</h3>
-            <p class="text-sm sm:text-base text-gray-500">
+            <mat-icon class="text-4xl sm:text-6xl text-gray-300 dark:text-gray-600 mb-2 sm:mb-4">auto_awesome</mat-icon>
+            <h3 class="text-lg sm:text-xl font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">No Abilities Found</h3>
+            <p class="text-sm sm:text-base text-gray-500 dark:text-gray-400">
                 @if (selectedGameVersion && (selectedClass || selectedSpec || selectedHeroTalent)) {
                 No abilities are available for the selected combination in version {{ selectedGameVersion }}.
                 } @else if (selectedGameVersion) {
@@ -686,4 +689,5 @@
         </mat-card-content>
     </mat-card>
     }
+    </div>
 </div>

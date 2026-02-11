@@ -1,24 +1,20 @@
-<div class="absolute inset-0 flex flex-col overflow-y-auto">
-    <!-- Header -->
-    <div class="bg-card dark:bg-transparent relative overflow-hidden px-4 py-12 sm:px-16 sm:py-16">
-        <div class="relative z-10 mx-auto flex w-full max-w-6xl flex-col">
+<div class="absolute inset-0 flex flex-col">
+    <!-- Header (fixed at top) -->
+    <div class="flex-shrink-0 bg-card dark:bg-transparent relative overflow-hidden px-4 py-8 sm:px-16 sm:py-12">
+        <div class="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center">
             <button mat-button [routerLink]="['/support']" class="mb-4 self-start">
                 <mat-icon [svgIcon]="'heroicons_outline:arrow-left'" class="mr-2"></mat-icon>
                 Back to Support
             </button>
-            <h1 class="text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">
+            <h1 class="text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl text-center">
                 Frequently Asked Questions
             </h1>
-            <div class="text-secondary mt-3 text-lg tracking-tight">
-                Find quick answers to common questions
-            </div>
         </div>
     </div>
 
-    <!-- Content -->
-    <div class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-16 sm:py-14">
-        <!-- Category Filter -->
-        <div class="mb-8 flex flex-wrap gap-2">
+    <!-- Category Filter (fixed below header) -->
+    <div class="flex-shrink-0 mx-auto w-full max-w-6xl px-4 sm:px-16 pt-6 pb-4">
+        <div class="flex flex-wrap gap-2">
             @for (category of faqCategories; track category) {
             <button mat-stroked-button [color]="selectedCategory === category ? 'primary' : ''"
                 (click)="selectCategory(category)" class="min-w-[100px]">
@@ -26,34 +22,39 @@
             </button>
             }
         </div>
+    </div>
 
-        <!-- FAQ Accordion -->
-        <mat-accordion class="faq-accordion">
-            @for (faq of filteredFaqs; track faq.question) {
-            <mat-expansion-panel class="mb-4">
-                <mat-expansion-panel-header>
-                    <mat-panel-title class="text-lg font-semibold">
-                        {{ faq.question }}
-                    </mat-panel-title>
-                </mat-expansion-panel-header>
-                <p class="text-secondary leading-relaxed">
-                    {{ faq.answer }}
+    <!-- Scrollable content -->
+    <div class="flex-1 overflow-y-auto min-h-0" #faqContent>
+        <div class="mx-auto w-full max-w-6xl px-4 sm:px-16 pb-10">
+            <!-- FAQ Accordion -->
+            <mat-accordion class="faq-accordion">
+                @for (faq of filteredFaqs; track faq.question) {
+                <mat-expansion-panel class="mb-4">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title class="text-lg font-semibold">
+                            {{ faq.question }}
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <p class="text-secondary leading-relaxed">
+                        {{ faq.answer }}
+                    </p>
+                </mat-expansion-panel>
+                }
+            </mat-accordion>
+
+            <!-- Still need help? -->
+            <div class="bg-card dark:bg-transparent mt-12 rounded-lg border p-8 text-center">
+                <mat-icon class="text-primary mb-4" [svgIcon]="'heroicons_outline:chat-bubble-left-right'"
+                    style="width: 48px; height: 48px;"></mat-icon>
+                <h2 class="text-2xl font-semibold mb-4">Still need help?</h2>
+                <p class="text-secondary mb-6">
+                    Can't find what you're looking for? Our support team is here to help.
                 </p>
-            </mat-expansion-panel>
-            }
-        </mat-accordion>
-
-        <!-- Still need help? -->
-        <div class="bg-card dark:bg-transparent mt-12 rounded-lg border p-8 text-center">
-            <mat-icon class="text-primary mb-4" [svgIcon]="'heroicons_outline:chat-bubble-left-right'"
-                style="width: 48px; height: 48px;"></mat-icon>
-            <h2 class="text-2xl font-semibold mb-4">Still need help?</h2>
-            <p class="text-secondary mb-6">
-                Can't find what you're looking for? Our support team is here to help.
-            </p>
-            <button mat-flat-button color="primary" [routerLink]="['/support/ticket']">
-                Submit Support Ticket
-            </button>
+                <button mat-flat-button color="primary" [routerLink]="['/support/ticket']">
+                    Submit Support Ticket
+                </button>
+            </div>
         </div>
     </div>
 </div>

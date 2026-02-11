@@ -6,17 +6,17 @@
 
     <mat-dialog-content class="py-4 overflow-y-auto flex-1">
         <!-- Version (read-only) -->
-        <div class="mb-4 text-sm text-gray-500">
-            Version: <span class="font-medium text-gray-700">{{ ability.game_version || '-' }}</span>
+        <div class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+            Version: <span class="font-medium">{{ ability.game_version || '-' }}</span>
         </div>
 
         <form [formGroup]="abilityForm" class="flex flex-col gap-4">
             <!-- Icon: preview + URL -->
-            <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div class="shrink-0">
-                    <img [src]="iconPreviewUrl" alt="Icon" class="w-14 h-14 rounded object-cover bg-white border"
+                    <img [src]="iconPreviewUrl" alt="Icon" class="w-14 h-14 rounded object-cover bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-600"
                         (error)="$any($event.target).style.display='none'">
-                    <div *ngIf="!iconPreviewUrl" class="w-14 h-14 rounded bg-gray-200 flex items-center justify-center">
+                    <div *ngIf="!iconPreviewUrl" class="w-14 h-14 rounded bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
                         <mat-icon class="text-gray-400">image_not_supported</mat-icon>
                     </div>
                 </div>

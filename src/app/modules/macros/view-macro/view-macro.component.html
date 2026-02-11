@@ -7,8 +7,8 @@
     <!-- Macro Not Found -->
     <div *ngIf="!isLoading && !macro" class="flex flex-col items-center justify-center h-64">
         <mat-icon class="text-6xl text-gray-300 mb-4">error_outline</mat-icon>
-        <h3 class="text-xl font-medium text-gray-600 mb-2">Macro Not Found</h3>
-        <p class="text-gray-500 mb-4">The macro you're looking for doesn't exist or has been removed.</p>
+        <h3 class="text-xl font-medium text-gray-600 dark:text-gray-400 mb-2">Macro Not Found</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">The macro you're looking for doesn't exist or has been removed.</p>
         <button mat-flat-button color="primary" (click)="onBackToMacros()">
             <mat-icon class="mr-2">arrow_back</mat-icon>
             Back to Macros
@@ -18,20 +18,20 @@
     <!-- Macro Content -->
     <div *ngIf="!isLoading && macro" class="flex flex-col w-full h-full">
         <!-- Header -->
-        <div class="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+        <div class="bg-white dark:bg-gray-800 border-b border-gray-200 px-4 sm:px-6 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <button mat-icon-button (click)="onBackToMacros()" matTooltip="Back to Macros">
                         <mat-icon>arrow_back</mat-icon>
                     </button>
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                             <img *ngIf="iconUrl" [src]="iconUrl" [alt]="macro.name" class="w-10 h-10 rounded">
                             <mat-icon *ngIf="!iconUrl" class="text-gray-400">code</mat-icon>
                         </div>
                         <div>
                             <h1 class="text-2xl font-bold text-gray-900">{{ macro.name }}</h1>
-                            <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                 <span>{{ getClassDisplayName(macro.class) }}</span>
                             </div>
                         </div>
@@ -68,7 +68,7 @@
                                 <mat-card-title>Description</mat-card-title>
                             </mat-card-header>
                             <mat-card-content>
-                                <p class="text-gray-700 leading-relaxed">{{ macro.description }}</p>
+                                <p class="text-gray-700 dark:text-gray-300 leading-relaxed">{{ macro.description }}</p>
                             </mat-card-content>
                         </mat-card>
 
@@ -82,7 +82,7 @@
                                     class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
                                     <pre>{{ formatMacroText(macro.macroText || macro.text || '') }}</pre>
                                 </div>
-                                <div class="mt-2 flex items-center justify-between text-sm text-gray-500">
+                                <div class="mt-2 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                                     <span>{{ (macro.macroText || macro.text || '').length }} characters</span>
                                     <button mat-button (click)="copyToClipboard(macro.macroText || macro.text || '')">
                                         <mat-icon class="mr-1">content_copy</mat-icon>
@@ -103,15 +103,15 @@
                             </mat-card-header>
                             <mat-card-content class="space-y-4">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-gray-600">Usage Count</span>
+                                    <span class="text-gray-600 dark:text-gray-400">Usage Count</span>
                                     <span class="font-semibold">{{ macro.usageCount | number }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-gray-600">Created</span>
+                                    <span class="text-gray-600 dark:text-gray-400">Created</span>
                                     <span class="font-semibold">{{ macro.createdAt | date:'short' }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-gray-600">Updated</span>
+                                    <span class="text-gray-600 dark:text-gray-400">Updated</span>
                                     <span class="font-semibold">{{ macro.updatedAt | date:'short' }}</span>
                                 </div>
                             </mat-card-content>
@@ -124,14 +124,14 @@
                             </mat-card-header>
                             <mat-card-content class="space-y-4">
                                 <div *ngIf="macro.creatorUsername" class="flex items-center justify-between">
-                                    <span class="text-gray-600">Created by</span>
+                                    <span class="text-gray-600 dark:text-gray-400">Created by</span>
                                     <a [routerLink]="['/user', macro.creatorUsername]"
                                         class="font-semibold text-blue-600 hover:text-blue-800 hover:underline">
                                         {{ macro.creatorUsername }}
                                     </a>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-gray-600">Class</span>
+                                    <span class="text-gray-600 dark:text-gray-400">Class</span>
                                     <span class="font-semibold">{{ getClassDisplayName(macro.class) }}</span>
                                 </div>
                             </mat-card-content>

@@ -1,6 +1,6 @@
 <div class="flex flex-row w-full h-full">
     <!-- Left Column: Macro List -->
-    <div class="w-80 flex flex-col border-r border-gray-200 bg-white" *ngIf="drawerOpen">
+    <div class="w-80 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" *ngIf="drawerOpen">
         <!-- Header -->
         <div class="flex-shrink-0 px-4 py-3 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-center">Macro List</h2>
@@ -184,9 +184,25 @@
 
         <!-- Scrollable Macro List -->
         <div class="flex-1 overflow-y-auto">
+            <!-- Draft Macro Entry -->
+            @if (draftMacro) {
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3"
+                [ngClass]="{'bg-blue-50 dark:bg-blue-900/30': isCreating}" (click)="selectDraft()">
+                <div class="w-8 h-8 flex-shrink-0 bg-amber-100 dark:bg-amber-900/40 rounded flex items-center justify-center">
+                    <mat-icon class="text-amber-600 dark:text-amber-400 text-lg">edit_note</mat-icon>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate">{{ draftMacro.formData.name || 'Untitled Macro' }}</div>
+                    <div class="text-sm text-gray-500 truncate">Draft</div>
+                </div>
+                <div class="flex items-center flex-shrink-0">
+                    <span class="text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">Draft</span>
+                </div>
+            </div>
+            }
             @for (macro of filteredMacros; track macro.id) {
-            <div class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 flex items-center gap-3"
-                [class.bg-blue-50]="currentSelectedMacro?.id === macro.id" (click)="selectMacro(macro)">
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3"
+                [ngClass]="{'bg-blue-50 dark:bg-blue-900/30': currentSelectedMacro?.id === macro.id}" (click)="selectMacro(macro)">
                 @if (getMacroIcon(macro)) {
                 <img [src]="getMacroIcon(macro)" [alt]="macro.name" class="w-8 h-8 flex-shrink-0 rounded">
                     } @else {
@@ -220,9 +236,9 @@
         </div>
 
     <!-- Right Column: Macro Data -->
-    <div class="flex-1 flex flex-col bg-gray-50">
+    <div class="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
         <!-- Header with Toggle Button -->
-        <div class="flex items-center justify-between gap-4 p-4 border-b bg-white">
+        <div class="flex items-center justify-between gap-4 p-4 border-b bg-white dark:bg-gray-800">
             <div class="flex items-center gap-4">
                 <button mat-icon-button (click)="toggleDrawer()" matTooltip="Toggle Macro List">
                     <mat-icon>{{ drawerOpen ? 'chevron_left' : 'menu' }}</mat-icon>
@@ -238,7 +254,7 @@
         <!-- Scrollable Content -->
         <div class="flex-1 overflow-y-auto p-6">
             @if (isCreating) {
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-bold">Create New Macro</h3>
                     <button mat-icon-button (click)="onCancelCreate()" matTooltip="Cancel">
@@ -250,8 +266,8 @@
                 @if (!useMacroBuilder && !useManualMode) {
                 <div class="text-center py-12">
                     <div class="mb-8">
-                        <h4 class="text-xl font-medium text-gray-900 mb-2">How would you like to create your macro?</h4>
-                        <p class="text-gray-600">Choose your preferred method for creating a new macro</p>
+                        <h4 class="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">How would you like to create your macro?</h4>
+                        <p class="text-gray-600 dark:text-gray-400">Choose your preferred method for creating a new macro</p>
                             </div>
 
                             <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
@@ -283,7 +299,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Icon Picker -->
                                 <div class="space-y-2">
-                                    <label class="text-sm font-medium text-gray-700">Macro Icon (Optional)</label>
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Macro Icon (Optional)</label>
                                     <app-icon-picker [selectedIcon]="createSelectedIcon"
                                 (iconSelected)="onCreateIconSelected($event)" (iconCleared)="onCreateIconCleared()"
                                         placeholder="Select an icon for your macro">
@@ -589,7 +605,7 @@
                                 <p class="text-sm text-gray-600">Review your selections and generate the macro</p>
 
                                         <!-- Configuration Summary -->
-                                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                        <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                                     <h5 class="text-sm font-semibold text-gray-900 mb-3">Configuration Summary</h5>
                                             <div class="space-y-2 text-sm">
                                                 <div class="flex justify-between">
@@ -739,7 +755,7 @@
                                         </div>
 
                                         <!-- Summary Note -->
-                                        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
                                             <p class="text-sm text-blue-900">
                                         <mat-icon class="text-blue-600 mr-2 align-middle text-sm">info</mat-icon>
                                         Note: Macro text, ability, and icon cannot be edited after creation. Use the
@@ -771,7 +787,7 @@
             } @else if (currentSelectedMacro) {
                 @if (!isEditing) {
                 <!-- View Mode -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-xl font-bold">{{ currentSelectedMacro.name }}</h3>
                     <div class="flex gap-2">
@@ -831,7 +847,7 @@
                         }
                     </div>
                     @if (currentSelectedMacro.file) {
-                    <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-3">
                         <div class="flex items-center gap-2 mb-1">
                             <mat-icon class="text-blue-600 text-sm">upload_file</mat-icon>
                             <span class="text-sm font-medium text-blue-900">
@@ -855,12 +871,12 @@
                     <div><strong>Description:</strong> {{ currentSelectedMacro.description }}</div>
                     }
                     <div><strong>Macro Text:</strong></div>
-                    <pre class="bg-gray-100 p-3 rounded">{{ currentSelectedMacro.macro_text }}</pre>
+                    <pre class="bg-gray-100 dark:bg-gray-800 p-3 rounded">{{ currentSelectedMacro.macro_text }}</pre>
                             </div>
                                 </div>
             } @else {
             <!-- Edit Mode -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-bold">Edit Macro</h3>
                     <div class="flex gap-2">
@@ -923,7 +939,7 @@
                 </div>
                     </div>
                     @if (currentSelectedMacro?.file) {
-                    <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-3">
                         <div class="flex items-center gap-2 mb-1">
                             <mat-icon class="text-blue-600 text-sm">upload_file</mat-icon>
                             <span class="text-sm font-medium text-blue-900">
@@ -970,7 +986,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Icon Picker -->
                                 <div class="space-y-2">
-                                    <label class="text-sm font-medium text-gray-700">Macro Icon</label>
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Macro Icon</label>
                                     <app-icon-picker [selectedIcon]="getSelectedIconForMacro(currentSelectedMacro)"
                                         (iconSelected)="onIconSelected($event, currentSelectedMacro)"
                                         (iconCleared)="onIconCleared(currentSelectedMacro)"
