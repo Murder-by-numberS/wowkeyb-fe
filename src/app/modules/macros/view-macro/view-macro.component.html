@@ -18,7 +18,7 @@
     <!-- Macro Content -->
     <div *ngIf="!isLoading && macro" class="flex flex-col w-full h-full">
         <!-- Header -->
-        <div class="bg-white dark:bg-gray-800 border-b border-gray-200 px-4 sm:px-6 py-4">
+        <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <button mat-icon-button (click)="onBackToMacros()" matTooltip="Back to Macros">
@@ -30,7 +30,7 @@
                             <mat-icon *ngIf="!iconUrl" class="text-gray-400">code</mat-icon>
                         </div>
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-900">{{ macro.name }}</h1>
+                            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ macro.name }}</h1>
                             <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                 <span>{{ getClassDisplayName(macro.class) }}</span>
                             </div>
@@ -68,7 +68,7 @@
                                 <mat-card-title>Description</mat-card-title>
                             </mat-card-header>
                             <mat-card-content>
-                                <p class="text-gray-700 dark:text-gray-300 leading-relaxed">{{ macro.description }}</p>
+                                <p class="text-gray-700 dark:text-gray-300 leading-relaxed">{{ macro.description || 'No description provided.' }}</p>
                             </mat-card-content>
                         </mat-card>
 

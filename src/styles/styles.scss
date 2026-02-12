@@ -3,6 +3,39 @@
 /*  @ Styles from this file will override 'vendors.scss' and Fuse's base styles.
 /* ----------------------------------------------------------------------------------------------------- */
 
+/* Primary button text contrast fix
+   Ensures dark readable text on amber/gold primary buttons in both light and dark mode */
+.mat-mdc-unelevated-button.mat-primary {
+  --mdc-filled-button-label-text-color: #111827 !important;
+  --mdc-filled-button-disabled-label-text-color: rgba(17, 24, 39, 0.4) !important;
+
+  .mat-icon {
+    color: #111827 !important;
+  }
+}
+
+.mat-mdc-raised-button.mat-primary {
+  --mdc-protected-button-label-text-color: #111827 !important;
+  --mdc-protected-button-disabled-label-text-color: rgba(17, 24, 39, 0.4) !important;
+
+  .mat-icon {
+    color: #111827 !important;
+  }
+}
+
+/* Stroked/outlined button visibility fix */
+.mat-mdc-outlined-button:not(.mat-primary):not(.mat-accent):not(.mat-warn) {
+  border-color: rgba(0, 0, 0, 0.25);
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.dark {
+  .mat-mdc-outlined-button:not(.mat-primary):not(.mat-accent):not(.mat-warn) {
+    border-color: rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.85);
+  }
+}
+
 /* Mobile Dialog Styles */
 .mobile-dialog {
   .mat-mdc-dialog-container {
