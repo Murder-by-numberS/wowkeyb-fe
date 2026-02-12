@@ -34,6 +34,12 @@
     border-color: rgba(255, 255, 255, 0.35);
     color: rgba(255, 255, 255, 0.85);
   }
+
+  /* Dialog dark mode */
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+  }
 }
 
 /* Mobile Dialog Styles */
