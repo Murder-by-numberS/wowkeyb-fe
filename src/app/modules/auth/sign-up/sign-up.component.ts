@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, NgZone, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import {
     FormsModule,
     NgForm,
@@ -13,12 +13,20 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { fuseAnimations } from '@fuse/animations';
 import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
+import { FuseConfigService, Scheme } from '@fuse/services/config';
+import { Subject, takeUntil } from 'rxjs';
+
+import { environment } from 'environments/environment';
 import { AuthService } from 'app/core/auth/auth.service';
+import { BackendService } from 'app/core/services/backend.service';
+import { KeybindingService } from 'app/core/services/keybinding.service';
 import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
 import { SchemeToggleComponent } from 'app/shared/scheme-toggle/scheme-toggle.component';
+
+declare const google: any;
 
 @Component({
     selector: 'auth-sign-up',
@@ -54,9 +62,16 @@ export class AuthSignUpComponent implements OnInit {
     /**
      * Constructor
      */
+    private _unsubscribeAll: Subject<any> = new Subject<any>();
+
     constructor(
+        private _activatedRoute: ActivatedRoute,
         private _authService: AuthService,
+        private _backendService: BackendService,
         private _formBuilder: UntypedFormBuilder,
+        private _fuseConfigService: FuseConfigService,
+        private _keybindingService: KeybindingService,
+        private _ngZone: NgZone,
         private _router: Router
     ) { }
 
@@ -75,6 +90,64 @@ export class AuthSignUpComponent implements OnInit {
             password: ['', Validators.required],
             // agreements: ['', Validators.requiredTrue],
         });
+
+        this._initGoogleSignIn();
+    }
+
+    private _initGoogleSignIn(): void {
+        if (typeof google === 'undefined') {
+            setTimeout(() => this._initGoogleSignIn(), 200);
+            return;
+        }
+
+        google.accounts.id.initialize({
+            client_id: environment.googleClientId,
+            callback: (response: any) => {
+                this._ngZone.run(() => this._handleGoogleSignIn(response));
+            },
+        });
+
+        google.accounts.id.renderButton(
+            document.getElementById('google-signup-btn'),
+            {
+                theme: 'outline',
+                size: 'large',
+                width: 320,
+                text: 'signup_with',
+            }
+        );
+    }
+
+    private _handleGoogleSignIn(response: any): void {
+        this.showAlert = false;
+
+        this._authService.signInWithGoogle(response.credential).subscribe(
+            (res) => {
+                if (res.userSettings?.scheme) {
+                    this._fuseConfigService.config = { scheme: res.userSettings.scheme as Scheme };
+                }
+                this._backendService.startPing();
+
+                this._keybindingService.getKeybindings()
+                    .pipe(takeUntil(this._unsubscribeAll))
+                    .subscribe((keybindings) => {
+                        console.log('Keybindings loaded after Google sign-up:', keybindings.length);
+                    });
+
+                const redirectURL =
+                    this._activatedRoute.snapshot.queryParamMap.get('redirectURL') || '/signed-in-redirect';
+                this._router.navigateByUrl(redirectURL);
+            },
+            (error) => {
+                const errorMessage = error.error?.message || 'Error signing up with Google';
+
+                this.alert = {
+                    type: 'error',
+                    message: errorMessage,
+                };
+                this.showAlert = true;
+            }
+        );
     }
 
     // -----------------------------------------------------------------------------------------------------

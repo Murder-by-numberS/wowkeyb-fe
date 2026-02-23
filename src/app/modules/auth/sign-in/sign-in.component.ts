@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, NgZone, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import {
     FormsModule,
     NgForm,
@@ -20,11 +20,14 @@ import { FuseConfigService, FuseConfig, Scheme } from '@fuse/services/config';
 
 import { Subject, takeUntil } from 'rxjs';
 
+import { environment } from 'environments/environment';
 import { AuthService } from 'app/core/auth/auth.service';
 import { BackendService } from 'app/core/services/backend.service';
 import { KeybindingService } from 'app/core/services/keybinding.service';
 import { AuthBackgroundComponent } from 'app/shared/auth-background/auth-background.component';
 import { SchemeToggleComponent } from 'app/shared/scheme-toggle/scheme-toggle.component';
+
+declare const google: any;
 
 @Component({
     selector: 'auth-sign-in',
@@ -70,6 +73,7 @@ export class AuthSignInComponent implements OnInit {
         private _backendService: BackendService,
         private _fuseConfigService: FuseConfigService,
         private _keybindingService: KeybindingService,
+        private _ngZone: NgZone,
         private _router: Router
     ) { }
 
@@ -99,6 +103,61 @@ export class AuthSignInComponent implements OnInit {
                 this.config = config;
             });
 
+        this._initGoogleSignIn();
+    }
+
+    private _initGoogleSignIn(): void {
+        if (typeof google === 'undefined') {
+            setTimeout(() => this._initGoogleSignIn(), 200);
+            return;
+        }
+
+        google.accounts.id.initialize({
+            client_id: environment.googleClientId,
+            callback: (response: any) => {
+                this._ngZone.run(() => this._handleGoogleSignIn(response));
+            },
+        });
+
+        google.accounts.id.renderButton(
+            document.getElementById('google-signin-btn'),
+            {
+                theme: 'outline',
+                size: 'large',
+                width: 320,
+                text: 'signin_with',
+            }
+        );
+    }
+
+    private _handleGoogleSignIn(response: any): void {
+        this.showAlert = false;
+
+        this._authService.signInWithGoogle(response.credential).subscribe(
+            (res) => {
+                this.setScheme(res.userSettings.scheme);
+                this._backendService.startPing();
+
+                this._keybindingService.getKeybindings()
+                    .pipe(takeUntil(this._unsubscribeAll))
+                    .subscribe((keybindings) => {
+                        console.log('Keybindings loaded after Google sign-in:', keybindings.length);
+                    });
+
+                const redirectURL =
+                    this._activatedRoute.snapshot.queryParamMap.get('redirectURL') || '/signed-in-redirect';
+                this._router.navigateByUrl(redirectURL);
+            },
+            (error) => {
+                const errorMessage = error.error?.message || 'Error signing in with Google';
+
+                this.alert = {
+                    type: 'error',
+                    message: errorMessage,
+                };
+                this.showAlert = true;
+            }
+        );
     }
 
     // -----------------------------------------------------------------------------------------------------
