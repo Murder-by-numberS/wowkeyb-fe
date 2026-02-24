@@ -99,8 +99,9 @@ export class AuthSignInComponent implements OnInit {
         this._fuseConfigService.config$
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe((config: FuseConfig) => {
-                // Store the config
                 this.config = config;
+                this.scheme = config.scheme as 'dark' | 'light';
+                this._renderGoogleButton();
             });
 
         this._initGoogleSignIn();
@@ -119,15 +120,22 @@ export class AuthSignInComponent implements OnInit {
             },
         });
 
-        google.accounts.id.renderButton(
-            document.getElementById('google-signin-btn'),
-            {
-                theme: 'outline',
-                size: 'large',
-                width: 320,
-                text: 'signin_with',
-            }
-        );
+        this._renderGoogleButton();
+    }
+
+    private _renderGoogleButton(): void {
+        if (typeof google === 'undefined') return;
+
+        const container = document.getElementById('google-signin-btn');
+        if (!container) return;
+
+        container.innerHTML = '';
+        google.accounts.id.renderButton(container, {
+            theme: 'filled_blue',
+            size: 'large',
+            width: 320,
+            text: 'signin_with',
+        });
     }
 
     private _handleGoogleSignIn(response: any): void {

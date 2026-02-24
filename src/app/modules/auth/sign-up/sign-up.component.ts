@@ -16,7 +16,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { fuseAnimations } from '@fuse/animations';
 import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
-import { FuseConfigService, Scheme } from '@fuse/services/config';
+import { FuseConfigService, FuseConfig, Scheme } from '@fuse/services/config';
 import { Subject, takeUntil } from 'rxjs';
 
 import { environment } from 'environments/environment';
@@ -58,6 +58,7 @@ export class AuthSignUpComponent implements OnInit {
     };
     signUpForm: UntypedFormGroup;
     showAlert: boolean = false;
+    scheme: 'dark' | 'light';
 
     /**
      * Constructor
@@ -91,6 +92,13 @@ export class AuthSignUpComponent implements OnInit {
             // agreements: ['', Validators.requiredTrue],
         });
 
+        this._fuseConfigService.config$
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe((config: FuseConfig) => {
+                this.scheme = config.scheme as 'dark' | 'light';
+                this._renderGoogleButton();
+            });
+
         this._initGoogleSignIn();
     }
 
@@ -107,15 +115,22 @@ export class AuthSignUpComponent implements OnInit {
             },
         });
 
-        google.accounts.id.renderButton(
-            document.getElementById('google-signup-btn'),
-            {
-                theme: 'outline',
-                size: 'large',
-                width: 320,
-                text: 'signup_with',
-            }
-        );
+        this._renderGoogleButton();
+    }
+
+    private _renderGoogleButton(): void {
+        if (typeof google === 'undefined') return;
+
+        const container = document.getElementById('google-signup-btn');
+        if (!container) return;
+
+        container.innerHTML = '';
+        google.accounts.id.renderButton(container, {
+            theme: 'filled_blue',
+            size: 'large',
+            width: 320,
+            text: 'signup_with',
+        });
     }
 
     private _handleGoogleSignIn(response: any): void {
