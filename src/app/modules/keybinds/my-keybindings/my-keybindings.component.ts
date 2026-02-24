@@ -19,6 +19,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 //Components
 import { KeyboardComponent } from '../keyboard/keyboard.component';
+import { ActionBarLayoutComponent } from '../action-bar-layout/action-bar-layout.component';
+import { ExpandedKeyboardComponent } from '../expanded-keyboard/expanded-keyboard.component';
 import { AbilitiesComponent } from '../abilities/abilities.component';
 import { KeybindsDrawerComponent } from '../keybinds-drawer/keybinds-drawer.component';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
@@ -57,6 +59,8 @@ import { Keybinding } from 'app/core/types/keybinding';
         MatDialogModule,
 
         KeyboardComponent,
+        ActionBarLayoutComponent,
+        ExpandedKeyboardComponent,
         AbilitiesComponent,
         KeybindsDrawerComponent
     ],
@@ -88,6 +92,14 @@ export class MyKeybindingsComponent implements OnInit {
 
     editingName: boolean = false;
 
+    /** View mode: keyboard (default), action bar layout, or expanded keyboard */
+    viewMode: 'keyboard' | 'layout' | 'expanded' = 'keyboard';
+
+    /** When true, drawer uses overlay behavior (mobile-style) - used in layout mode on all screen sizes */
+    get useOverlayMode(): boolean {
+        return this.isMobile || this.viewMode === 'layout' || this.viewMode === 'expanded';
+    }
+
     private _unsubscribeAll: Subject<any> = new Subject<any>();
 
     currentUserId: string | null = null;
@@ -118,6 +130,24 @@ export class MyKeybindingsComponent implements OnInit {
         // Check if device is mobile
         this.checkMobile();
         window.addEventListener('resize', () => this.checkMobile());
+
+        // Initial view mode from URL
+        const view = this.route.snapshot.queryParams['view'];
+        if (view === 'action_bars') {
+            this.viewMode = 'layout';
+            this.drawerOpen = false;
+            this.opened = false;
+        } else if (view === 'expanded') {
+            this.viewMode = 'expanded';
+            this.drawerOpen = false;
+            this.opened = false;
+        } else if (view === 'keyboard') {
+            this.viewMode = 'keyboard';
+            if (!this.isMobile) {
+                this.drawerOpen = true;
+                this.opened = true;
+            }
+        }
 
         this._authService.check()
             .pipe(takeUntil(this._unsubscribeAll))
@@ -187,6 +217,23 @@ export class MyKeybindingsComponent implements OnInit {
         this.route.queryParams
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe(params => {
+                // Sync view mode with URL
+                if (params['view'] === 'action_bars') {
+                    this.viewMode = 'layout';
+                    this.drawerOpen = false;
+                    this.opened = false;
+                } else if (params['view'] === 'expanded') {
+                    this.viewMode = 'expanded';
+                    this.drawerOpen = false;
+                    this.opened = false;
+                } else if (params['view'] === 'keyboard') {
+                    this.viewMode = 'keyboard';
+                    if (!this.isMobile) {
+                        this.drawerOpen = true;
+                        this.opened = true;
+                    }
+                }
+
                 if (params['keybindingId']) {
                     const keybindingId = params['keybindingId'];
                     const shouldDuplicate = params['duplicate'] === 'true';
@@ -718,6 +765,23 @@ export class MyKeybindingsComponent implements OnInit {
     toggleDrawer(): void {
         this.drawerOpen = !this.drawerOpen;
         this.opened = this.drawerOpen; // Keep opened in sync for backward compatibility
+    }
+
+    setViewMode(mode: 'keyboard' | 'layout' | 'expanded'): void {
+        this.viewMode = mode;
+        if (mode === 'layout' || mode === 'expanded') {
+            this.drawerOpen = false;
+            this.opened = false;
+        } else if (!this.isMobile) {
+            this.drawerOpen = true;
+            this.opened = true;
+        }
+        this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { view: mode === 'layout' ? 'action_bars' : mode },
+            queryParamsHandling: 'merge',
+            replaceUrl: true,
+        });
     }
 
     private checkMobile(): void {

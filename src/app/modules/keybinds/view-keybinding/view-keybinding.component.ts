@@ -176,6 +176,51 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
         }
     }
 
+    /**
+     * Export keybinding as JSON for the WoWKeyb addon.
+     * Copies to clipboard in format: { name, keybinds: [{ key, spell: { spellId, name } }] }
+     */
+    exportForAddon(): void {
+        if (!this.keybinding?.keybinds?.length) {
+            this.snackBar.open('No keybinds to export', 'Close', { duration: 3000 });
+            return;
+        }
+        const profile: Record<string, unknown> = {
+            name: this.keybinding.name,
+            class: this.keybinding.class,
+            spec: this.keybinding.spec,
+            heroTalent: this.keybinding.heroTalent,
+            keybinds: this.keybinding.keybinds.map(kb => ({
+                key: kb.key,
+                spell: {
+                    spellId: kb.spell?.spellId?.toString() ?? '',
+                    name: kb.spell?.name ?? '',
+                    icon: kb.spell?.icon ?? '',
+                    description: kb.spell?.description ?? ''
+                },
+                barId: kb.barId ?? undefined,
+                slotIndex: kb.slotIndex ?? undefined
+            }))
+        };
+        if (this.keybinding.layout?.bars?.length) {
+            profile.layout = {
+                bars: this.keybinding.layout.bars,
+                screenWidth: this.keybinding.layout.screenWidth ?? 2560,
+                screenHeight: this.keybinding.layout.screenHeight ?? 1440
+            };
+        }
+        const json = JSON.stringify(profile);
+        navigator.clipboard.writeText(json).then(() => {
+            this.snackBar.open(
+                'Copied! In WoW: /wowkeyb import ' + this.keybinding!.name.replace(/[^a-zA-Z0-9]/g, '') + ' then paste',
+                'Close',
+                { duration: 5000 }
+            );
+        }).catch(() => {
+            this.snackBar.open('Failed to copy to clipboard', 'Close', { duration: 3000 });
+        });
+    }
+
     copyToVersion(versionId: string): void {
         if (!this.keybinding || this.isCopyingToVersion) return;
 

@@ -1,16 +1,16 @@
 <div class="flex flex-row w-full h-full relative">
-    <!-- Backdrop for mobile when drawer is open -->
-    @if (!drawerDisabled && drawerOpen && isMobile) {
-    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity" (click)="toggleDrawer()"></div>
+    <!-- Backdrop when drawer is open in overlay mode (mobile or Action Bars view) -->
+    @if (!drawerDisabled && drawerOpen && useOverlayMode) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity" (click)="toggleDrawer()"></div>
     }
 
     <!-- Left Column: Keybinding List (hidden when drawerDisabled) -->
     @if (!drawerDisabled) {
     <div class="w-80 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-transform duration-300 ease-in-out"
-        [class.fixed]="isMobile" [class.inset-y-0]="isMobile" [class.left-0]="isMobile" [class.z-50]="isMobile"
-        [class.-translate-x-full]="isMobile && !drawerOpen" [class.translate-x-0]="isMobile && drawerOpen"
-        [class.hidden]="!isMobile && !drawerOpen" [class.static]="!isMobile"
-        [style.height]="isMobile ? '100vh' : '100%'">
+        [class.fixed]="useOverlayMode" [class.inset-y-0]="useOverlayMode" [class.left-0]="useOverlayMode" [class.z-50]="useOverlayMode"
+        [class.-translate-x-full]="useOverlayMode && !drawerOpen" [class.translate-x-0]="useOverlayMode && drawerOpen"
+        [class.hidden]="!useOverlayMode && !drawerOpen" [class.static]="!useOverlayMode"
+        [style.height]="useOverlayMode ? '100vh' : '100%'">
         <keybinds-drawer [isKeybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
             (keybindingSelected)="onKeybindingSelected($event)" (refreshKeybindings)="refreshChildKeybindings()"
             (keybindingUpdated)="onKeybindingUpdated($event)">
@@ -142,7 +142,8 @@
         <!-- Scrollable Content (overflow-x-hidden on mobile so abilities grid doesn't cause horizontal scroll) -->
         <div class="flex-1 overflow-y-auto overflow-x-hidden min-w-0 pb-16">
             @if (selectedKeybinding) {
-            <!-- Abilities Section (min-w-0 so mobile grid wraps and no abilities are cut off) -->
+            <!-- Abilities Section - only in Keyboard view -->
+            @if (viewMode === 'keyboard') {
             <div class="w-full min-w-0 bg-gray-300 dark:bg-gray-600 min-h-[120px] sm:min-h-[150px] lg:min-h-[100px] flex-shrink-0">
                 <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
                     [drawerOpen]="drawerOpen"
@@ -150,13 +151,69 @@
                     (keybindingUpdated)="updateKeybinding($event)">
                 </abilities>
             </div>
+            }
+
+            <!-- View mode toggle -->
+            <div class="flex gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <button
+                    type="button"
+                    (click)="setViewMode('keyboard')"
+                    [class.ring-2]="viewMode === 'keyboard'"
+                    [class.ring-blue-500]="viewMode === 'keyboard'"
+                    mat-stroked-button
+                    class="flex items-center gap-2">
+                    <mat-icon>keyboard</mat-icon>
+                    <span>Keyboard</span>
+                </button>
+                <button
+                    type="button"
+                    (click)="setViewMode('layout')"
+                    [class.ring-2]="viewMode === 'layout'"
+                    [class.ring-blue-500]="viewMode === 'layout'"
+                    mat-stroked-button
+                    class="flex items-center gap-2">
+                    <mat-icon>grid_view</mat-icon>
+                    <span>Action Bars</span>
+                </button>
+                <button
+                    type="button"
+                    (click)="setViewMode('expanded')"
+                    [class.ring-2]="viewMode === 'expanded'"
+                    [class.ring-blue-500]="viewMode === 'expanded'"
+                    mat-stroked-button
+                    class="flex items-center gap-2">
+                    <mat-icon>expand</mat-icon>
+                    <span>Expand</span>
+                </button>
+            </div>
 
             <!-- Keyboard Section -->
+            @if (viewMode === 'keyboard') {
             <div class="w-full relative h-[600px] sm:h-[700px] lg:h-[800px]">
                 <keyboard (refreshKeybindings)="refreshChildKeybindings()" [selectedKeybinding]="selectedKeybinding"
                     [keybindingSelected]="keybindingSelected" [drawerOpened]="drawerOpen">
                 </keyboard>
             </div>
+            }
+
+            <!-- Action Bar Layout (Edit Mode) -->
+            @if (viewMode === 'layout') {
+            <div class="w-full relative min-h-[400px]">
+                <action-bar-layout
+                    (refreshKeybindings)="refreshChildKeybindings()"
+                    [selectedKeybinding]="selectedKeybinding"
+                    [keybindingSelected]="keybindingSelected">
+                </action-bar-layout>
+            </div>
+            }
+
+            <!-- Expanded Keyboard -->
+            @if (viewMode === 'expanded') {
+            <div class="w-full relative h-[650px] sm:h-[750px] lg:h-[900px] overflow-hidden">
+                <app-expanded-keyboard [keybinding]="selectedKeybinding" class="absolute inset-0">
+                </app-expanded-keyboard>
+            </div>
+            }
             } @else {
             <!-- Empty State -->
             <div class="flex flex-col items-center justify-center h-full text-center p-8">
