@@ -107,6 +107,25 @@ export class AuthService {
     }
 
     /**
+     * Sign in with Google
+     */
+    signInWithGoogle(credential: string): Observable<any> {
+        if (this._authenticated) {
+            return throwError('User is already logged in.');
+        }
+
+        return this._httpClient.post(`${this.apiUrl}/auth/google`, { credential }).pipe(
+            switchMap((response: any) => {
+                this.accessToken = response.token;
+                this.currentUser = JSON.stringify(response.user);
+                this._authenticated = true;
+                this._userService.user = response.user;
+                return of(response);
+            })
+        );
+    }
+
+    /**
      * Sign in
      *
      * @param credentials
