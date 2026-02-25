@@ -30,9 +30,11 @@ import {
 import { KeybindingService } from 'app/core/services/keybinding.service';
 import { KeybindDialogComponent } from '../keyboard/keybind-dialog/keybind-dialog.component';
 import { SlotAssignDialogComponent } from './slot-assign-dialog/slot-assign-dialog.component';
+import { SlotKeyDialogComponent } from './slot-key-dialog.component';
 
 /** Slot display: key label + keybinds for that key */
 interface ActionBarSlot {
+    slotIndex: number;
     keyLabel: string;
     keybinds: Keybind[];
 }
@@ -53,6 +55,7 @@ const DEFAULT_KEYS_BY_BAR_INDEX: string[][] = [
     ['Ctrl+1', 'Ctrl+2', 'Ctrl+3', 'Ctrl+4', 'Ctrl+5', 'Ctrl+6', 'Ctrl+7', 'Ctrl+8', 'Ctrl+9', 'Ctrl+10', 'Ctrl+11', 'Ctrl+12'],
     ['Alt+1', 'Alt+2', 'Alt+3', 'Alt+4', 'Alt+5', 'Alt+6', 'Alt+7', 'Alt+8', 'Alt+9', 'Alt+10', 'Alt+11', 'Alt+12'],
 ];
+const ASSIGNABLE_KEYS = DEFAULT_KEYS_BY_BAR_INDEX.flat();
 
 @Component({
     selector: 'action-bar-layout',
@@ -84,11 +87,21 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
     selectedBarId: string | null = null;
     guideLineX: number | null = null;
     guideLineY: number | null = null;
+    keybindMode = false;
+    positionInputX: number | null = null;
+    positionInputY: number | null = null;
+    layoutDirty = false;
+    private layoutTouchesKeybinds = false;
+    private cleanLayoutSnapshot: ActionBarLayout | null = null;
+    private cleanKeybindsSnapshot: Keybind[] | null = null;
+    private activeKeybindingId: string | null = null;
+    private lastRenderSignature: string | null = null;
 
     /** Screen resolution */
     screenWidth = 2560;
     screenHeight = 1440;
     barGap = DEFAULT_BAR_GAP;
+    barMode: 'blizzard' | 'custom' = 'custom';
 
     readonly resolutions = RESOLUTIONS;
     readonly slotOptions = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -101,8 +114,21 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
     ) {}
 
     ngOnChanges(): void {
-        this.buildDisplayBars();
+        const currentId = this.selectedKeybinding?.keybindingId || null;
+        const renderSignature = this.computeRenderSignature(this.selectedKeybinding);
+        if (currentId !== this.activeKeybindingId) {
+            this.activeKeybindingId = currentId;
+            this.layoutDirty = false;
+            this.layoutTouchesKeybinds = false;
+            this.cleanLayoutSnapshot = null;
+            this.cleanKeybindsSnapshot = null;
+            this.lastRenderSignature = null;
+        }
+        if (this.lastRenderSignature === renderSignature) {
+            return;
+        }
         this.loadResolution();
+        this.buildDisplayBars();
     }
 
     ngAfterViewInit(): void {
@@ -116,6 +142,11 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
             this.screenHeight = layout.screenHeight;
         }
         this.barGap = layout?.barGap ?? DEFAULT_BAR_GAP;
+        this.barMode = layout?.barMode ?? 'custom';
+    }
+
+    get useCustomBarsMode(): boolean {
+        return this.barMode === 'custom';
     }
 
     private buildDisplayBars(): void {
@@ -132,6 +163,7 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
                     {
                         id: 'main',
                         slots: 12,
+                        slotKeys: Array.from({ length: 12 }, () => ''),
                         position: {
                             anchor: 'bottom',
                             x: this.screenWidth / 2,
@@ -144,14 +176,20 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
                 ),
             ];
         }
+        this.syncPositionInputsFromSelectedBar();
+        this.lastRenderSignature = this.computeRenderSignature(this.selectedKeybinding);
         this.cdr.markForCheck();
     }
 
     private toDisplayBar(bar: ActionBar, barIndex: number): DisplayBar {
-        const keys =
-            DEFAULT_KEYS_BY_BAR_INDEX[barIndex] ||
-            Array.from({ length: bar.slots }, (_, i) => String(i + 1));
-        const displaySlots: ActionBarSlot[] = keys.slice(0, bar.slots).map((keyLabel) => ({
+        const configuredKeys = Array.isArray(bar.slotKeys) ? [...bar.slotKeys] : [];
+        const keys = Array.from({ length: bar.slots }, (_, i) => {
+            return configuredKeys[i] !== undefined
+                ? configuredKeys[i]
+                : '';
+        });
+        const displaySlots: ActionBarSlot[] = keys.map((keyLabel, slotIndex) => ({
+            slotIndex,
             keyLabel,
             keybinds: [],
         }));
@@ -163,9 +201,17 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         ) {
             this.selectedKeybinding.keybinds.forEach((keybind) => {
                 if (!keybind?.key || !keybind?.spell) return;
-                const slot = displaySlots.find(
+                const slotByIndex =
+                    keybind.barId === bar.id &&
+                    typeof keybind.slotIndex === 'number' &&
+                    keybind.slotIndex >= 0 &&
+                    keybind.slotIndex < displaySlots.length
+                        ? displaySlots[keybind.slotIndex]
+                        : null;
+                const slotByKey = displaySlots.find(
                     (s) => keybind.key.toLowerCase() === s.keyLabel.toLowerCase()
                 );
+                const slot = slotByIndex || slotByKey;
                 if (slot) slot.keybinds.push(keybind);
             });
         }
@@ -219,6 +265,24 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         return this.displayBars.find((b) => b.id === this.selectedBarId) || null;
     }
 
+    get selectedBarCoordinates(): { x: number; y: number } | null {
+        if (!this.selectedBar) return null;
+        const { x, y } = this.getNormalizedBarPosition(this.selectedBar);
+        return { x: Math.round(x), y: Math.round(y) };
+    }
+
+    private syncPositionInputsFromSelectedBar(): void {
+        const bar = this.selectedBar;
+        if (!bar) {
+            this.positionInputX = null;
+            this.positionInputY = null;
+            return;
+        }
+        const { x, y } = this.getNormalizedBarPosition(bar);
+        this.positionInputX = Math.round(x);
+        this.positionInputY = Math.round(y);
+    }
+
     onResolutionSelect(value: string): void {
         const [w, h] = value.split('x').map(Number);
         this.screenWidth = w;
@@ -231,16 +295,21 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         const layout = this.getLayoutToSave();
         layout.screenWidth = this.screenWidth;
         layout.screenHeight = this.screenHeight;
-        this.keybindingService
-            .updateKeybinding(this.selectedKeybinding.keybindingId, { layout })
-            .subscribe({
-                next: (updated) => {
-                    this.selectedKeybinding = updated;
-                    this.buildDisplayBars();
-                    this.refreshKeybindings.emit();
-                },
-                error: (err) => console.error('Error updating resolution:', err),
-            });
+        this.markLayoutDirty();
+        this.setDraftLayout(layout);
+        this.buildDisplayBars();
+    }
+
+    onBarModeChange(mode: 'blizzard' | 'custom'): void {
+        if (!this.selectedKeybinding) return;
+        if (mode !== 'blizzard' && mode !== 'custom') return;
+        if (mode === this.barMode) return;
+        this.barMode = mode;
+        const layout = this.getLayoutToSave();
+        layout.barMode = mode;
+        this.markLayoutDirty();
+        this.setDraftLayout(layout);
+        this.buildDisplayBars();
     }
 
     onBarGapChange(value: number): void {
@@ -252,16 +321,9 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         this.barGap = nextGap;
         const layout = this.getLayoutToSave();
         layout.barGap = nextGap;
-        this.keybindingService
-            .updateKeybinding(this.selectedKeybinding.keybindingId, { layout })
-            .subscribe({
-                next: (updated) => {
-                    this.selectedKeybinding = updated;
-                    this.buildDisplayBars();
-                    this.refreshKeybindings.emit();
-                },
-                error: (err) => console.error('Error updating bar gap:', err),
-            });
+        this.markLayoutDirty();
+        this.setDraftLayout(layout);
+        this.buildDisplayBars();
     }
 
     onBarDragEnded(bar: DisplayBar, event: CdkDragEnd): void {
@@ -298,26 +360,32 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         const target = layout.bars.find((b) => b.id === bar.id);
         if (!target) return;
 
+        const displayTarget = this.displayBars.find((b) => b.id === bar.id);
+        const previousDisplayPosition = displayTarget ? { ...displayTarget.position } : null;
+
         target.position = {
             anchor: 'center',
             x: designX,
             y: designY,
         };
 
-        this.keybindingService
-            .updateKeybinding(this.selectedKeybinding.keybindingId, { layout })
-            .subscribe({
-                next: (updated) => {
-                    // Clear CDK transform so persisted coordinates are the source of truth.
-                    event.source.reset();
-                    this.guideLineX = null;
-                    this.guideLineY = null;
-                    this.selectedKeybinding = updated;
-                    this.buildDisplayBars();
-                    this.refreshKeybindings.emit();
-                },
-                error: (err) => console.error('Error updating bar position:', err),
-            });
+        // Optimistically update visible state first to avoid full-canvas flash.
+        if (displayTarget) {
+            displayTarget.position = { ...target.position };
+        }
+        // Clear CDK transform so the persisted position becomes the source of truth.
+        event.source.reset();
+        this.guideLineX = null;
+        this.guideLineY = null;
+        this.syncPositionInputsFromSelectedBar();
+        this.cdr.markForCheck();
+        this.markLayoutDirty();
+        this.setDraftLayout(layout);
+
+        // Keep old revert behavior unnecessary in draft mode, but keep state consistent.
+        if (!displayTarget && previousDisplayPosition) {
+            this.cdr.markForCheck();
+        }
     }
 
     onBarDragMoved(bar: DisplayBar, event: CdkDragMove): void {
@@ -344,6 +412,10 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
 
         this.guideLineX = snapped.guideX;
         this.guideLineY = snapped.guideY;
+        if (this.selectedBarId === bar.id) {
+            this.positionInputX = Math.round(snapped.x);
+            this.positionInputY = Math.round(snapped.y);
+        }
     }
 
     onSelectedBarSlotsChange(slots: number): void {
@@ -374,6 +446,45 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         this.updateBarLayout(bar.id, { orientation });
     }
 
+    applySelectedBarPosition(): void {
+        const bar = this.selectedBar;
+        if (!bar || !this.selectedKeybinding) return;
+        if (!Number.isFinite(this.positionInputX) || !Number.isFinite(this.positionInputY)) return;
+
+        const x = Math.max(0, Math.min(this.screenWidth, Number(this.positionInputX)));
+        const y = Math.max(0, Math.min(this.screenHeight, Number(this.positionInputY)));
+
+        this.positionInputX = Math.round(x);
+        this.positionInputY = Math.round(y);
+
+        this.updateBarLayout(bar.id, {
+            position: {
+                anchor: 'center',
+                x,
+                y,
+            },
+        });
+    }
+
+    centerSelectedBar(): void {
+        const bar = this.selectedBar;
+        if (!bar || !this.selectedKeybinding) return;
+        const current = this.getNormalizedBarPosition(bar);
+        const x = this.screenWidth / 2;
+        const y = Math.max(0, Math.min(this.screenHeight, current.y));
+
+        this.positionInputX = Math.round(x);
+        this.positionInputY = Math.round(y);
+
+        this.updateBarLayout(bar.id, {
+            position: {
+                anchor: 'center',
+                x,
+                y,
+            },
+        });
+    }
+
     resetSelectedBar(): void {
         const bar = this.selectedBar;
         if (!bar || !this.selectedKeybinding) return;
@@ -381,6 +492,7 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
             slots: 12,
             scale: 1,
             orientation: 'horizontal',
+            slotKeys: Array.from({ length: 12 }, () => ''),
         });
     }
 
@@ -393,17 +505,20 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         if (typeof patch.slots === 'number') target.slots = patch.slots;
         if (typeof patch.scale === 'number') target.scale = patch.scale;
         if (patch.orientation) target.orientation = patch.orientation;
-
-        this.keybindingService
-            .updateKeybinding(this.selectedKeybinding.keybindingId, { layout })
-            .subscribe({
-                next: (updated) => {
-                    this.selectedKeybinding = updated;
-                    this.buildDisplayBars();
-                    this.refreshKeybindings.emit();
-                },
-                error: (err) => console.error('Error updating bar layout:', err),
-            });
+        if (patch.position) target.position = { ...patch.position };
+        if (Array.isArray(patch.slotKeys)) target.slotKeys = [...patch.slotKeys];
+        if (!Array.isArray(target.slotKeys)) {
+            target.slotKeys = Array.from({ length: target.slots }, () => '');
+        } else {
+            target.slotKeys = target.slotKeys.slice(0, target.slots);
+            while (target.slotKeys.length < target.slots) {
+                target.slotKeys.push('');
+            }
+        }
+        this.markLayoutDirty();
+        this.setDraftLayout(layout);
+        this.buildDisplayBars();
+        this.syncPositionInputsFromSelectedBar();
     }
 
     private getSnappedPosition(
@@ -499,6 +614,14 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
     onSlotClick(bar: DisplayBar, slot: ActionBarSlot, event: Event): void {
         event.stopPropagation();
         if (!this.selectedKeybinding) return;
+        if (this.keybindMode) {
+            this.openSlotKeyDialog(bar, slot);
+            return;
+        }
+        if (!slot.keyLabel) {
+            this.openSlotKeyDialog(bar, slot);
+            return;
+        }
         if (slot.keybinds?.length > 0) {
             this.openKeybindDialog(bar, slot);
         } else {
@@ -545,11 +668,67 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
                 key: result.key,
                 spell: result.spell,
                 barId: bar.id,
-                slotIndex: bar.displaySlots.indexOf(slot),
+                slotIndex: slot.slotIndex,
             };
             const updatedKeybinds = [...(this.selectedKeybinding.keybinds || []), newKeybind];
             this.saveKeybinds(updatedKeybinds);
         });
+    }
+
+    private openSlotKeyDialog(bar: DisplayBar, slot: ActionBarSlot): void {
+        const dialogRef = this.dialog.open(SlotKeyDialogComponent, {
+            data: {
+                currentKey: slot.keyLabel,
+                options: ASSIGNABLE_KEYS,
+            },
+            width: 'min(90vw, 420px)',
+        });
+
+        dialogRef.afterClosed().subscribe((newKey: string | undefined) => {
+            if (!newKey || newKey === slot.keyLabel) return;
+            this.updateSlotKey(bar, slot, newKey);
+        });
+    }
+
+    private updateSlotKey(bar: DisplayBar, slot: ActionBarSlot, newKey: string): void {
+        if (!this.selectedKeybinding) return;
+
+        const layout = this.getLayoutToSave();
+        const targetBar = layout.bars.find((b) => b.id === bar.id);
+        if (!targetBar) return;
+
+        const slotKeys = Array.isArray(targetBar.slotKeys) ? [...targetBar.slotKeys] : [];
+        while (slotKeys.length < targetBar.slots) {
+            slotKeys.push('');
+        }
+
+        // Prevent duplicate assignment across layout slots
+        const used = new Set<string>();
+        for (const b of this.displayBars) {
+            for (const s of b.displaySlots) {
+                if (b.id === bar.id && s.slotIndex === slot.slotIndex) continue;
+                used.add(s.keyLabel.toLowerCase());
+            }
+        }
+        if (used.has(newKey.toLowerCase())) return;
+
+        slotKeys[slot.slotIndex] = newKey;
+        targetBar.slotKeys = slotKeys;
+
+        const keybinds = (this.selectedKeybinding.keybinds || []).map((kb) => {
+            if (kb.barId === bar.id && kb.slotIndex === slot.slotIndex) {
+                return { ...kb, key: newKey };
+            }
+            return kb;
+        });
+        this.markLayoutDirty();
+        this.layoutTouchesKeybinds = true;
+        this.selectedKeybinding = {
+            ...this.selectedKeybinding,
+            layout: this.cloneLayout(layout),
+            keybinds,
+        };
+        this.buildDisplayBars();
     }
 
     private saveKeybinds(keybinds: Keybind[]): void {
@@ -576,6 +755,7 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         const newBar: ActionBar = {
             id: newId,
             slots: 12,
+            slotKeys: Array.from({ length: 12 }, () => ''),
             position: {
                 anchor: 'center',
                 x: this.screenWidth / 2,
@@ -589,18 +769,11 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         layout.bars.push(newBar);
         layout.screenWidth = this.screenWidth;
         layout.screenHeight = this.screenHeight;
-
-        this.keybindingService
-            .updateKeybinding(this.selectedKeybinding.keybindingId, { layout })
-            .subscribe({
-                next: (updated) => {
-                    this.selectedKeybinding = updated;
-                    this.buildDisplayBars();
-                    this.selectedBarId = newId;
-                    this.refreshKeybindings.emit();
-                },
-                error: (err) => console.error('Error adding bar:', err),
-            });
+        this.markLayoutDirty();
+        this.setDraftLayout(layout);
+        this.buildDisplayBars();
+        this.selectedBarId = newId;
+        this.syncPositionInputsFromSelectedBar();
     }
 
     removeBar(bar: DisplayBar, event: Event): void {
@@ -610,22 +783,108 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         const layout = this.getLayoutToSave();
         layout.bars = layout.bars.filter((b) => b.id !== bar.id);
         const keybinds = (this.selectedKeybinding.keybinds || []).filter((kb) => kb.barId !== bar.id);
+        this.markLayoutDirty();
+        this.layoutTouchesKeybinds = true;
+        this.selectedKeybinding = {
+            ...this.selectedKeybinding,
+            layout,
+            keybinds,
+        };
+        this.selectedBarId = this.selectedBarId === bar.id ? null : this.selectedBarId;
+        this.buildDisplayBars();
+        this.syncPositionInputsFromSelectedBar();
+    }
+
+    selectBar(bar: DisplayBar, event?: MouseEvent): void {
+        event?.stopPropagation();
+        this.selectedBarId = bar.id;
+        this.syncPositionInputsFromSelectedBar();
+    }
+
+    clearSelection(): void {
+        this.selectedBarId = null;
+        this.syncPositionInputsFromSelectedBar();
+    }
+
+    saveLayoutChanges(): void {
+        if (!this.selectedKeybinding || !this.layoutDirty) return;
+        const layout = this.getLayoutToSave();
+        const payload: Partial<Keybinding> = { layout };
+        if (this.layoutTouchesKeybinds) {
+            payload.keybinds = [...(this.selectedKeybinding.keybinds || [])];
+        }
 
         this.keybindingService
-            .updateKeybinding(this.selectedKeybinding.keybindingId, { layout, keybinds })
+            .updateKeybinding(this.selectedKeybinding.keybindingId, payload)
             .subscribe({
                 next: (updated) => {
                     this.selectedKeybinding = updated;
-                    this.selectedBarId = this.selectedBarId === bar.id ? null : this.selectedBarId;
-                    this.buildDisplayBars();
+                    this.layoutDirty = false;
+                    this.layoutTouchesKeybinds = false;
+                    this.cleanLayoutSnapshot = null;
+                    this.cleanKeybindsSnapshot = null;
+                    this.lastRenderSignature = this.computeRenderSignature(this.selectedKeybinding);
+                    this.syncPositionInputsFromSelectedBar();
                     this.refreshKeybindings.emit();
                 },
-                error: (err) => console.error('Error removing bar:', err),
+                error: (err) => console.error('Error saving layout changes:', err),
             });
     }
 
-    selectBar(bar: DisplayBar): void {
-        this.selectedBarId = this.selectedBarId === bar.id ? null : bar.id;
+    resetLayoutChanges(): void {
+        if (!this.selectedKeybinding || !this.layoutDirty) return;
+        const layout = this.cleanLayoutSnapshot ? this.cloneLayout(this.cleanLayoutSnapshot) : null;
+        const keybinds = this.cleanKeybindsSnapshot ? [...this.cleanKeybindsSnapshot] : [...(this.selectedKeybinding.keybinds || [])];
+        this.selectedKeybinding = {
+            ...this.selectedKeybinding,
+            layout,
+            keybinds,
+        };
+        this.layoutDirty = false;
+        this.layoutTouchesKeybinds = false;
+        this.cleanLayoutSnapshot = null;
+        this.cleanKeybindsSnapshot = null;
+        this.buildDisplayBars();
+        this.loadResolution();
+        this.syncPositionInputsFromSelectedBar();
+    }
+
+    private markLayoutDirty(): void {
+        if (this.layoutDirty || !this.selectedKeybinding) return;
+        this.cleanLayoutSnapshot = this.selectedKeybinding.layout
+            ? this.cloneLayout(this.selectedKeybinding.layout)
+            : null;
+        this.cleanKeybindsSnapshot = [...(this.selectedKeybinding.keybinds || [])];
+        this.layoutDirty = true;
+    }
+
+    private setDraftLayout(layout: ActionBarLayout): void {
+        if (!this.selectedKeybinding) return;
+        this.selectedKeybinding = {
+            ...this.selectedKeybinding,
+            layout: this.cloneLayout(layout),
+        };
+    }
+
+    private cloneLayout(layout: ActionBarLayout): ActionBarLayout {
+        return JSON.parse(JSON.stringify(layout));
+    }
+
+    private computeRenderSignature(keybinding: Keybinding | null): string {
+        if (!keybinding) return 'no-keybinding';
+        const layoutSig = keybinding.layout ? JSON.stringify(keybinding.layout) : 'no-layout';
+        const keybindsSig = (keybinding.keybinds || [])
+            .map((kb) =>
+                [
+                    kb.barId || '',
+                    typeof kb.slotIndex === 'number' ? String(kb.slotIndex) : '',
+                    kb.key || '',
+                    kb.spell?.spellId || kb.spell?.name || '',
+                ].join('|')
+            )
+            .sort()
+            .join(';');
+        return `${keybinding.keybindingId || ''}::${layoutSig}::${keybindsSig}`;
     }
 
     private getLayoutToSave(): ActionBarLayout {
@@ -636,6 +895,7 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
                     ...b,
                     position: { ...b.position },
                 })),
+                barMode: existing.barMode ?? this.barMode,
                 screenWidth: this.screenWidth,
                 screenHeight: this.screenHeight,
                 barGap: existing.barGap ?? this.barGap,
@@ -645,10 +905,12 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
             bars: this.displayBars.map((b) => ({
                 id: b.id,
                 slots: b.slots,
+                slotKeys: Array.isArray(b.slotKeys) ? [...b.slotKeys].slice(0, b.slots) : undefined,
                 position: { ...b.position },
                 orientation: b.orientation,
                 scale: b.scale ?? 1,
             })),
+            barMode: this.barMode,
             screenWidth: this.screenWidth,
             screenHeight: this.screenHeight,
             barGap: this.barGap,

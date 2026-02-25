@@ -14,6 +14,7 @@ export interface BarPosition {
 export interface ActionBar {
     id: string;
     slots: number;
+    slotKeys?: string[];
     position: BarPosition;
     orientation: 'horizontal' | 'vertical';
     scale?: number;
@@ -21,6 +22,8 @@ export interface ActionBar {
 
 export interface ActionBarLayout {
     bars: ActionBar[];
+    /** Which in-game bar mode to use when applying profile in addon */
+    barMode?: 'blizzard' | 'custom';
     /** Screen resolution for layout preview (design pixels) */
     screenWidth?: number;
     screenHeight?: number;
