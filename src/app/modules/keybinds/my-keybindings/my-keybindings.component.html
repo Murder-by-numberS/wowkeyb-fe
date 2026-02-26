@@ -1,16 +1,16 @@
 <div class="flex flex-row w-full h-full relative">
     <!-- Backdrop when drawer is open in overlay mode (mobile or Action Bars view) -->
     @if (!drawerDisabled && drawerOpen && useOverlayMode) {
-    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity" (click)="toggleDrawer()"></div>
+    <div class="fixed left-0 right-0 bottom-0 top-16 bg-black bg-opacity-50 z-40 transition-opacity" (click)="toggleDrawer()"></div>
     }
 
     <!-- Left Column: Keybinding List (hidden when drawerDisabled) -->
     @if (!drawerDisabled) {
     <div class="w-80 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-transform duration-300 ease-in-out"
-        [class.fixed]="useOverlayMode" [class.inset-y-0]="useOverlayMode" [class.left-0]="useOverlayMode" [class.z-50]="useOverlayMode"
+        [class.fixed]="useOverlayMode" [class.left-0]="useOverlayMode" [class.bottom-0]="useOverlayMode" [class.top-16]="useOverlayMode" [class.z-50]="useOverlayMode"
         [class.-translate-x-full]="useOverlayMode && !drawerOpen" [class.translate-x-0]="useOverlayMode && drawerOpen"
         [class.hidden]="!useOverlayMode && !drawerOpen" [class.static]="!useOverlayMode"
-        [style.height]="useOverlayMode ? '100vh' : '100%'">
+        [style.height]="useOverlayMode ? 'calc(100vh - 64px)' : '100%'">
         <keybinds-drawer [isKeybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
             (keybindingSelected)="onKeybindingSelected($event)" (refreshKeybindings)="refreshChildKeybindings()"
             (keybindingUpdated)="onKeybindingUpdated($event)">
@@ -70,6 +70,19 @@
                 }
             </div>
 
+            <div class="flex items-center gap-2 w-full lg:w-auto lg:ml-auto">
+                <button
+                    type="button"
+                    mat-stroked-button
+                    (click)="importFromAddon()"
+                    [disabled]="!isAuthenticated"
+                    [matTooltip]="!isAuthenticated ? 'Create an account to import keybindings' : 'Import addon JSON into My Keybindings'"
+                    class="text-xs sm:text-sm flex-shrink-0">
+                    <mat-icon class="text-base sm:text-lg">upload</mat-icon>
+                    <span class="ml-1">Import</span>
+                </button>
+            </div>
+
             @if (selectedKeybinding) {
             <!-- Dynamic Action Buttons -->
             <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0 w-full lg:w-auto">
@@ -111,6 +124,17 @@
                     class="text-xs sm:text-sm flex-shrink-0">
                     <mat-icon class="text-base sm:text-lg">delete</mat-icon>
                     <span class="ml-1 hidden sm:inline">Delete</span>
+                </button>
+
+                <button
+                    type="button"
+                    mat-stroked-button
+                    (click)="exportForAddon()"
+                    [disabled]="!selectedKeybinding?.keybinds?.length"
+                    matTooltip="Copy JSON for WoWKeyb addon"
+                    class="text-xs sm:text-sm flex-shrink-0">
+                    <mat-icon class="text-base sm:text-lg">download</mat-icon>
+                    <span class="ml-1 hidden sm:inline">Export</span>
                 </button>
 
                 <button type="button" mat-flat-button color="primary" (click)="shareKeybinding()" [disabled]="!isAuthenticated"
