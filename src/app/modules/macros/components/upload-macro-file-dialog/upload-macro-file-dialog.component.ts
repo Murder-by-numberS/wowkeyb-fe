@@ -12,6 +12,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MacroFileService, PreviewMacroFileResponse } from '../../services/macro-file.service';
+import { FRONTEND_CLASS_OPTIONS } from 'app/core/utils/class-name-utils';
 
 interface SelectableMacro {
     index: number;
@@ -279,21 +280,7 @@ export class UploadMacroFileDialogComponent implements OnInit {
     selectableMacros: SelectableMacro[] = [];
     importResult: any = null;
 
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
+    classes = FRONTEND_CLASS_OPTIONS;
 
     constructor(
         private fb: FormBuilder,

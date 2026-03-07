@@ -14,6 +14,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MacroService, MacroTemplate, GenerateMacroResponse } from '../../services/macro.service';
 import { AbilityPickerComponent, AbilitySelection } from '../ability-picker/ability-picker.component';
 import { fullClasses } from 'app/core/data/classes';
+import { FRONTEND_CLASS_OPTIONS } from 'app/core/utils/class-name-utils';
 
 @Component({
     selector: 'app-macro-builder',
@@ -48,21 +49,7 @@ export class MacroBuilderComponent implements OnInit {
     availableHeroTalents: string[] = [];
     macroTitle: string = '';
 
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
+    classes = FRONTEND_CLASS_OPTIONS;
 
     constructor(
         private fb: FormBuilder,

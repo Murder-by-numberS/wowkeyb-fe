@@ -14,6 +14,7 @@ import { Macro, MacroService } from '../services/macro.service';
 import { AuthService } from 'app/core/auth/auth.service';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
 import { IconService } from '../../icons/services/icon.service';
+import { FRONTEND_CLASS_OPTIONS, formatClassNameForFrontend } from 'app/core/utils/class-name-utils';
 
 @Component({
     selector: 'app-view-macro',
@@ -113,7 +114,7 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
     }
 
     generateMockMacro(id: string): Macro {
-        const classes = ['deathknight', 'demonhunter', 'druid', 'evoker', 'hunter', 'mage', 'monk', 'paladin', 'priest', 'rogue', 'shaman', 'warlock', 'warrior', 'miscellaneous'];
+        const classes = [...FRONTEND_CLASS_OPTIONS.map((cls) => cls.value), 'miscellaneous'];
         const className = classes[Math.floor(Math.random() * classes.length)];
 
         return {
@@ -180,23 +181,8 @@ export class ViewMacroComponent implements OnInit, OnDestroy {
     }
 
     getClassDisplayName(className: string): string {
-        const classMap: { [key: string]: string } = {
-            'deathknight': 'Death Knight',
-            'demonhunter': 'Demon Hunter',
-            'druid': 'Druid',
-            'evoker': 'Evoker',
-            'hunter': 'Hunter',
-            'mage': 'Mage',
-            'monk': 'Monk',
-            'paladin': 'Paladin',
-            'priest': 'Priest',
-            'rogue': 'Rogue',
-            'shaman': 'Shaman',
-            'warlock': 'Warlock',
-            'warrior': 'Warrior',
-            'miscellaneous': 'Miscellaneous'
-        };
-        return classMap[className] || className;
+        if (className === 'miscellaneous') return 'Miscellaneous';
+        return formatClassNameForFrontend(className);
     }
 
 

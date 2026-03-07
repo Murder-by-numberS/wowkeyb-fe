@@ -7,7 +7,15 @@ import { environment } from 'environments/environment';
 
 import { Keybinding } from '../types/keybinding';
 import { Keybind } from '../types/keybind';
-import { formatClassNameForFrontend, formatClassNameForBackend } from '../utils/class-name-utils';
+import {
+    CLASS_SPEC_HERO_CATALOG,
+    formatClassNameForFrontend,
+    formatClassNameForBackend,
+    formatSpecNameForFrontend,
+    formatSpecNameForBackend,
+    formatHeroTalentNameForFrontend,
+    formatHeroTalentNameForBackend,
+} from '../utils/class-name-utils';
 
 interface KeybindUpdate {
     addedKeybinds: Keybind[];
@@ -33,6 +41,21 @@ export class KeybindingService {
     }
 
     constructor(private http: HttpClient) { }
+
+    private mapKeybindingForFrontend(keybinding: Keybinding): Keybinding {
+        return {
+            ...keybinding,
+            class: formatClassNameForFrontend(keybinding.class),
+            spec: keybinding.spec ? formatSpecNameForFrontend(keybinding.spec) : keybinding.spec,
+            heroTalent: keybinding.heroTalent ? formatHeroTalentNameForFrontend(keybinding.heroTalent) : keybinding.heroTalent,
+            randomClassDetails: keybinding.randomClassDetails ? {
+                ...keybinding.randomClassDetails,
+                class: formatClassNameForFrontend(keybinding.randomClassDetails.class),
+                spec: formatSpecNameForFrontend(keybinding.randomClassDetails.spec),
+                heroTalent: formatHeroTalentNameForFrontend(keybinding.randomClassDetails.heroTalent),
+            } : keybinding.randomClassDetails,
+        };
+    }
 
     getKeybindingById(id: string): Keybinding | undefined {
         const currentKeybindings = this.keybindingsSource.getValue();
@@ -145,15 +168,14 @@ export class KeybindingService {
         // Transform frontend class name to backend format before sending
         const backendUpdatedKeybinding = {
             ...updatedKeybinding,
-            ...(updatedKeybinding.class && { class: formatClassNameForBackend(updatedKeybinding.class) })
+            ...(updatedKeybinding.class && { class: formatClassNameForBackend(updatedKeybinding.class) }),
+            ...(updatedKeybinding.spec && { spec: formatSpecNameForBackend(updatedKeybinding.spec) }),
+            ...(updatedKeybinding.heroTalent && { heroTalent: formatHeroTalentNameForBackend(updatedKeybinding.heroTalent) }),
         };
 
         return this.http.put<Keybinding>(`${environment.apiUrl}/keybindings/${id}`, backendUpdatedKeybinding)
             .pipe(
-                map((response: Keybinding) => ({
-                    ...response,
-                    class: formatClassNameForFrontend(response.class)
-                })),
+                map((response: Keybinding) => this.mapKeybindingForFrontend(response)),
                 tap((response: Keybinding) => {
                     console.log('updateKeybinding - backend response:', response);
                     console.log('updateKeybinding - response keybinds:', response.keybinds?.length);
@@ -196,14 +218,13 @@ export class KeybindingService {
         // Transform frontend class name to backend format before sending
         const backendKeybinding = keybinding ? {
             ...keybinding,
-            class: formatClassNameForBackend(keybinding.class)
+            class: formatClassNameForBackend(keybinding.class),
+            ...(keybinding.spec && { spec: formatSpecNameForBackend(keybinding.spec) }),
+            ...(keybinding.heroTalent && { heroTalent: formatHeroTalentNameForBackend(keybinding.heroTalent) }),
         } : {};
 
         return this.http.post<Keybinding>(`${environment.apiUrl}/keybindings`, backendKeybinding).pipe(
-            map((newKeybinding: Keybinding) => ({
-                ...newKeybinding,
-                class: formatClassNameForFrontend(newKeybinding.class)
-            })),
+            map((newKeybinding: Keybinding) => this.mapKeybindingForFrontend(newKeybinding)),
             tap((newKeybinding: Keybinding) => {
                 console.log('after created - newKeybinding', newKeybinding);
                 const currentKeybindings = this.keybindingsSource.getValue();
@@ -216,13 +237,7 @@ export class KeybindingService {
     getKeybindings(): Observable<Keybinding[]> {
         console.log('getting keybindings');
         return this.http.get<Keybinding[]>(`${environment.apiUrl}/keybindings`).pipe(
-            map((keybindings: Keybinding[]) => {
-                // Transform backend class names (lowercase) to frontend format (capitalized)
-                return keybindings.map(keybinding => ({
-                    ...keybinding,
-                    class: formatClassNameForFrontend(keybinding.class)
-                }));
-            }),
+            map((keybindings: Keybinding[]) => keybindings.map((keybinding) => this.mapKeybindingForFrontend(keybinding))),
             tap((keybindings: Keybinding[]) => {
                 console.log('getKeybindings - raw keybindings from server:', keybindings.length);
                 console.log('getKeybindings - keybinding IDs from server:', keybindings.map(kb => kb.keybindingId));
@@ -249,13 +264,7 @@ export class KeybindingService {
         if (limit) params = params.set('limit', limit.toString());
 
         return this.http.get<Keybinding[]>(`${environment.apiUrl}/keybindings/popular`, { params }).pipe(
-            map((keybindings: Keybinding[]) => {
-                // Transform backend class names (lowercase) to frontend format (capitalized)
-                return keybindings.map(keybinding => ({
-                    ...keybinding,
-                    class: formatClassNameForFrontend(keybinding.class)
-                }));
-            })
+            map((keybindings: Keybinding[]) => keybindings.map((keybinding) => this.mapKeybindingForFrontend(keybinding)))
         );
     }
 
@@ -271,12 +280,10 @@ export class KeybindingService {
                     // Keep the group key in lowercase (backend format) to match component expectations
                     transformedResponse[backendClassName] = {
                         recent: classData.recent.map(keybinding => ({
-                            ...keybinding,
-                            class: formatClassNameForFrontend(keybinding.class)
+                            ...this.mapKeybindingForFrontend(keybinding),
                         })),
                         popular: classData.popular.map(keybinding => ({
-                            ...keybinding,
-                            class: formatClassNameForFrontend(keybinding.class)
+                            ...this.mapKeybindingForFrontend(keybinding),
                         }))
                     };
                 });
@@ -301,13 +308,7 @@ export class KeybindingService {
         const timestamp = Date.now();
         console.log('Fetching keybindings with cache-busting timestamp:', timestamp);
         return this.http.get<Keybinding[]>(`${environment.apiUrl}/keybindings?t=${timestamp}`).pipe(
-            map((keybindings: Keybinding[]) => {
-                // Transform backend class names (lowercase) to frontend format (capitalized)
-                return keybindings.map(keybinding => ({
-                    ...keybinding,
-                    class: formatClassNameForFrontend(keybinding.class)
-                }));
-            }),
+            map((keybindings: Keybinding[]) => keybindings.map((keybinding) => this.mapKeybindingForFrontend(keybinding))),
             tap((keybindings: Keybinding[]) => {
                 console.log('Force refresh completed - keybindings updated:', keybindings.length);
                 console.log('Force refresh - keybinding versions:', keybindings.map(kb => ({
@@ -326,19 +327,13 @@ export class KeybindingService {
 
     getKeybinding(id: string): Observable<Keybinding> {
         return this.http.get<Keybinding>(`${environment.apiUrl}/keybindings/${id}`).pipe(
-            map((keybinding: Keybinding) => ({
-                ...keybinding,
-                class: formatClassNameForFrontend(keybinding.class)
-            }))
+            map((keybinding: Keybinding) => this.mapKeybindingForFrontend(keybinding))
         );
     }
 
     duplicateKeybinding(keybindingId: string): Observable<Keybinding> {
         return this.http.post<Keybinding>(`${environment.apiUrl}/keybindings/${keybindingId}/duplicate`, {}).pipe(
-            map((newKeybinding: Keybinding) => ({
-                ...newKeybinding,
-                class: formatClassNameForFrontend(newKeybinding.class)
-            })),
+            map((newKeybinding: Keybinding) => this.mapKeybindingForFrontend(newKeybinding)),
             tap((newKeybinding: Keybinding) => {
                 // Update the local state with the new keybinding
                 const currentKeybindings = this.keybindingsSource.getValue();
@@ -382,8 +377,8 @@ export class KeybindingService {
         const keybindingToUpdate = currentKeybindings[keybindingIndex];
         keybindingToUpdate.name = updatedKeybinding.name;
         keybindingToUpdate.class = formatClassNameForFrontend(updatedKeybinding.class); // Ensure frontend format
-        keybindingToUpdate.spec = updatedKeybinding.spec;
-        keybindingToUpdate.heroTalent = updatedKeybinding.heroTalent;
+        keybindingToUpdate.spec = updatedKeybinding.spec ? formatSpecNameForFrontend(updatedKeybinding.spec) : updatedKeybinding.spec;
+        keybindingToUpdate.heroTalent = updatedKeybinding.heroTalent ? formatHeroTalentNameForFrontend(updatedKeybinding.heroTalent) : updatedKeybinding.heroTalent;
         keybindingToUpdate.version = updatedKeybinding.version;
         keybindingToUpdate.keybinds = updatedKeybinding.keybinds;
         keybindingToUpdate.isPublic = updatedKeybinding.isPublic;
@@ -443,6 +438,10 @@ export class KeybindingService {
             `${environment.apiUrl}/keybindings/${keybindingId}/copy-to-version`,
             { version_id: versionId }
         );
+    }
+
+    getClassSpecHeroCatalog(): Observable<{ classes: typeof CLASS_SPEC_HERO_CATALOG }> {
+        return this.http.get<{ classes: typeof CLASS_SPEC_HERO_CATALOG }>(`${environment.apiUrl}/keybindings/catalog`);
     }
 
 }

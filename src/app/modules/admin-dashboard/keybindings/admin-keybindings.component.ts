@@ -18,6 +18,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { AdminService, AdminKeybinding } from 'app/core/services/admin.service';
 import { DeleteVersionsDialogComponent, DeleteVersionsDialogResult } from './delete-versions-dialog.component';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { formatClassNameForFrontend } from 'app/core/utils/class-name-utils';
 
 @Component({
     selector: 'admin-keybindings',
@@ -168,9 +169,7 @@ export class AdminKeybindingsComponent implements OnInit {
     }
 
     formatClassName(className: string): string {
-        if (className === 'deathknight') return 'Death Knight';
-        if (className === 'demonhunter') return 'Demon Hunter';
-        return className.charAt(0).toUpperCase() + className.slice(1);
+        return formatClassNameForFrontend(className);
     }
 
     formatDate(dateString: string): string {

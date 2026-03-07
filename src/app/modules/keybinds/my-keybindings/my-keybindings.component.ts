@@ -38,6 +38,11 @@ import { UserService } from 'app/core/user/user.service';
 //Types
 import { Keybinding } from 'app/core/types/keybinding';
 import { Keybind } from 'app/core/types/keybind';
+import {
+    formatClassNameForFrontend,
+    formatSpecNameForFrontend,
+    formatHeroTalentNameForFrontend
+} from 'app/core/utils/class-name-utils';
 
 interface AddonImportPayload {
     name?: string;
@@ -767,9 +772,9 @@ export class MyKeybindingsComponent implements OnInit {
 
         return {
             name: typeof obj.name === 'string' ? obj.name.trim() : '',
-            class: typeof obj.class === 'string' ? obj.class.trim() : '',
-            spec: typeof obj.spec === 'string' ? obj.spec : undefined,
-            heroTalent: typeof obj.heroTalent === 'string' ? obj.heroTalent : undefined,
+            class: typeof obj.class === 'string' ? formatClassNameForFrontend(obj.class.trim()) : '',
+            spec: typeof obj.spec === 'string' ? formatSpecNameForFrontend(obj.spec) : undefined,
+            heroTalent: typeof obj.heroTalent === 'string' ? formatHeroTalentNameForFrontend(obj.heroTalent) : undefined,
             keybinds,
             layout: (obj.layout && typeof obj.layout === 'object') ? (obj.layout as Keybinding['layout']) : undefined,
         };
