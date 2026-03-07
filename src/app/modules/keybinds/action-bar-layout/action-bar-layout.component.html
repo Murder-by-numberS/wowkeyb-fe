@@ -1,0 +1,112 @@
+<div class="flex flex-col w-full h-full">
+    <div class="flex flex-wrap items-center justify-between gap-2 p-2 bg-gray-300 dark:bg-gray-700 rounded-t-lg">
+        <div class="flex items-center gap-3">
+            <mat-icon class="text-gray-600 dark:text-gray-400">view_module</mat-icon>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Blizzard Action Bars</span>
+            <span
+                class="text-xs text-amber-700 dark:text-amber-300"
+                matTooltip="This view maps keys and spells to Blizzard bars. Final bar positions are managed in WoW Edit Mode."
+                matTooltipPosition="below">
+                Preview only - move bars in WoW Edit Mode
+            </span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button
+                type="button"
+                mat-stroked-button
+                (click)="keybindMode = !keybindMode"
+                [class.ring-2]="keybindMode"
+                [class.ring-blue-500]="keybindMode"
+                matTooltip="Toggle keybind remap mode for slots"
+                class="text-xs sm:text-sm">
+                <mat-icon class="text-base">keyboard</mat-icon>
+                <span class="ml-1">{{ keybindMode ? 'Keybind Mode On' : 'Keybind Mode' }}</span>
+            </button>
+            <button
+                type="button"
+                mat-stroked-button
+                (click)="addBar()"
+                [disabled]="!keybindingSelected || !selectedKeybinding || displayBars.length >= maxBlizzardBars"
+                matTooltip="Add another Blizzard action bar"
+                class="text-xs sm:text-sm">
+                <mat-icon class="text-base">add</mat-icon>
+                <span class="ml-1">Add Action Bar ({{ displayBars.length }}/{{ maxBlizzardBars }})</span>
+            </button>
+            @if (layoutDirty) {
+            <button
+                type="button"
+                mat-flat-button
+                color="primary"
+                (click)="saveLayoutChanges()"
+                class="text-xs sm:text-sm">
+                <mat-icon class="text-base">save</mat-icon>
+                <span class="ml-1">Save</span>
+            </button>
+            <button
+                type="button"
+                mat-stroked-button
+                (click)="resetLayoutChanges()"
+                class="text-xs sm:text-sm">
+                <mat-icon class="text-base">undo</mat-icon>
+                <span class="ml-1">Reset</span>
+            </button>
+            }
+        </div>
+    </div>
+
+    <div class="flex-1 p-4 bg-gray-800 dark:bg-gray-900 min-h-[400px] overflow-auto">
+        @if (!keybindingSelected || !selectedKeybinding) {
+        <p class="text-sm text-gray-400">Select a keybinding to map Blizzard bars</p>
+        } @else {
+        <div class="flex flex-col gap-3 max-w-5xl mx-auto">
+            @for (bar of displayBars; track bar.id; let idx = $index) {
+            <div class="rounded-lg border border-gray-600 bg-gray-900/90 p-3 shadow">
+                <div class="mb-2 flex items-center justify-between">
+                    <div class="text-xs font-semibold text-gray-200">Blizzard Bar {{ idx + 1 }}</div>
+                    <div class="text-[11px] text-gray-400">horizontal · {{ bar.slots }} slots</div>
+                </div>
+                <div
+                    class="relative flex gap-1 p-1.5 rounded-lg border border-gray-600 bg-gray-700/70 w-fit flex-shrink-0"
+                    [class.flex-row]="true">
+                    @for (slot of bar.displaySlots; track slot.slotIndex) {
+                    <button
+                        type="button"
+                        (click)="onSlotClick(bar, slot, $event)"
+                        [matTooltip]="keybindMode
+                            ? (slot.keyLabel ? ('Change keybind (' + slot.keyLabel + ')') : 'Assign keybind')
+                            : (!slot.keyLabel
+                                ? 'Assign a keybind first (Keybind Mode)'
+                                : (slot.keybinds?.length ? 'Click to edit' : 'Click to add spell'))"
+                        matTooltipPosition="above"
+                        class="relative w-10 h-10 sm:w-12 sm:h-12 min-w-10 min-h-10 sm:min-w-12 sm:min-h-12 flex flex-col items-center justify-center rounded border border-gray-600 bg-gray-600 hover:bg-gray-500 transition-colors cursor-pointer group flex-shrink-0 overflow-hidden"
+                        [ngClass]="keybindMode ? 'border-blue-400 bg-blue-600/25 hover:bg-blue-500/35' : ''">
+                        @if (keybindMode) {
+                        <mat-icon class="absolute top-0.5 right-0.5 !text-[12px] !w-3 !h-3 text-blue-200 opacity-80">keyboard</mat-icon>
+                        }
+                        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] font-mono text-gray-300 truncate w-full text-center px-0.5">
+                            @if (slot.keyLabel) {
+                            {{
+                                slot.keyLabel.length > 4
+                                    ? slot.keyLabel.replace('Shift+','S+').replace('Ctrl+','C+').replace('Alt+','A+')
+                                    : slot.keyLabel
+                            }}
+                            }
+                        </span>
+                        @if (slot.keybinds?.length) {
+                        <img
+                            [src]="slot.keybinds[0].spell?.icon"
+                            [alt]="slot.keybinds[0].spell?.name"
+                            class="w-6 h-6 sm:w-8 sm:h-8 object-contain flex-shrink-0"
+                            [matTooltip]="slot.keybinds[0].spell?.name + (slot.keybinds.length > 1 ? ' (+' + (slot.keybinds.length - 1) + ' more)' : '')" />
+                        } @else {
+                        <mat-icon class="text-gray-500 text-xl opacity-50 group-hover:opacity-70">add_circle_outline</mat-icon>
+                        }
+                    </button>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+        }
+    </div>
+</div>

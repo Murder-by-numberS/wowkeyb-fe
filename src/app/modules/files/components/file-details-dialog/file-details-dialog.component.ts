@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MacroFileService } from '../../../macros/services/macro-file.service';
+import { FRONTEND_CLASS_OPTIONS, formatClassNameForFrontend } from 'app/core/utils/class-name-utils';
 
 export interface FileDetailsData {
     file: any;
@@ -128,21 +129,7 @@ export class FileDetailsDialogComponent implements OnInit {
     loadingFile = false;
     downloadingFile = false;
 
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
+    classes = FRONTEND_CLASS_OPTIONS;
 
     constructor(
         public dialogRef: MatDialogRef<FileDetailsDialogComponent>,
@@ -158,8 +145,7 @@ export class FileDetailsDialogComponent implements OnInit {
     }
 
     getClassName(classValue: string): string {
-        const cls = this.classes.find(c => c.value === classValue);
-        return cls ? cls.label : classValue;
+        return formatClassNameForFrontend(classValue);
     }
 
     formatDate(date: string | Date): string {

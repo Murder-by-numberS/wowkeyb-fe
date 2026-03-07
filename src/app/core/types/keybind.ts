@@ -10,4 +10,8 @@ export interface Keybind {
         spellId: string
     };
     modifiers?: string[];
+    /** Optional: which action bar (for layout mode) */
+    barId?: string;
+    /** Optional: which slot on the bar (0-based) */
+    slotIndex?: number;
 }

@@ -14,6 +14,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MacroFileService } from '../../services/macro-file.service';
 import { Macro } from '../../services/macro.service';
+import { FRONTEND_CLASS_OPTIONS, formatClassNameForFrontend } from 'app/core/utils/class-name-utils';
 
 export interface ExportMacroFileDialogData {
     macros: Macro[];
@@ -218,21 +219,7 @@ export class ExportMacroFileDialogComponent implements OnInit {
     filteredMacros: SelectableMacro[] = [];
     exporting = false;
 
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
+    classes = FRONTEND_CLASS_OPTIONS;
 
     get selectedCount(): number {
         return this.filteredMacros.filter(m => m.selected).length;
@@ -310,8 +297,7 @@ export class ExportMacroFileDialogComponent implements OnInit {
 
     getClassName(classValue: string | undefined): string {
         if (!classValue) return 'Generic';
-        const cls = this.classes.find(c => c.value === classValue);
-        return cls ? cls.label : classValue;
+        return formatClassNameForFrontend(classValue);
     }
 
     onExport(): void {

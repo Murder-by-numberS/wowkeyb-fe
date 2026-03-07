@@ -26,6 +26,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 //Services
 import { AbilitiesService } from 'app/core/services/abilities.service';
 import { VersionCompareService } from 'app/core/services/version-compare.service';
+import {
+    FRONTEND_CLASS_OPTIONS,
+    formatClassNameForFrontend,
+    formatClassNameForBackend,
+    formatSpecNameForFrontend,
+    formatSpecNameForBackend,
+    formatHeroTalentNameForFrontend,
+    formatHeroTalentNameForBackend
+} from 'app/core/utils/class-name-utils';
 
 //Data
 import { fullClasses } from 'app/core/data/classes';
@@ -88,21 +97,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
     // Data properties
     abilities: Ability[] = [];
     filteredAbilities: Ability[] = [];
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
+    classes = FRONTEND_CLASS_OPTIONS;
     specs = [];
     heroTalents = [];
     gameVersions: string[] = [];
@@ -1359,15 +1354,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
  */
     formatClassName(className: string): string {
         if (!className) return 'Unknown';
-
-        // Handle special cases
-        if (className === 'demonhunter') return 'Demon Hunter';
-        if (className === 'deathknight') return 'Death Knight';
-
-        // Capitalize first letter of each word
-        return className.split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
+        return formatClassNameForFrontend(className);
     }
 
     /**
@@ -1375,15 +1362,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
  */
     formatSpecName(specName: string): string {
         if (!specName) return '';
-
-        // Handle special cases
-        if (specName === 'beast-mastery') return 'Beast Mastery';
-        if (specName === 'windwalker') return 'Windwalker';
-
-        // Capitalize first letter of each word
-        return specName.split('-')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
+        return formatSpecNameForFrontend(specName);
     }
 
     /**
@@ -1391,13 +1370,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
  */
     getBackendClassName(formattedClassName: string): string {
         if (!formattedClassName) return '';
-
-        // Handle special cases
-        if (formattedClassName === 'Demon Hunter') return 'demonhunter';
-        if (formattedClassName === 'Death Knight') return 'deathknight';
-
-        // Convert to lowercase
-        return formattedClassName.toLowerCase();
+        return formatClassNameForBackend(formattedClassName);
     }
 
     /**
@@ -1405,12 +1378,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
  */
     getBackendSpecName(formattedSpecName: string): string {
         if (!formattedSpecName) return '';
-
-        // Handle special cases first
-        if (formattedSpecName === 'Beast Mastery') return 'beast-mastery';
-
-        // Convert to lowercase
-        return formattedSpecName.toLowerCase();
+        return formatSpecNameForBackend(formattedSpecName);
     }
 
     /**
@@ -1418,14 +1386,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
  */
     getBackendHeroTalentName(formattedHeroTalentName: string): string {
         if (!formattedHeroTalentName) return '';
-
-        // Handle special cases first
-        if (formattedHeroTalentName === 'Elune\'s Chosen') return 'elunes-chosen';
-
-        // Convert to lowercase, replace spaces with hyphens, and replace apostrophes with hyphens
-        return formattedHeroTalentName.toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/'/g, '-');
+        return formatHeroTalentNameForBackend(formattedHeroTalentName);
     }
 
     /**
@@ -1433,52 +1394,7 @@ export class AbilitiesComponent implements OnInit, OnDestroy {
      */
     formatHeroTalentName(heroTalentName: string): string {
         if (!heroTalentName) return '';
-
-        // Handle special cases
-        if (heroTalentName === 'herald-of-the-sun') return 'Herald of the Sun';
-        if (heroTalentName === 'lightsmith') return 'Lightsmith';
-        if (heroTalentName === 'templar') return 'Templar';
-        if (heroTalentName === 'deathbringer') return 'Deathbringer';
-        if (heroTalentName === 'san-layn') return 'San\'layn';
-        if (heroTalentName === 'rider-of-the-apocalypse') return 'Rider of the Apocalypse';
-        if (heroTalentName === 'aldrachi-reaver') return 'Aldrachi Reaver';
-        if (heroTalentName === 'fel-scarred') return 'Fel Scarred';
-        if (heroTalentName === 'elunes-chosen') return 'Elune\'s Chosen';
-        if (heroTalentName === 'keeper-of-the-grove') return 'Keeper of the Grove';
-        if (heroTalentName === 'druid-of-the-claw') return 'Druid of the Claw';
-        if (heroTalentName === 'wildstalker') return 'Wildstalker';
-        if (heroTalentName === 'chronowarden') return 'Chronowarden';
-        if (heroTalentName === 'scalecommander') return 'Scalecommander';
-        if (heroTalentName === 'flameshaper') return 'Flameshaper';
-        if (heroTalentName === 'dark-ranger') return 'Dark Ranger';
-        if (heroTalentName === 'pack-leader') return 'Pack Leader';
-        if (heroTalentName === 'sentinel') return 'Sentinel';
-        if (heroTalentName === 'spellslinger') return 'Spellslinger';
-        if (heroTalentName === 'sunfury') return 'Sunfury';
-        if (heroTalentName === 'frostfire') return 'Frostfire';
-        if (heroTalentName === 'master-of-harmony') return 'Master of Harmony';
-        if (heroTalentName === 'shado-pan') return 'Shado-Pan';
-        if (heroTalentName === 'conduit-of-the-celestials') return 'Conduit of the Celestials';
-        if (heroTalentName === 'oracle') return 'Oracle';
-        if (heroTalentName === 'voidweaver') return 'Voidweaver';
-        if (heroTalentName === 'archon') return 'Archon';
-        if (heroTalentName === 'deathstalker') return 'Deathstalker';
-        if (heroTalentName === 'fatebound') return 'Fatebound';
-        if (heroTalentName === 'trickster') return 'Trickster';
-        if (heroTalentName === 'farseer') return 'Farseer';
-        if (heroTalentName === 'stormbringer') return 'Stormbringer';
-        if (heroTalentName === 'totemic') return 'Totemic';
-        if (heroTalentName === 'hellcaller') return 'Hellcaller';
-        if (heroTalentName === 'soul-harvester') return 'Soul Harvester';
-        if (heroTalentName === 'diabolist') return 'Diabolist';
-        if (heroTalentName === 'colossus') return 'Colossus';
-        if (heroTalentName === 'slayer') return 'Slayer';
-        if (heroTalentName === 'mountain-thane') return 'Mountain Thane';
-
-        // Capitalize first letter of each word
-        return heroTalentName.split('-')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
+        return formatHeroTalentNameForFrontend(heroTalentName);
     }
 
 

@@ -19,12 +19,16 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 //Components
 import { KeyboardComponent } from '../keyboard/keyboard.component';
+import { ActionBarLayoutComponent } from '../action-bar-layout/action-bar-layout.component';
+import { ExpandedKeyboardComponent } from '../expanded-keyboard/expanded-keyboard.component';
 import { AbilitiesComponent } from '../abilities/abilities.component';
 import { KeybindsDrawerComponent } from '../keybinds-drawer/keybinds-drawer.component';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
 import { ShareDialogComponent } from '../share-dialog/share-dialog.component';
 import { VersionCopyDialogComponent, VersionCopyDialogData } from '../version-copy-dialog/version-copy-dialog.component';
 import { DeleteKeybindingDialogComponent, DeleteKeybindingDialogResult } from '../delete-keybinding-dialog/delete-keybinding-dialog.component';
+import { ImportAddonProfileDialogComponent, ImportAddonProfileDialogResult } from './import-addon-profile-dialog.component';
+import { ImportConflictAction, ImportConflictDialogComponent } from './import-conflict-dialog.component';
 
 //Services
 import { KeybindingService } from 'app/core/services/keybinding.service';
@@ -33,6 +37,21 @@ import { UserService } from 'app/core/user/user.service';
 
 //Types
 import { Keybinding } from 'app/core/types/keybinding';
+import { Keybind } from 'app/core/types/keybind';
+import {
+    formatClassNameForFrontend,
+    formatSpecNameForFrontend,
+    formatHeroTalentNameForFrontend
+} from 'app/core/utils/class-name-utils';
+
+interface AddonImportPayload {
+    name?: string;
+    class?: string;
+    spec?: string;
+    heroTalent?: string;
+    keybinds?: Keybind[];
+    layout?: Keybinding['layout'];
+}
 
 @Component({
     selector: 'my-keybindings',
@@ -57,11 +76,14 @@ import { Keybinding } from 'app/core/types/keybinding';
         MatDialogModule,
 
         KeyboardComponent,
+        ActionBarLayoutComponent,
+        ExpandedKeyboardComponent,
         AbilitiesComponent,
         KeybindsDrawerComponent
     ],
 })
 export class MyKeybindingsComponent implements OnInit {
+    private static readonly ADDON_SHARE_CODE_PREFIX = 'WK1:';
     @ViewChild(KeybindsDrawerComponent) keybindsDrawerComponent: KeybindsDrawerComponent;
     @ViewChild(AbilitiesComponent) abilitiesComponent: AbilitiesComponent;
     @ViewChild(KeyboardComponent) keyboard: KeyboardComponent;
@@ -87,6 +109,14 @@ export class MyKeybindingsComponent implements OnInit {
     refresh: boolean = false;
 
     editingName: boolean = false;
+
+    /** View mode: keyboard (default), action bar layout, or expanded keyboard */
+    viewMode: 'keyboard' | 'layout' | 'expanded' = 'keyboard';
+
+    /** When true, drawer uses overlay behavior (mobile-style) - used in layout mode on all screen sizes */
+    get useOverlayMode(): boolean {
+        return this.isMobile || this.viewMode === 'layout' || this.viewMode === 'expanded';
+    }
 
     private _unsubscribeAll: Subject<any> = new Subject<any>();
 
@@ -118,6 +148,24 @@ export class MyKeybindingsComponent implements OnInit {
         // Check if device is mobile
         this.checkMobile();
         window.addEventListener('resize', () => this.checkMobile());
+
+        // Initial view mode from URL
+        const view = this.route.snapshot.queryParams['view'];
+        if (view === 'action_bars') {
+            this.viewMode = 'layout';
+            this.drawerOpen = false;
+            this.opened = false;
+        } else if (view === 'expanded') {
+            this.viewMode = 'expanded';
+            this.drawerOpen = false;
+            this.opened = false;
+        } else if (view === 'keyboard') {
+            this.viewMode = 'keyboard';
+            if (!this.isMobile) {
+                this.drawerOpen = true;
+                this.opened = true;
+            }
+        }
 
         this._authService.check()
             .pipe(takeUntil(this._unsubscribeAll))
@@ -187,6 +235,23 @@ export class MyKeybindingsComponent implements OnInit {
         this.route.queryParams
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe(params => {
+                // Sync view mode with URL
+                if (params['view'] === 'action_bars') {
+                    this.viewMode = 'layout';
+                    this.drawerOpen = false;
+                    this.opened = false;
+                } else if (params['view'] === 'expanded') {
+                    this.viewMode = 'expanded';
+                    this.drawerOpen = false;
+                    this.opened = false;
+                } else if (params['view'] === 'keyboard') {
+                    this.viewMode = 'keyboard';
+                    if (!this.isMobile) {
+                        this.drawerOpen = true;
+                        this.opened = true;
+                    }
+                }
+
                 if (params['keybindingId']) {
                     const keybindingId = params['keybindingId'];
                     const shouldDuplicate = params['duplicate'] === 'true';
@@ -303,8 +368,9 @@ export class MyKeybindingsComponent implements OnInit {
                 this.cdr.detectChanges();
             }, 0);
 
-            // Close drawer on mobile after selecting a keybinding
-            if (this.isMobile) {
+            // Close drawer after selecting when in overlay-style views:
+            // mobile, action bars layout, or expanded keyboard.
+            if (this.useOverlayMode) {
                 this.opened = false;
                 this.drawerOpen = false;
             }
@@ -536,6 +602,244 @@ export class MyKeybindingsComponent implements OnInit {
             });
     }
 
+    exportForAddon(): void {
+        if (!this.selectedKeybinding?.keybinds?.length) {
+            this.snackBar.open('No keybinds to export', 'Close', { duration: 3000 });
+            return;
+        }
+
+        const profile: Record<string, unknown> = {
+            name: this.selectedKeybinding.name,
+            class: this.selectedKeybinding.class,
+            spec: this.selectedKeybinding.spec,
+            heroTalent: this.selectedKeybinding.heroTalent,
+            keybinds: this.selectedKeybinding.keybinds.map((kb) => ({
+                key: kb.key,
+                spell: {
+                    spellId: kb.spell?.spellId?.toString() ?? '',
+                    name: kb.spell?.name ?? '',
+                    icon: kb.spell?.icon ?? '',
+                    description: kb.spell?.description ?? '',
+                },
+                barId: kb.barId ?? undefined,
+                slotIndex: kb.slotIndex ?? undefined,
+            })),
+        };
+
+        if (this.selectedKeybinding.layout?.bars?.length) {
+            profile.layout = {
+                bars: this.selectedKeybinding.layout.bars,
+                screenWidth: this.selectedKeybinding.layout.screenWidth ?? 2560,
+                screenHeight: this.selectedKeybinding.layout.screenHeight ?? 1440,
+                barGap: this.selectedKeybinding.layout.barGap ?? 16,
+            };
+        }
+
+        const json = JSON.stringify(profile);
+        const shareCode = this.encodeAddonShareCode(json);
+        navigator.clipboard.writeText(shareCode).then(() => {
+            const importName = (this.selectedKeybinding.name || 'Profile').replace(/[^a-zA-Z0-9]/g, '');
+            this.snackBar.open(
+                `Copied share code! In WoW: /wowkeyb import ${importName} then paste`,
+                'Close',
+                { duration: 5000 }
+            );
+        }).catch(() => {
+            this.snackBar.open('Failed to copy to clipboard', 'Close', { duration: 3000 });
+        });
+    }
+
+    importFromAddon(): void {
+        if (!this.isAuthenticated) {
+            this.snackBar.open('Sign in to import keybindings', 'Close', { duration: 3000 });
+            return;
+        }
+
+        const dialogRef = this.dialog.open(ImportAddonProfileDialogComponent, {
+            width: 'min(90vw, 720px)',
+            maxWidth: '90vw',
+            maxHeight: '85vh',
+        });
+
+        dialogRef.afterClosed().subscribe((result: ImportAddonProfileDialogResult | undefined) => {
+            if (!result?.json) return;
+            this.handleAddonImport(result.json);
+        });
+    }
+
+    private handleAddonImport(jsonText: string): void {
+        let parsed: unknown;
+        try {
+            const normalized = jsonText.trim();
+            const decodedShareCode = this.decodeAddonShareCode(normalized);
+            parsed = JSON.parse(decodedShareCode ?? normalized);
+        } catch {
+            this.snackBar.open('Invalid profile code. Please paste a WoWKeyb addon export code.', 'Close', { duration: 4000 });
+            return;
+        }
+
+        const payload = this.toImportPayload(parsed);
+        if (!payload || !payload.name || !payload.class || !payload.keybinds?.length) {
+            this.snackBar.open('Invalid profile format. Required: name, class, keybinds.', 'Close', { duration: 4000 });
+            return;
+        }
+
+        const existing = this.keybindings.find(
+            (kb) => kb.name?.trim().toLowerCase() === payload.name!.trim().toLowerCase()
+        );
+
+        if (!existing) {
+            this.createImportedKeybinding(payload);
+            return;
+        }
+
+        const conflictRef = this.dialog.open(ImportConflictDialogComponent, {
+            width: 'min(90vw, 520px)',
+            data: {
+                incomingName: payload.name,
+                existingName: existing.name,
+            },
+        });
+
+        conflictRef.afterClosed().subscribe((action: ImportConflictAction | undefined) => {
+            if (!action || action === 'cancel') {
+                this.snackBar.open('Import cancelled', 'Close', { duration: 2500 });
+                return;
+            }
+            if (action === 'update') {
+                this.updateImportedKeybinding(existing, payload);
+                return;
+            }
+            const uniqueName = this.getUniqueImportedName(payload.name!);
+            this.createImportedKeybinding({ ...payload, name: uniqueName });
+        });
+    }
+
+    private encodeAddonShareCode(payload: string): string {
+        const bytes = new TextEncoder().encode(payload);
+        let binary = '';
+        bytes.forEach((b) => {
+            binary += String.fromCharCode(b);
+        });
+        return `${MyKeybindingsComponent.ADDON_SHARE_CODE_PREFIX}${btoa(binary)}`;
+    }
+
+    private decodeAddonShareCode(value: string): string | null {
+        if (!value?.toUpperCase().startsWith(MyKeybindingsComponent.ADDON_SHARE_CODE_PREFIX)) {
+            return null;
+        }
+        const encoded = value.slice(MyKeybindingsComponent.ADDON_SHARE_CODE_PREFIX.length).trim();
+        if (!encoded) return null;
+        try {
+            const binary = atob(encoded);
+            const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+            return new TextDecoder().decode(bytes);
+        } catch {
+            return null;
+        }
+    }
+
+    private toImportPayload(data: unknown): AddonImportPayload | null {
+        if (!data || typeof data !== 'object') return null;
+        const obj = data as Record<string, unknown>;
+        if (!Array.isArray(obj.keybinds)) return null;
+
+        const keybinds = obj.keybinds
+            .map((raw): Keybind | null => {
+                if (!raw || typeof raw !== 'object') return null;
+                const r = raw as Record<string, unknown>;
+                const key = typeof r.key === 'string' ? r.key : '';
+                const spellRaw = (r.spell || {}) as Record<string, unknown>;
+                const spellIdRaw = spellRaw.spellId ?? spellRaw.spell_id;
+                const spellId = spellIdRaw !== undefined && spellIdRaw !== null ? String(spellIdRaw) : '';
+
+                if (!key) return null;
+                return {
+                    key,
+                    spell: {
+                        spellId,
+                        name: typeof spellRaw.name === 'string' ? spellRaw.name : '',
+                        icon: typeof spellRaw.icon === 'string' ? spellRaw.icon : '',
+                        description: typeof spellRaw.description === 'string' ? spellRaw.description : '',
+                    },
+                    barId: typeof r.barId === 'string' ? r.barId : (typeof r.bar_id === 'string' ? r.bar_id : undefined),
+                    slotIndex: typeof r.slotIndex === 'number'
+                        ? r.slotIndex
+                        : (typeof r.slot_index === 'number' ? r.slot_index : undefined),
+                } as Keybind;
+            })
+            .filter((kb): kb is Keybind => !!kb);
+
+        return {
+            name: typeof obj.name === 'string' ? obj.name.trim() : '',
+            class: typeof obj.class === 'string' ? formatClassNameForFrontend(obj.class.trim()) : '',
+            spec: typeof obj.spec === 'string' ? formatSpecNameForFrontend(obj.spec) : undefined,
+            heroTalent: typeof obj.heroTalent === 'string' ? formatHeroTalentNameForFrontend(obj.heroTalent) : undefined,
+            keybinds,
+            layout: (obj.layout && typeof obj.layout === 'object') ? (obj.layout as Keybinding['layout']) : undefined,
+        };
+    }
+
+    private updateImportedKeybinding(existing: Keybinding, payload: AddonImportPayload): void {
+        this.keybindingService.updateKeybinding(existing.keybindingId, {
+            name: payload.name,
+            class: payload.class,
+            spec: payload.spec,
+            heroTalent: payload.heroTalent,
+            keybinds: payload.keybinds,
+            layout: payload.layout,
+        }).subscribe({
+            next: (updated) => {
+                this.onKeybindingSelected(updated);
+                this.snackBar.open(`Updated "${updated.name}" from import`, 'Close', { duration: 3500 });
+                this.refreshChildKeybindings();
+            },
+            error: (error) => {
+                console.error('Error updating imported keybinding:', error);
+                this.snackBar.open('Failed to update existing keybinding', 'Close', { duration: 3500 });
+            },
+        });
+    }
+
+    private createImportedKeybinding(payload: AddonImportPayload): void {
+        const keybindingToCreate: Partial<Keybinding> = {
+            name: payload.name,
+            class: payload.class,
+            spec: payload.spec,
+            heroTalent: payload.heroTalent,
+            keybinds: payload.keybinds || [],
+            layout: payload.layout,
+            isPublic: false,
+            userId: this.currentUserId || undefined,
+        };
+
+        this.keybindingService.createKeybinding(keybindingToCreate as Keybinding).subscribe({
+            next: (created) => {
+                this.onKeybindingSelected(created);
+                this.snackBar.open(`Imported "${created.name}"`, 'Close', { duration: 3500 });
+                this.refreshChildKeybindings();
+            },
+            error: (error) => {
+                console.error('Error creating imported keybinding:', error);
+                this.snackBar.open('Failed to import keybinding', 'Close', { duration: 3500 });
+            },
+        });
+    }
+
+    private getUniqueImportedName(baseName: string): string {
+        const trimmed = (baseName || 'Imported Profile').trim() || 'Imported Profile';
+        const existingNames = new Set(this.keybindings.map((kb) => kb.name?.toLowerCase()));
+        if (!existingNames.has(trimmed.toLowerCase())) return trimmed;
+
+        let idx = 1;
+        let candidate = `${trimmed} (Imported ${idx})`;
+        while (existingNames.has(candidate.toLowerCase())) {
+            idx += 1;
+            candidate = `${trimmed} (Imported ${idx})`;
+        }
+        return candidate;
+    }
+
     shareKeybinding() {
         if (!this.selectedKeybinding) {
             return;
@@ -718,6 +1022,29 @@ export class MyKeybindingsComponent implements OnInit {
     toggleDrawer(): void {
         this.drawerOpen = !this.drawerOpen;
         this.opened = this.drawerOpen; // Keep opened in sync for backward compatibility
+    }
+
+    openDrawerForSelection(): void {
+        if (this.drawerDisabled) return;
+        this.drawerOpen = true;
+        this.opened = true;
+    }
+
+    setViewMode(mode: 'keyboard' | 'layout' | 'expanded'): void {
+        this.viewMode = mode;
+        if (mode === 'layout' || mode === 'expanded') {
+            this.drawerOpen = false;
+            this.opened = false;
+        } else if (!this.isMobile) {
+            this.drawerOpen = true;
+            this.opened = true;
+        }
+        this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { view: mode === 'layout' ? 'action_bars' : mode },
+            queryParamsHandling: 'merge',
+            replaceUrl: true,
+        });
     }
 
     private checkMobile(): void {

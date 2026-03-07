@@ -18,6 +18,12 @@
             }
         </div>
         <div class="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 w-auto">
+            <button mat-stroked-button (click)="exportForAddon()" *ngIf="keybinding?.keybinds?.length"
+                class="w-auto min-w-fit px-3 py-1" matTooltip="Copy share code string for WoWKeyb addon"
+                [matTooltipShowDelay]="500">
+                <mat-icon class="!text-lg">download</mat-icon>
+                <span class="ml-2 text-sm sm:text-base">Export for Addon</span>
+            </button>
             <button mat-stroked-button (click)="onExpand()" *ngIf="!isExpanded" class="w-auto min-w-fit px-3 py-1"
                 [matTooltip]="'Expand View'" [matTooltipShowDelay]="500">
                 <mat-icon class="!text-lg">expand</mat-icon>

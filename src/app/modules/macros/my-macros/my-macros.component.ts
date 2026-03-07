@@ -38,6 +38,7 @@ import { classes, fullClasses, classNames } from 'app/core/data/classes';
 import { AbilitiesService } from 'app/core/services/abilities.service';
 import { VersionCompareService } from 'app/core/services/version-compare.service';
 import { Ability } from 'app/core/types/ability';
+import { FRONTEND_CLASS_OPTIONS, formatClassNameForFrontend } from 'app/core/utils/class-name-utils';
 
 // Extended Macro interface to support expandable list functionality
 interface ExpandableMacro extends Macro {
@@ -232,21 +233,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     ];
 
     // Classes for macro builder
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
+    classes = FRONTEND_CLASS_OPTIONS;
 
     // Edit macro form properties
     editSelectedAbility: AbilitySelection | null = null;
@@ -1046,23 +1033,8 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     }
 
     getClassDisplayName(className: string): string {
-        const classNames: { [key: string]: string } = {
-            'deathknight': 'Death Knight',
-            'demonhunter': 'Demon Hunter',
-            'druid': 'Druid',
-            'evoker': 'Evoker',
-            'hunter': 'Hunter',
-            'mage': 'Mage',
-            'monk': 'Monk',
-            'paladin': 'Paladin',
-            'priest': 'Priest',
-            'rogue': 'Rogue',
-            'shaman': 'Shaman',
-            'warlock': 'Warlock',
-            'warrior': 'Warrior',
-            'miscellaneous': 'Miscellaneous'
-        };
-        return classNames[className] || className;
+        if (className === 'miscellaneous') return 'Miscellaneous';
+        return formatClassNameForFrontend(className);
     }
 
     formatMacroText(text: string): string {

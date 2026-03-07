@@ -18,6 +18,7 @@ import { AdminService, AdminAbility } from 'app/core/services/admin.service';
 import { AdminEditAbilityDialogComponent } from './edit-ability-dialog/edit-ability-dialog.component';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { fullClasses } from 'app/core/data/classes';
+import { FRONTEND_CLASS_OPTIONS, formatClassNameForFrontend } from 'app/core/utils/class-name-utils';
 
 @Component({
     selector: 'admin-abilities',
@@ -66,21 +67,7 @@ export class AdminAbilitiesComponent implements OnInit {
     sortDirection: 'asc' | 'desc' = 'asc';
 
     // Filter options
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
+    classes = FRONTEND_CLASS_OPTIONS;
 
     specs: string[] = [];
     heroTalents: string[] = [];
@@ -258,9 +245,7 @@ export class AdminAbilitiesComponent implements OnInit {
 
     formatClassName(className: string): string {
         if (!className) return '-';
-        if (className === 'deathknight') return 'Death Knight';
-        if (className === 'demonhunter') return 'Demon Hunter';
-        return className.charAt(0).toUpperCase() + className.slice(1);
+        return formatClassNameForFrontend(className);
     }
 
     formatAbilityType(type: string): string {

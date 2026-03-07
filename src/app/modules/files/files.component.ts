@@ -25,6 +25,7 @@ import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.compo
 import { FileDetailsDialogComponent } from './components/file-details-dialog/file-details-dialog.component';
 import { FileViewerDialogComponent } from './components/file-viewer-dialog/file-viewer-dialog.component';
 import { UserService } from 'app/core/user/user.service';
+import { FRONTEND_CLASS_OPTIONS } from 'app/core/utils/class-name-utils';
 
 @Component({
     selector: 'files',
@@ -86,21 +87,7 @@ export class FilesComponent implements OnInit, OnDestroy {
 
     private destroy$ = new Subject<void>();
 
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
+    classes = FRONTEND_CLASS_OPTIONS;
 
     constructor(
         private macroFileService: MacroFileService,

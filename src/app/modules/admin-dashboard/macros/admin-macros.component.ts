@@ -19,6 +19,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 
 import { AdminService, AdminMacro } from 'app/core/services/admin.service';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { formatClassNameForFrontend } from 'app/core/utils/class-name-utils';
 
 @Component({
     selector: 'admin-macros',
@@ -167,9 +168,7 @@ export class AdminMacrosComponent implements OnInit {
 
     formatClassName(className: string | null): string {
         if (!className) return 'General';
-        if (className === 'deathknight') return 'Death Knight';
-        if (className === 'demonhunter') return 'Demon Hunter';
-        return className.charAt(0).toUpperCase() + className.slice(1);
+        return formatClassNameForFrontend(className);
     }
 
     formatDate(dateString: string): string {

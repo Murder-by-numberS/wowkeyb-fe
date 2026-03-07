@@ -13,6 +13,7 @@ import { AbilitiesService } from 'app/core/services/abilities.service';
 import { VersionCompareService } from 'app/core/services/version-compare.service';
 import { Ability } from 'app/core/types/ability';
 import { formatString } from 'app/core/util/util';
+import { FRONTEND_CLASS_OPTIONS } from 'app/core/utils/class-name-utils';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -65,21 +66,7 @@ export class AbilityPickerComponent implements OnInit {
     private searchSubject = new Subject<string>();
 
     // Dropdown options
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
+    classes = FRONTEND_CLASS_OPTIONS;
 
     specs: string[] = [];
     heroTalents: string[] = [];

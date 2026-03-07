@@ -1,4 +1,5 @@
 import { Keybind } from "./keybind";
+import { ActionBarLayout } from "./action-bar-layout";
 
 export interface Keybinding {
     keybindingId: string;
@@ -11,6 +12,8 @@ export interface Keybinding {
     isPublic: boolean;
     createdAt: string;
     keybinds: Keybind[];
+    /** Optional action bar layout for Edit Mode */
+    layout?: ActionBarLayout;
     views?: number;
     deleted_at?: string; // For soft-deleted keybindings
     version?: {

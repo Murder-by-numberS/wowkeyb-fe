@@ -13,6 +13,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { MacroFileService, MacroDownload } from '../../services/macro-file.service';
 import { ConfirmDialogComponent } from 'app/core/components/confirm-dialog.component';
+import { FRONTEND_CLASS_OPTIONS, formatClassNameForFrontend } from 'app/core/utils/class-name-utils';
 
 @Component({
     selector: 'download-history-dialog',
@@ -205,21 +206,7 @@ export class DownloadHistoryDialogComponent implements OnInit {
     filterFileType: 'account' | 'character' | null = null;
     filterClass: string | null = null;
 
-    classes = [
-        { value: 'deathknight', label: 'Death Knight' },
-        { value: 'demonhunter', label: 'Demon Hunter' },
-        { value: 'druid', label: 'Druid' },
-        { value: 'evoker', label: 'Evoker' },
-        { value: 'hunter', label: 'Hunter' },
-        { value: 'mage', label: 'Mage' },
-        { value: 'monk', label: 'Monk' },
-        { value: 'paladin', label: 'Paladin' },
-        { value: 'priest', label: 'Priest' },
-        { value: 'rogue', label: 'Rogue' },
-        { value: 'shaman', label: 'Shaman' },
-        { value: 'warlock', label: 'Warlock' },
-        { value: 'warrior', label: 'Warrior' }
-    ];
+    classes = FRONTEND_CLASS_OPTIONS;
 
     constructor(
         private dialogRef: MatDialogRef<DownloadHistoryDialogComponent>,
@@ -313,8 +300,7 @@ export class DownloadHistoryDialogComponent implements OnInit {
     }
 
     getClassName(classValue: string): string {
-        const cls = this.classes.find(c => c.value === classValue);
-        return cls ? cls.label : classValue;
+        return formatClassNameForFrontend(classValue);
     }
 
     formatDate(dateString: string): string {
