@@ -248,7 +248,8 @@ export class ActionBarLayoutComponent implements OnChanges {
     private openSlotAssignDialog(bar: DisplayBar, slot: ActionBarSlot): void {
         const dialogRef = this.dialog.open(SlotAssignDialogComponent, {
             data: { slotKey: slot.keyLabel, keybinding: this.selectedKeybinding },
-            width: 'min(90vw, 500px)',
+            width: 'min(95vw, 980px)',
+            maxWidth: '95vw',
             maxHeight: '90vh',
         });
 
@@ -275,7 +276,7 @@ export class ActionBarLayoutComponent implements OnChanges {
         });
 
         dialogRef.afterClosed().subscribe((newKey: string | undefined) => {
-            if (!newKey || newKey === slot.keyLabel) return;
+            if (newKey === undefined || newKey === slot.keyLabel) return;
             this.updateSlotKey(bar, slot, newKey);
         });
     }
@@ -300,7 +301,7 @@ export class ActionBarLayoutComponent implements OnChanges {
                 used.add(s.keyLabel.toLowerCase());
             }
         }
-        if (used.has(newKey.toLowerCase())) return;
+        if (newKey && used.has(newKey.toLowerCase())) return;
 
         slotKeys[slot.slotIndex] = newKey;
         targetBar.slotKeys = slotKeys;

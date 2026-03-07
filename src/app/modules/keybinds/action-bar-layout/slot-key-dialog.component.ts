@@ -33,18 +33,19 @@ export interface SlotKeyDialogData {
                     (keydown)="onKeyDown($event)"
                     (ngModelChange)="onInputChange($event)"
                     (keyup.enter)="save()"
-                    placeholder="Press a key combo (e.g. Shift+1)" />
+                    placeholder="Press a key combo (e.g. Ctrl+Shift+5)" />
             </mat-form-field>
             <p class="text-xs text-gray-500 dark:text-gray-400">
-                Press your key combo directly. Format is Modifier+Key.
+                Press your key combo directly. Format is Modifier(s)+Key.
             </p>
             @if (selectedKeyInput && !isValidSelection) {
             <p class="mt-2 text-xs text-red-500">
-                Invalid keybind. Use formats like 1, Shift+1, Ctrl+1, or Alt+1.
+                Invalid keybind. Use formats like 1, Shift+1, Ctrl+1, Alt+1, or Ctrl+Shift+5.
             </p>
             }
         </mat-dialog-content>
         <mat-dialog-actions align="end">
+            <button mat-stroked-button color="warn" (click)="unbind()">Unbind</button>
             <button mat-button (click)="dialogRef.close()">Cancel</button>
             <button
                 mat-flat-button
@@ -98,10 +99,6 @@ export class SlotKeyDialogComponent {
         if (event.ctrlKey) modifiers.push('Ctrl');
         if (event.shiftKey) modifiers.push('Shift');
         if (event.altKey) modifiers.push('Alt');
-        if (modifiers.length > 1) {
-            this.isValidSelection = false;
-            return;
-        }
 
         const keyToken = this.parseKeyTokenFromEventCode(event.code);
         if (!keyToken) {
@@ -109,7 +106,7 @@ export class SlotKeyDialogComponent {
             return;
         }
 
-        const canonical = modifiers.length ? `${modifiers[0]}+${keyToken}` : `${keyToken}`;
+        const canonical = modifiers.length ? `${modifiers.join('+')}+${keyToken}` : `${keyToken}`;
         this.selectedKeyInput = canonical;
         this.isValidSelection = true;
     }
@@ -118,6 +115,10 @@ export class SlotKeyDialogComponent {
         const canonical = this.toCanonical(this.selectedKeyInput);
         if (!canonical) return;
         this.dialogRef.close(canonical);
+    }
+
+    unbind(): void {
+        this.dialogRef.close('');
     }
 
     private toCanonical(value: string): string | null {
@@ -177,13 +178,14 @@ export class SlotKeyDialogComponent {
             return null;
         };
 
-        let modifier: 'Shift' | 'Ctrl' | 'Alt' | null = null;
+        const modifiers: Array<'Shift' | 'Ctrl' | 'Alt'> = [];
         let keyToken: string | null = null;
         for (const token of tokens) {
             const maybeMod = normalizeModifier(token);
             if (maybeMod) {
-                if (modifier && modifier !== maybeMod) return null;
-                modifier = maybeMod;
+                if (!modifiers.includes(maybeMod)) {
+                    modifiers.push(maybeMod);
+                }
                 continue;
             }
 
@@ -200,9 +202,10 @@ export class SlotKeyDialogComponent {
                 const compactMod = normalizeModifier(compact[1]);
                 const compactKey = parseKeyToken(compact[2]);
                 if (!compactMod || compactKey === null) return null;
-                if (modifier && modifier !== compactMod) return null;
+                if (!modifiers.includes(compactMod)) {
+                    modifiers.push(compactMod);
+                }
                 if (keyToken !== null) return null;
-                modifier = compactMod;
                 keyToken = compactKey;
                 continue;
             }
@@ -211,7 +214,11 @@ export class SlotKeyDialogComponent {
         }
 
         if (keyToken === null) return null;
-        return modifier ? `${modifier}+${keyToken}` : `${keyToken}`;
+        const orderedModifiers: Array<'Ctrl' | 'Shift' | 'Alt'> = [];
+        if (modifiers.includes('Ctrl')) orderedModifiers.push('Ctrl');
+        if (modifiers.includes('Shift')) orderedModifiers.push('Shift');
+        if (modifiers.includes('Alt')) orderedModifiers.push('Alt');
+        return orderedModifiers.length ? `${orderedModifiers.join('+')}+${keyToken}` : `${keyToken}`;
     }
 
     private parseKeyTokenFromEventCode(code: string): string | null {

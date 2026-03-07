@@ -37,28 +37,30 @@ export interface SlotAssignDialogResult {
         MatProgressSpinnerModule,
     ],
     template: `
-        <h2 mat-dialog-title>Add ability to slot</h2>
-        <mat-dialog-content class="min-h-[200px]">
+        <h2 mat-dialog-title class="text-2xl">Add ability to slot</h2>
+        <mat-dialog-content class="h-[68vh] max-h-[70vh] min-h-[360px] overflow-hidden flex flex-col">
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
                 Keybind: <span class="font-mono font-medium text-gray-700 dark:text-gray-300">{{ data.slotKey }}</span>
             </p>
             @if (isLoading) {
-            <div class="flex justify-center py-12">
+            <div class="flex justify-center items-center grow py-12">
                 <mat-spinner diameter="40"></mat-spinner>
             </div>
             } @else if (abilities.length === 0) {
             <p class="text-gray-500 dark:text-gray-400 py-4">No abilities available. Select a keybinding with class and spec in Keyboard view first.</p>
             } @else {
-            <div class="grid grid-cols-6 sm:grid-cols-8 gap-2 py-2 max-h-[300px] overflow-y-auto">
+            <div class="grow overflow-y-auto pr-1">
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 py-2">
                 @for (ability of abilities; track ability.id) {
                 <button
                     type="button"
                     (click)="selectAbility(ability)"
-                    class="flex flex-col items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    <img [src]="ability.icon" [alt]="ability.name" class="w-10 h-10 object-contain" />
-                    <span class="text-xs truncate w-full text-center mt-1">{{ ability.name }}</span>
+                    class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors h-full">
+                    <img [src]="ability.icon" [alt]="ability.name" class="w-14 h-14 object-contain" />
+                    <span class="text-sm w-full text-center mt-2 leading-snug break-words whitespace-normal">{{ ability.name }}</span>
                 </button>
                 }
+            </div>
             </div>
             }
         </mat-dialog-content>
