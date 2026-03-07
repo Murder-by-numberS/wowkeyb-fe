@@ -15,17 +15,17 @@ export interface ImportAddonProfileDialogResult {
     standalone: true,
     imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule],
     template: `
-        <h2 mat-dialog-title>Import WoWKeyb Addon JSON</h2>
+        <h2 mat-dialog-title>Import WoWKeyb Addon Share Code</h2>
         <mat-dialog-content>
             <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                Paste exported addon profile JSON.
+                Paste exported addon share code string (WK1:...) or legacy JSON.
             </p>
             <mat-form-field appearance="outline" class="w-full">
                 <textarea
                     matInput
                     rows="12"
                     [(ngModel)]="jsonText"
-                    placeholder='{"name":"My Profile","keybinds":[...]}'
+                    placeholder='WK1:eyJuYW1lIjoiTXkgUHJvZmlsZSIsImtleWJpbmRzIjpbLi4uXX0='
                 ></textarea>
             </mat-form-field>
         </mat-dialog-content>

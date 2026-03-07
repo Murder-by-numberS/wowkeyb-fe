@@ -6,9 +6,6 @@ import {
     ViewEncapsulation,
     ChangeDetectorRef,
     OnChanges,
-    ElementRef,
-    ViewChild,
-    AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,7 +15,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
-import { DragDropModule, CdkDragEnd, CdkDragMove } from '@angular/cdk/drag-drop';
 
 import { Keybinding } from 'app/core/types/keybinding';
 import { Keybind } from 'app/core/types/keybind';
@@ -44,10 +40,9 @@ interface DisplayBar extends ActionBar {
     displaySlots: ActionBarSlot[];
 }
 
-/** Grid size in design pixels for snapping */
-const GRID_SIZE = 32;
-const BAR_ALIGN_SNAP_THRESHOLD = 28;
 const DEFAULT_BAR_GAP = 16;
+const MAX_BLIZZARD_BARS = 5;
+const BLIZZARD_BAR_SLOTS = 12;
 
 const DEFAULT_KEYS_BY_BAR_INDEX: string[][] = [
     ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
@@ -70,26 +65,17 @@ const ASSIGNABLE_KEYS = DEFAULT_KEYS_BY_BAR_INDEX.flat();
         MatTooltipModule,
         MatFormFieldModule,
         MatSelectModule,
-        DragDropModule,
     ],
 })
-export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
+export class ActionBarLayoutComponent implements OnChanges {
     @Input() selectedKeybinding: Keybinding | null = null;
     @Input() keybindingSelected = false;
     @Output() refreshKeybindings = new EventEmitter<void>();
 
-    @ViewChild('screenCanvas') screenCanvasRef!: ElementRef<HTMLDivElement>;
-
     /** Display bars (from layout or default) */
     displayBars: DisplayBar[] = [];
 
-    /** Currently selected bar (for delete, etc.) */
-    selectedBarId: string | null = null;
-    guideLineX: number | null = null;
-    guideLineY: number | null = null;
     keybindMode = false;
-    positionInputX: number | null = null;
-    positionInputY: number | null = null;
     layoutDirty = false;
     private layoutTouchesKeybinds = false;
     private cleanLayoutSnapshot: ActionBarLayout | null = null;
@@ -101,11 +87,11 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
     screenWidth = 2560;
     screenHeight = 1440;
     barGap = DEFAULT_BAR_GAP;
-    barMode: 'blizzard' | 'custom' = 'custom';
+    barMode: 'blizzard' | 'custom' = 'blizzard';
 
     readonly resolutions = RESOLUTIONS;
     readonly slotOptions = Array.from({ length: 12 }, (_, i) => i + 1);
-    readonly axisPercents = [0, 25, 50, 75, 100];
+    readonly maxBlizzardBars = MAX_BLIZZARD_BARS;
 
     constructor(
         private dialog: MatDialog,
@@ -131,10 +117,6 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         this.buildDisplayBars();
     }
 
-    ngAfterViewInit(): void {
-        this.cdr.detectChanges();
-    }
-
     private loadResolution(): void {
         const layout = this.selectedKeybinding?.layout;
         if (layout?.screenWidth && layout?.screenHeight) {
@@ -142,7 +124,7 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
             this.screenHeight = layout.screenHeight;
         }
         this.barGap = layout?.barGap ?? DEFAULT_BAR_GAP;
-        this.barMode = layout?.barMode ?? 'custom';
+        this.barMode = 'blizzard';
     }
 
     get useCustomBarsMode(): boolean {
@@ -154,7 +136,7 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         const hasLayout = layout?.bars?.length;
 
         if (hasLayout) {
-            this.displayBars = layout.bars.map((bar, idx) =>
+            this.displayBars = layout.bars.slice(0, MAX_BLIZZARD_BARS).map((bar, idx) =>
                 this.toDisplayBar(bar, idx)
             );
         } else {
@@ -162,8 +144,8 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
                 this.toDisplayBar(
                     {
                         id: 'main',
-                        slots: 12,
-                        slotKeys: Array.from({ length: 12 }, () => ''),
+                        slots: BLIZZARD_BAR_SLOTS,
+                        slotKeys: Array.from({ length: BLIZZARD_BAR_SLOTS }, () => ''),
                         position: {
                             anchor: 'bottom',
                             x: this.screenWidth / 2,
@@ -176,14 +158,14 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
                 ),
             ];
         }
-        this.syncPositionInputsFromSelectedBar();
         this.lastRenderSignature = this.computeRenderSignature(this.selectedKeybinding);
         this.cdr.markForCheck();
     }
 
     private toDisplayBar(bar: ActionBar, barIndex: number): DisplayBar {
+        const normalizedSlots = BLIZZARD_BAR_SLOTS;
         const configuredKeys = Array.isArray(bar.slotKeys) ? [...bar.slotKeys] : [];
-        const keys = Array.from({ length: bar.slots }, (_, i) => {
+        const keys = Array.from({ length: normalizedSlots }, (_, i) => {
             return configuredKeys[i] !== undefined
                 ? configuredKeys[i]
                 : '';
@@ -216,399 +198,7 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
             });
         }
 
-        return { ...bar, displaySlots };
-    }
-
-    /** Grid overlay style for the canvas */
-    get gridBackgroundStyle(): { [key: string]: string } {
-        const cols = Math.floor(this.screenWidth / GRID_SIZE);
-        const rows = Math.floor(this.screenHeight / GRID_SIZE);
-        const cellW = (100 / cols).toFixed(2);
-        const cellH = (100 / rows).toFixed(2);
-        return {
-            backgroundImage:
-                'linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)',
-            backgroundSize: `${cellW}% ${cellH}%`,
-        };
-    }
-
-    /** Get bar position as CSS left/top percentage (center of bar) */
-    getBarStyle(bar: DisplayBar): { left: string; top: string } {
-        const { x, y } = this.getNormalizedBarPosition(bar);
-        return {
-            left: `${(x / this.screenWidth) * 100}%`,
-            top: `${(y / this.screenHeight) * 100}%`,
-        };
-    }
-
-    private getNormalizedBarPosition(bar: DisplayBar): { x: number; y: number } {
-        let x = bar.position?.x ?? this.screenWidth / 2;
-        let y = bar.position?.y ?? this.screenHeight - 50;
-        // Migrate old format: anchor bottom + (0,0) -> center bottom
-        if (bar.position?.anchor === 'bottom' && x === 0 && y === 0) {
-            x = this.screenWidth / 2;
-            y = this.screenHeight - 50;
-        }
-        return { x, y };
-    }
-
-    getAxisXValue(percent: number): number {
-        return Math.round((this.screenWidth * percent) / 100);
-    }
-
-    getAxisYValue(percent: number): number {
-        return Math.round((this.screenHeight * percent) / 100);
-    }
-
-    get selectedBar(): DisplayBar | null {
-        if (!this.selectedBarId) return null;
-        return this.displayBars.find((b) => b.id === this.selectedBarId) || null;
-    }
-
-    get selectedBarCoordinates(): { x: number; y: number } | null {
-        if (!this.selectedBar) return null;
-        const { x, y } = this.getNormalizedBarPosition(this.selectedBar);
-        return { x: Math.round(x), y: Math.round(y) };
-    }
-
-    private syncPositionInputsFromSelectedBar(): void {
-        const bar = this.selectedBar;
-        if (!bar) {
-            this.positionInputX = null;
-            this.positionInputY = null;
-            return;
-        }
-        const { x, y } = this.getNormalizedBarPosition(bar);
-        this.positionInputX = Math.round(x);
-        this.positionInputY = Math.round(y);
-    }
-
-    onResolutionSelect(value: string): void {
-        const [w, h] = value.split('x').map(Number);
-        this.screenWidth = w;
-        this.screenHeight = h;
-        this.onResolutionChange();
-    }
-
-    onResolutionChange(): void {
-        if (!this.selectedKeybinding) return;
-        const layout = this.getLayoutToSave();
-        layout.screenWidth = this.screenWidth;
-        layout.screenHeight = this.screenHeight;
-        this.markLayoutDirty();
-        this.setDraftLayout(layout);
-        this.buildDisplayBars();
-    }
-
-    onBarModeChange(mode: 'blizzard' | 'custom'): void {
-        if (!this.selectedKeybinding) return;
-        if (mode !== 'blizzard' && mode !== 'custom') return;
-        if (mode === this.barMode) return;
-        this.barMode = mode;
-        const layout = this.getLayoutToSave();
-        layout.barMode = mode;
-        this.markLayoutDirty();
-        this.setDraftLayout(layout);
-        this.buildDisplayBars();
-    }
-
-    onBarGapChange(value: number): void {
-        if (!this.selectedKeybinding) return;
-        const parsed = Number(value);
-        if (!Number.isFinite(parsed)) return;
-        const nextGap = Math.max(0, Math.min(80, Math.round(parsed)));
-        if (nextGap === this.barGap) return;
-        this.barGap = nextGap;
-        const layout = this.getLayoutToSave();
-        layout.barGap = nextGap;
-        this.markLayoutDirty();
-        this.setDraftLayout(layout);
-        this.buildDisplayBars();
-    }
-
-    onBarDragEnded(bar: DisplayBar, event: CdkDragEnd): void {
-        if (!this.selectedKeybinding || !this.screenCanvasRef) return;
-
-        const canvas = this.screenCanvasRef.nativeElement;
-        const canvasRect = canvas.getBoundingClientRect();
-        const scaleX = this.screenWidth / canvasRect.width;
-        const scaleY = this.screenHeight / canvasRect.height;
-        const delta = event.source.getFreeDragPosition();
-        const current = this.getNormalizedBarPosition(bar);
-        const barRect = event.source.element.nativeElement.getBoundingClientRect();
-        const dragHalfW = (barRect.width * scaleX) / 2;
-        const dragHalfH = (barRect.height * scaleY) / 2;
-        const snapped = this.getSnappedPosition(
-            current.x + delta.x * scaleX,
-            current.y + delta.y * scaleY,
-            bar.id,
-            dragHalfW,
-            dragHalfH,
-            canvasRect,
-            scaleX,
-            scaleY
-        );
-        let designX = snapped.x;
-        let designY = snapped.y;
-
-        // Keep coordinates within the design canvas, but avoid aggressive
-        // clamping that makes bars appear to "drift" after drop.
-        designX = Math.max(0, Math.min(this.screenWidth, designX));
-        designY = Math.max(0, Math.min(this.screenHeight, designY));
-
-        const layout = this.getLayoutToSave();
-        const target = layout.bars.find((b) => b.id === bar.id);
-        if (!target) return;
-
-        const displayTarget = this.displayBars.find((b) => b.id === bar.id);
-        const previousDisplayPosition = displayTarget ? { ...displayTarget.position } : null;
-
-        target.position = {
-            anchor: 'center',
-            x: designX,
-            y: designY,
-        };
-
-        // Optimistically update visible state first to avoid full-canvas flash.
-        if (displayTarget) {
-            displayTarget.position = { ...target.position };
-        }
-        // Clear CDK transform so the persisted position becomes the source of truth.
-        event.source.reset();
-        this.guideLineX = null;
-        this.guideLineY = null;
-        this.syncPositionInputsFromSelectedBar();
-        this.cdr.markForCheck();
-        this.markLayoutDirty();
-        this.setDraftLayout(layout);
-
-        // Keep old revert behavior unnecessary in draft mode, but keep state consistent.
-        if (!displayTarget && previousDisplayPosition) {
-            this.cdr.markForCheck();
-        }
-    }
-
-    onBarDragMoved(bar: DisplayBar, event: CdkDragMove): void {
-        if (!this.screenCanvasRef) return;
-
-        const canvasRect = this.screenCanvasRef.nativeElement.getBoundingClientRect();
-        const scaleX = this.screenWidth / canvasRect.width;
-        const scaleY = this.screenHeight / canvasRect.height;
-        const delta = event.source.getFreeDragPosition();
-        const current = this.getNormalizedBarPosition(bar);
-        const barRect = event.source.element.nativeElement.getBoundingClientRect();
-        const dragHalfW = (barRect.width * scaleX) / 2;
-        const dragHalfH = (barRect.height * scaleY) / 2;
-        const snapped = this.getSnappedPosition(
-            current.x + delta.x * scaleX,
-            current.y + delta.y * scaleY,
-            bar.id,
-            dragHalfW,
-            dragHalfH,
-            canvasRect,
-            scaleX,
-            scaleY
-        );
-
-        this.guideLineX = snapped.guideX;
-        this.guideLineY = snapped.guideY;
-        if (this.selectedBarId === bar.id) {
-            this.positionInputX = Math.round(snapped.x);
-            this.positionInputY = Math.round(snapped.y);
-        }
-    }
-
-    onSelectedBarSlotsChange(slots: number): void {
-        const bar = this.selectedBar;
-        if (!bar || !this.selectedKeybinding) return;
-        const parsed = Number(slots);
-        if (!Number.isFinite(parsed)) return;
-        const nextSlots = Math.max(1, Math.min(12, Math.round(parsed)));
-        if (nextSlots === bar.slots) return;
-        this.updateBarLayout(bar.id, { slots: nextSlots });
-    }
-
-    onSelectedBarScaleChange(scale: number): void {
-        const bar = this.selectedBar;
-        if (!bar || !this.selectedKeybinding) return;
-        const parsed = Number(scale);
-        if (!Number.isFinite(parsed)) return;
-        const nextScale = Math.max(0.7, Math.min(1.5, parsed));
-        if (Math.abs(nextScale - (bar.scale ?? 1)) < 0.001) return;
-        this.updateBarLayout(bar.id, { scale: nextScale });
-    }
-
-    onSelectedBarOrientationChange(orientation: 'horizontal' | 'vertical'): void {
-        const bar = this.selectedBar;
-        if (!bar || !this.selectedKeybinding) return;
-        if (orientation !== 'horizontal' && orientation !== 'vertical') return;
-        if (bar.orientation === orientation) return;
-        this.updateBarLayout(bar.id, { orientation });
-    }
-
-    applySelectedBarPosition(): void {
-        const bar = this.selectedBar;
-        if (!bar || !this.selectedKeybinding) return;
-        if (!Number.isFinite(this.positionInputX) || !Number.isFinite(this.positionInputY)) return;
-
-        const x = Math.max(0, Math.min(this.screenWidth, Number(this.positionInputX)));
-        const y = Math.max(0, Math.min(this.screenHeight, Number(this.positionInputY)));
-
-        this.positionInputX = Math.round(x);
-        this.positionInputY = Math.round(y);
-
-        this.updateBarLayout(bar.id, {
-            position: {
-                anchor: 'center',
-                x,
-                y,
-            },
-        });
-    }
-
-    centerSelectedBar(): void {
-        const bar = this.selectedBar;
-        if (!bar || !this.selectedKeybinding) return;
-        const current = this.getNormalizedBarPosition(bar);
-        const x = this.screenWidth / 2;
-        const y = Math.max(0, Math.min(this.screenHeight, current.y));
-
-        this.positionInputX = Math.round(x);
-        this.positionInputY = Math.round(y);
-
-        this.updateBarLayout(bar.id, {
-            position: {
-                anchor: 'center',
-                x,
-                y,
-            },
-        });
-    }
-
-    resetSelectedBar(): void {
-        const bar = this.selectedBar;
-        if (!bar || !this.selectedKeybinding) return;
-        this.updateBarLayout(bar.id, {
-            slots: 12,
-            scale: 1,
-            orientation: 'horizontal',
-            slotKeys: Array.from({ length: 12 }, () => ''),
-        });
-    }
-
-    private updateBarLayout(barId: string, patch: Partial<ActionBar>): void {
-        if (!this.selectedKeybinding) return;
-        const layout = this.getLayoutToSave();
-        const target = layout.bars.find((b) => b.id === barId);
-        if (!target) return;
-
-        if (typeof patch.slots === 'number') target.slots = patch.slots;
-        if (typeof patch.scale === 'number') target.scale = patch.scale;
-        if (patch.orientation) target.orientation = patch.orientation;
-        if (patch.position) target.position = { ...patch.position };
-        if (Array.isArray(patch.slotKeys)) target.slotKeys = [...patch.slotKeys];
-        if (!Array.isArray(target.slotKeys)) {
-            target.slotKeys = Array.from({ length: target.slots }, () => '');
-        } else {
-            target.slotKeys = target.slotKeys.slice(0, target.slots);
-            while (target.slotKeys.length < target.slots) {
-                target.slotKeys.push('');
-            }
-        }
-        this.markLayoutDirty();
-        this.setDraftLayout(layout);
-        this.buildDisplayBars();
-        this.syncPositionInputsFromSelectedBar();
-    }
-
-    private getSnappedPosition(
-        proposedX: number,
-        proposedY: number,
-        barId: string,
-        dragHalfW: number,
-        dragHalfH: number,
-        canvasRect: DOMRect,
-        scaleX: number,
-        scaleY: number
-    ): { x: number; y: number; guideX: number | null; guideY: number | null } {
-        const others = this.displayBars.filter((b) => b.id !== barId);
-        if (!others.length) {
-            return { x: proposedX, y: proposedY, guideX: null, guideY: null };
-        }
-
-        const xCandidates: Array<{ target: number; guide: number }> = [];
-        const yCandidates: Array<{ target: number; guide: number }> = [];
-        for (const other of others) {
-            const metrics = this.getBarMetrics(other, canvasRect, scaleX, scaleY);
-            const otherLeft = metrics.x - metrics.halfW;
-            const otherRight = metrics.x + metrics.halfW;
-            const otherStackOffset = metrics.halfH + dragHalfH + this.barGap;
-
-            // X-axis: center align, left edge align, right edge align
-            xCandidates.push({ target: metrics.x, guide: metrics.x });
-            xCandidates.push({ target: otherLeft + dragHalfW, guide: otherLeft });
-            xCandidates.push({ target: otherRight - dragHalfW, guide: otherRight });
-
-            // Y-axis: stack above / below to avoid overlap
-            yCandidates.push({ target: metrics.y - otherStackOffset, guide: metrics.y });
-            yCandidates.push({ target: metrics.y + otherStackOffset, guide: metrics.y });
-        }
-
-        const snappedX = this.getNearestCandidate(proposedX, xCandidates, BAR_ALIGN_SNAP_THRESHOLD);
-        const snappedY = this.getNearestCandidate(proposedY, yCandidates, BAR_ALIGN_SNAP_THRESHOLD);
-
-        return {
-            x: snappedX?.target ?? proposedX,
-            y: snappedY?.target ?? proposedY,
-            guideX: snappedX?.guide ?? null,
-            guideY: snappedY?.guide ?? null,
-        };
-    }
-
-    private getBarMetrics(
-        bar: DisplayBar,
-        canvasRect: DOMRect,
-        scaleX: number,
-        scaleY: number
-    ): { x: number; y: number; halfW: number; halfH: number } {
-        const pos = this.getNormalizedBarPosition(bar);
-        const fallbackHalfW = 200;
-        const fallbackHalfH = 40;
-        const canvas = this.screenCanvasRef?.nativeElement;
-        if (!canvas) {
-            return { x: pos.x, y: pos.y, halfW: fallbackHalfW, halfH: fallbackHalfH };
-        }
-
-        const el = canvas.querySelector(`[data-bar-id="${bar.id}"]`) as HTMLElement | null;
-        if (!el) {
-            return { x: pos.x, y: pos.y, halfW: fallbackHalfW, halfH: fallbackHalfH };
-        }
-
-        const rect = el.getBoundingClientRect();
-        return {
-            x: pos.x,
-            y: pos.y,
-            halfW: (rect.width * scaleX) / 2,
-            halfH: (rect.height * scaleY) / 2,
-        };
-    }
-
-    private getNearestCandidate(
-        value: number,
-        candidates: Array<{ target: number; guide: number }>,
-        threshold: number
-    ): { target: number; guide: number } | null {
-        if (!candidates.length) return null;
-        let closest = candidates[0];
-        let distance = Math.abs(value - closest.target);
-        for (let i = 1; i < candidates.length; i++) {
-            const d = Math.abs(value - candidates[i].target);
-            if (d < distance) {
-                distance = d;
-                closest = candidates[i];
-            }
-        }
-        return distance <= threshold ? closest : null;
+        return { ...bar, slots: normalizedSlots, orientation: 'horizontal', displaySlots };
     }
 
     onSlotClick(bar: DisplayBar, slot: ActionBarSlot, event: Event): void {
@@ -749,17 +339,17 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
 
     addBar(): void {
         if (!this.selectedKeybinding) return;
+        if (this.displayBars.length >= MAX_BLIZZARD_BARS) return;
 
-        const newId = `bar-${Date.now()}`;
         const barIndex = this.displayBars.length;
         const newBar: ActionBar = {
-            id: newId,
-            slots: 12,
-            slotKeys: Array.from({ length: 12 }, () => ''),
+            id: `bar-${this.displayBars.length + 1}`,
+            slots: BLIZZARD_BAR_SLOTS,
+            slotKeys: Array.from({ length: BLIZZARD_BAR_SLOTS }, () => ''),
             position: {
                 anchor: 'center',
                 x: this.screenWidth / 2,
-                y: this.screenHeight - 50 - barIndex * 70,
+                y: this.screenHeight - 50 - barIndex * 64,
             },
             orientation: 'horizontal',
             scale: 1,
@@ -772,38 +362,6 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         this.markLayoutDirty();
         this.setDraftLayout(layout);
         this.buildDisplayBars();
-        this.selectedBarId = newId;
-        this.syncPositionInputsFromSelectedBar();
-    }
-
-    removeBar(bar: DisplayBar, event: Event): void {
-        event.stopPropagation();
-        if (!this.selectedKeybinding || this.displayBars.length <= 1) return;
-
-        const layout = this.getLayoutToSave();
-        layout.bars = layout.bars.filter((b) => b.id !== bar.id);
-        const keybinds = (this.selectedKeybinding.keybinds || []).filter((kb) => kb.barId !== bar.id);
-        this.markLayoutDirty();
-        this.layoutTouchesKeybinds = true;
-        this.selectedKeybinding = {
-            ...this.selectedKeybinding,
-            layout,
-            keybinds,
-        };
-        this.selectedBarId = this.selectedBarId === bar.id ? null : this.selectedBarId;
-        this.buildDisplayBars();
-        this.syncPositionInputsFromSelectedBar();
-    }
-
-    selectBar(bar: DisplayBar, event?: MouseEvent): void {
-        event?.stopPropagation();
-        this.selectedBarId = bar.id;
-        this.syncPositionInputsFromSelectedBar();
-    }
-
-    clearSelection(): void {
-        this.selectedBarId = null;
-        this.syncPositionInputsFromSelectedBar();
     }
 
     saveLayoutChanges(): void {
@@ -824,7 +382,6 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
                     this.cleanLayoutSnapshot = null;
                     this.cleanKeybindsSnapshot = null;
                     this.lastRenderSignature = this.computeRenderSignature(this.selectedKeybinding);
-                    this.syncPositionInputsFromSelectedBar();
                     this.refreshKeybindings.emit();
                 },
                 error: (err) => console.error('Error saving layout changes:', err),
@@ -846,7 +403,6 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
         this.cleanKeybindsSnapshot = null;
         this.buildDisplayBars();
         this.loadResolution();
-        this.syncPositionInputsFromSelectedBar();
     }
 
     private markLayoutDirty(): void {
@@ -895,7 +451,7 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
                     ...b,
                     position: { ...b.position },
                 })),
-                barMode: existing.barMode ?? this.barMode,
+                barMode: 'blizzard',
                 screenWidth: this.screenWidth,
                 screenHeight: this.screenHeight,
                 barGap: existing.barGap ?? this.barGap,
@@ -910,7 +466,7 @@ export class ActionBarLayoutComponent implements OnChanges, AfterViewInit {
                 orientation: b.orientation,
                 scale: b.scale ?? 1,
             })),
-            barMode: this.barMode,
+            barMode: 'blizzard',
             screenWidth: this.screenWidth,
             screenHeight: this.screenHeight,
             barGap: this.barGap,

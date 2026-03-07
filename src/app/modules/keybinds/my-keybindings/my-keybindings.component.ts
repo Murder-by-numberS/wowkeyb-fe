@@ -78,6 +78,7 @@ interface AddonImportPayload {
     ],
 })
 export class MyKeybindingsComponent implements OnInit {
+    private static readonly ADDON_SHARE_CODE_PREFIX = 'WK1:';
     @ViewChild(KeybindsDrawerComponent) keybindsDrawerComponent: KeybindsDrawerComponent;
     @ViewChild(AbilitiesComponent) abilitiesComponent: AbilitiesComponent;
     @ViewChild(KeyboardComponent) keyboard: KeyboardComponent;
@@ -362,8 +363,9 @@ export class MyKeybindingsComponent implements OnInit {
                 this.cdr.detectChanges();
             }, 0);
 
-            // Close drawer on mobile after selecting a keybinding
-            if (this.isMobile) {
+            // Close drawer after selecting when in overlay-style views:
+            // mobile, action bars layout, or expanded keyboard.
+            if (this.useOverlayMode) {
                 this.opened = false;
                 this.drawerOpen = false;
             }
@@ -629,10 +631,11 @@ export class MyKeybindingsComponent implements OnInit {
         }
 
         const json = JSON.stringify(profile);
-        navigator.clipboard.writeText(json).then(() => {
+        const shareCode = this.encodeAddonShareCode(json);
+        navigator.clipboard.writeText(shareCode).then(() => {
             const importName = (this.selectedKeybinding.name || 'Profile').replace(/[^a-zA-Z0-9]/g, '');
             this.snackBar.open(
-                `Copied! In WoW: /wowkeyb import ${importName} then paste`,
+                `Copied share code! In WoW: /wowkeyb import ${importName} then paste`,
                 'Close',
                 { duration: 5000 }
             );
@@ -662,9 +665,11 @@ export class MyKeybindingsComponent implements OnInit {
     private handleAddonImport(jsonText: string): void {
         let parsed: unknown;
         try {
-            parsed = JSON.parse(jsonText);
+            const normalized = jsonText.trim();
+            const decodedShareCode = this.decodeAddonShareCode(normalized);
+            parsed = JSON.parse(decodedShareCode ?? normalized);
         } catch {
-            this.snackBar.open('Invalid JSON. Please paste the full addon export JSON.', 'Close', { duration: 4000 });
+            this.snackBar.open('Invalid share code/JSON. Please paste a WoWKeyb addon export.', 'Close', { duration: 4000 });
             return;
         }
 
@@ -703,6 +708,30 @@ export class MyKeybindingsComponent implements OnInit {
             const uniqueName = this.getUniqueImportedName(payload.name!);
             this.createImportedKeybinding({ ...payload, name: uniqueName });
         });
+    }
+
+    private encodeAddonShareCode(payload: string): string {
+        const bytes = new TextEncoder().encode(payload);
+        let binary = '';
+        bytes.forEach((b) => {
+            binary += String.fromCharCode(b);
+        });
+        return `${MyKeybindingsComponent.ADDON_SHARE_CODE_PREFIX}${btoa(binary)}`;
+    }
+
+    private decodeAddonShareCode(value: string): string | null {
+        if (!value?.toUpperCase().startsWith(MyKeybindingsComponent.ADDON_SHARE_CODE_PREFIX)) {
+            return null;
+        }
+        const encoded = value.slice(MyKeybindingsComponent.ADDON_SHARE_CODE_PREFIX.length).trim();
+        if (!encoded) return null;
+        try {
+            const binary = atob(encoded);
+            const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+            return new TextDecoder().decode(bytes);
+        } catch {
+            return null;
+        }
     }
 
     private toImportPayload(data: unknown): AddonImportPayload | null {
@@ -988,6 +1017,12 @@ export class MyKeybindingsComponent implements OnInit {
     toggleDrawer(): void {
         this.drawerOpen = !this.drawerOpen;
         this.opened = this.drawerOpen; // Keep opened in sync for backward compatibility
+    }
+
+    openDrawerForSelection(): void {
+        if (this.drawerDisabled) return;
+        this.drawerOpen = true;
+        this.opened = true;
     }
 
     setViewMode(mode: 'keyboard' | 'layout' | 'expanded'): void {

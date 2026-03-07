@@ -38,6 +38,7 @@ import { VersionCopyDialogComponent, VersionCopyDialogData } from '../version-co
     templateUrl: './view-keybinding.component.html'
 })
 export class ViewKeybindingComponent implements OnInit, OnDestroy {
+    private static readonly ADDON_SHARE_CODE_PREFIX = 'WK1:';
     keybinding: Keybinding | null = null;
     isOwner = false;
     isAuthenticated = false;
@@ -177,8 +178,7 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Export keybinding as JSON for the WoWKeyb addon.
-     * Copies to clipboard in format: { name, keybinds: [{ key, spell: { spellId, name } }] }
+     * Export keybinding as share code string for the WoWKeyb addon.
      */
     exportForAddon(): void {
         if (!this.keybinding?.keybinds?.length) {
@@ -210,15 +210,25 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
             };
         }
         const json = JSON.stringify(profile);
-        navigator.clipboard.writeText(json).then(() => {
+        const shareCode = this.encodeAddonShareCode(json);
+        navigator.clipboard.writeText(shareCode).then(() => {
             this.snackBar.open(
-                'Copied! In WoW: /wowkeyb import ' + this.keybinding!.name.replace(/[^a-zA-Z0-9]/g, '') + ' then paste',
+                'Copied share code! In WoW: /wowkeyb import ' + this.keybinding!.name.replace(/[^a-zA-Z0-9]/g, '') + ' then paste',
                 'Close',
                 { duration: 5000 }
             );
         }).catch(() => {
             this.snackBar.open('Failed to copy to clipboard', 'Close', { duration: 3000 });
         });
+    }
+
+    private encodeAddonShareCode(payload: string): string {
+        const bytes = new TextEncoder().encode(payload);
+        let binary = '';
+        bytes.forEach((b) => {
+            binary += String.fromCharCode(b);
+        });
+        return `${ViewKeybindingComponent.ADDON_SHARE_CODE_PREFIX}${btoa(binary)}`;
     }
 
     copyToVersion(versionId: string): void {
