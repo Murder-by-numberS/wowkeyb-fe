@@ -669,7 +669,7 @@ export class MyKeybindingsComponent implements OnInit {
             const decodedShareCode = this.decodeAddonShareCode(normalized);
             parsed = JSON.parse(decodedShareCode ?? normalized);
         } catch {
-            this.snackBar.open('Invalid share code/JSON. Please paste a WoWKeyb addon export.', 'Close', { duration: 4000 });
+            this.snackBar.open('Invalid profile code. Please paste a WoWKeyb addon export code.', 'Close', { duration: 4000 });
             return;
         }
 
