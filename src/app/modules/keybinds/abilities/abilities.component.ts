@@ -850,10 +850,17 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
             //loop through abilities and add the keybindings to the abilities from the selectedKeybinding
             data.forEach(ability => {
                 ability.keybindings = this.selectedKeybinding.keybinds
-                    .filter((keybind) =>
-                        keybind.spell?.spellId == ability.spellId ||
-                        keybind.spell?.sourceSpellId == ability.spellId
-                    )
+                    .filter((keybind) => {
+                        const spell: any = keybind.spell || {};
+                        const directSpellId = String(spell.spellId || spell.spell_id || '');
+                        const sourceSpellId = String(spell.sourceSpellId || spell.source_spell_id || '');
+                        const sourceSpellName = String(spell.sourceSpellName || spell.source_spell_name || '').trim().toLowerCase();
+                        const abilitySpellId = String(ability.spellId || '');
+                        const abilityName = String(ability.name || '').trim().toLowerCase();
+                        return directSpellId === abilitySpellId
+                            || sourceSpellId === abilitySpellId
+                            || (sourceSpellName !== '' && sourceSpellName === abilityName);
+                    })
                     .map((keybind) => keybind.key);
             });
             this.abilities = data;
@@ -940,8 +947,17 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
                 const unchangedKeys = newKeybindings.filter((key) => oldKeybindings.includes(key));
                 unchangedKeys.forEach((key) => {
                     const existing = this.selectedKeybinding?.keybinds?.find((kb) =>
-                        kb.key === key &&
-                        (kb.spell?.spellId === ability.spellId || kb.spell?.sourceSpellId === ability.spellId)
+                        kb.key === key && (() => {
+                            const spell: any = kb.spell || {};
+                            const directSpellId = String(spell.spellId || spell.spell_id || '');
+                            const sourceSpellId = String(spell.sourceSpellId || spell.source_spell_id || '');
+                            const sourceSpellName = String(spell.sourceSpellName || spell.source_spell_name || '').trim().toLowerCase();
+                            const abilitySpellId = String(ability.spellId || '');
+                            const abilityName = String(ability.name || '').trim().toLowerCase();
+                            return directSpellId === abilitySpellId
+                                || sourceSpellId === abilitySpellId
+                                || (sourceSpellName !== '' && sourceSpellName === abilityName);
+                        })()
                     );
                     if (!existing) return;
                     const existingIsMacro = existing.spell?.isMacro === true

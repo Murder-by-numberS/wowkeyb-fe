@@ -784,10 +784,18 @@ export class MyKeybindingsComponent implements OnInit {
                         description: typeof spellRaw.description === 'string' ? spellRaw.description : '',
                         actionType: spellRaw.actionType === 'macro' ? 'macro' : 'spell',
                         isMacro: spellRaw.isMacro === true || spellId.startsWith('macro:'),
-                        macroId: typeof spellRaw.macroId === 'string' ? spellRaw.macroId : undefined,
+                        macroId: typeof spellRaw.macroId === 'string'
+                            ? spellRaw.macroId
+                            : (typeof spellRaw.macro_id === 'string' ? spellRaw.macro_id : undefined),
                         macroText: typeof spellRaw.macroText === 'string' ? spellRaw.macroText : undefined,
-                        sourceSpellId: typeof spellRaw.sourceSpellId === 'string' ? spellRaw.sourceSpellId : undefined,
-                        sourceSpellName: typeof spellRaw.sourceSpellName === 'string' ? spellRaw.sourceSpellName : undefined,
+                        sourceSpellId: spellRaw.sourceSpellId !== undefined && spellRaw.sourceSpellId !== null
+                            ? String(spellRaw.sourceSpellId)
+                            : (spellRaw.source_spell_id !== undefined && spellRaw.source_spell_id !== null
+                                ? String(spellRaw.source_spell_id)
+                                : undefined),
+                        sourceSpellName: typeof spellRaw.sourceSpellName === 'string'
+                            ? spellRaw.sourceSpellName
+                            : (typeof spellRaw.source_spell_name === 'string' ? spellRaw.source_spell_name : undefined),
                     },
                     barId: typeof r.barId === 'string' ? r.barId : (typeof r.bar_id === 'string' ? r.bar_id : undefined),
                     slotIndex: typeof r.slotIndex === 'number'
