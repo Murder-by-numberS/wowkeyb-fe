@@ -222,7 +222,7 @@ export class ActionBarLayoutComponent implements OnChanges {
     private openKeybindDialog(bar: DisplayBar, slot: ActionBarSlot): void {
         const keyForDialog = { label: slot.keyLabel, keybinds: [...(slot.keybinds || [])] };
         const isMobile = window.innerWidth < 768;
-        const dialogWidth = `${Math.min(300 + Math.max(0, keyForDialog.keybinds.length - 2) * 50, 600)}px`;
+        const dialogWidth = `${Math.min(520 + Math.max(0, keyForDialog.keybinds.length - 2) * 70, 760)}px`;
 
         const dialogRef = this.dialog.open(KeybindDialogComponent, {
             data: { key: keyForDialog },
@@ -235,13 +235,34 @@ export class ActionBarLayoutComponent implements OnChanges {
         dialogRef.afterClosed().subscribe((result) => {
             if (result === false) return;
             const allKeybinds = [...this.selectedKeybinding.keybinds];
-            const isKeybindForSlot = (kb: Keybind) =>
-                kb.key.toLowerCase() === slot.keyLabel.toLowerCase();
+            const isKeybindForSlot = (kb: Keybind) => {
+                const keybindKey = String(kb?.key || '').toLowerCase().replace(/\s+/g, '');
+                const slotKey = String(slot?.keyLabel || '').toLowerCase().replace(/\s+/g, '');
+                if (!keybindKey || !slotKey) return false;
+                if (keybindKey === slotKey) return true;
+                const parts = keybindKey.split('+');
+                return parts[parts.length - 1] === slotKey;
+            };
+            const dedupeKeybindList = (items: Keybind[]) => {
+                const seen = new Set<string>();
+                return items.filter((item) => {
+                    const keySig = String(item?.key || '').toLowerCase().replace(/\s+/g, '');
+                    const spellSig = String(item?.spell?.spellId || '').toLowerCase();
+                    const actionSig = String(item?.spell?.actionType || '').toLowerCase();
+                    const macroSig = String(item?.spell?.macroId || '').toLowerCase();
+                    const signature = [keySig, spellSig, actionSig, macroSig].join('|');
+                    if (!keySig || !spellSig || seen.has(signature)) {
+                        return false;
+                    }
+                    seen.add(signature);
+                    return true;
+                });
+            };
             const updatedKeybinds = [
                 ...allKeybinds.filter((k) => !isKeybindForSlot(k)),
                 ...result,
             ];
-            this.saveKeybinds(updatedKeybinds);
+            this.saveKeybinds(dedupeKeybindList(updatedKeybinds));
         });
     }
 

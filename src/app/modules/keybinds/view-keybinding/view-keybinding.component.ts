@@ -196,12 +196,33 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
                     spellId: kb.spell?.spellId?.toString() ?? '',
                     name: kb.spell?.name ?? '',
                     icon: kb.spell?.icon ?? '',
-                    description: kb.spell?.description ?? ''
+                    description: kb.spell?.description ?? '',
+                    actionType: kb.spell?.actionType,
+                    isMacro: kb.spell?.isMacro,
+                    macroId: kb.spell?.macroId,
+                    macroText: kb.spell?.macroText,
+                    sourceSpellId: kb.spell?.sourceSpellId,
+                    sourceSpellName: kb.spell?.sourceSpellName,
                 },
                 barId: kb.barId ?? undefined,
                 slotIndex: kb.slotIndex ?? undefined
             }))
         };
+        const macros = (this.keybinding.keybinds || [])
+            .filter((kb) => kb.spell?.isMacro || kb.spell?.actionType === 'macro' || String(kb.spell?.spellId || '').startsWith('macro:'))
+            .map((kb) => ({
+                id: kb.spell?.macroId || kb.spell?.spellId || '',
+                name: kb.spell?.name || 'Macro',
+                macroText: kb.spell?.macroText || '',
+                icon: kb.spell?.icon || '',
+                sourceSpellId: kb.spell?.sourceSpellId || '',
+                sourceSpellName: kb.spell?.sourceSpellName || '',
+            }));
+        if (macros.length > 0) {
+            profile.macros = Array.from(
+                new Map(macros.map((macro) => [String(macro.id), macro])).values()
+            );
+        }
         if (this.keybinding.layout?.bars?.length) {
             profile.layout = {
                 bars: this.keybinding.layout.bars,

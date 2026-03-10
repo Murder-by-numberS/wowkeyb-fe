@@ -3,11 +3,14 @@ import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { Ability } from 'app/core/types/ability';
 import { Keybinding } from 'app/core/types/keybinding';
 import { AbilitiesService } from 'app/core/services/abilities.service';
 import { formatClassName } from 'app/core/util/util';
+import { Macro, MacroService } from 'app/modules/macros/services/macro.service';
 
 export interface SlotAssignDialogData {
     slotKey: string;
@@ -20,10 +23,14 @@ export interface SlotAssignDialogResult {
         key: string;
         description: string;
         icon: string;
-        id: string;
+        id: string | number;
         keybinding: string;
         name: string;
         spellId: string;
+        actionType?: 'spell' | 'macro';
+        isMacro?: boolean;
+        macroId?: string;
+        macroText?: string;
     };
 }
 
@@ -46,21 +53,42 @@ export interface SlotAssignDialogResult {
             <div class="flex justify-center items-center grow py-12">
                 <mat-spinner diameter="40"></mat-spinner>
             </div>
-            } @else if (abilities.length === 0) {
-            <p class="text-gray-500 dark:text-gray-400 py-4">No abilities available. Select a keybinding with class and spec in Keyboard view first.</p>
+            } @else if (abilities.length === 0 && macros.length === 0) {
+            <p class="text-gray-500 dark:text-gray-400 py-4">No abilities or macros available. Create macros in My Macros or select a keybinding with class/spec first.</p>
             } @else {
             <div class="grow overflow-y-auto pr-1">
-            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 py-2">
-                @for (ability of abilities; track ability.id) {
-                <button
-                    type="button"
-                    (click)="selectAbility(ability)"
-                    class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors h-full">
-                    <img [src]="ability.icon" [alt]="ability.name" class="w-14 h-14 object-contain" />
-                    <span class="text-sm w-full text-center mt-2 leading-snug break-words whitespace-normal">{{ ability.name }}</span>
-                </button>
-                }
+            @if (abilities.length > 0) {
+            <div class="mb-4">
+                <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Abilities</div>
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 py-2">
+                    @for (ability of abilities; track ability.id) {
+                    <button
+                        type="button"
+                        (click)="selectAbility(ability)"
+                        class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors h-full">
+                        <img [src]="ability.icon" [alt]="ability.name" class="w-14 h-14 object-contain" />
+                        <span class="text-sm w-full text-center mt-2 leading-snug break-words whitespace-normal">{{ ability.name }}</span>
+                    </button>
+                    }
+                </div>
             </div>
+            }
+            @if (macros.length > 0) {
+            <div>
+                <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Macros</div>
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 py-2">
+                    @for (macro of macros; track macro.id || macro.name) {
+                    <button
+                        type="button"
+                        (click)="selectMacro(macro)"
+                        class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors h-full">
+                        <img [src]="resolveMacroIcon(macro)" [alt]="macro.name" class="w-14 h-14 object-contain" />
+                        <span class="text-sm w-full text-center mt-2 leading-snug break-words whitespace-normal">{{ macro.name }}</span>
+                    </button>
+                    }
+                </div>
+            </div>
+            }
             </div>
             }
         </mat-dialog-content>
@@ -71,12 +99,15 @@ export interface SlotAssignDialogResult {
 })
 export class SlotAssignDialogComponent implements OnInit {
     abilities: Ability[] = [];
+    macros: Macro[] = [];
     isLoading = true;
+    private readonly macroFallbackIcon = 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg';
 
     constructor(
         @Inject(MAT_DIALOG_DATA) public data: SlotAssignDialogData,
         private dialogRef: MatDialogRef<SlotAssignDialogComponent>,
-        private abilitiesService: AbilitiesService
+        private abilitiesService: AbilitiesService,
+        private macroService: MacroService
     ) {}
 
     ngOnInit(): void {
@@ -95,23 +126,29 @@ export class SlotAssignDialogComponent implements OnInit {
             return;
         }
 
-        this.abilitiesService
-            .getAbilities(
-                wowClass,
-                spec,
-                heroTalent,
-                gameVersion
-            )
-            .subscribe({
-                next: (res: any) => {
-                    this.abilities = Array.isArray(res) ? res : (res?.abilities || res?.data || []);
-                    this.isLoading = false;
-                },
-                error: () => {
-                    this.abilities = [];
-                    this.isLoading = false;
-                },
-            });
+        const abilities$ = this.abilitiesService
+            .getAbilities(wowClass, spec, heroTalent, gameVersion)
+            .pipe(catchError(() => of([])));
+
+        const macros$ = this.macroService
+            .getMyMacros(1, 250, 'created_at', 'desc')
+            .pipe(catchError(() => of({ macros: [] })));
+
+        forkJoin([abilities$, macros$]).subscribe({
+            next: ([abilityRes, macroRes]: [any, any]) => {
+                this.abilities = Array.isArray(abilityRes)
+                    ? abilityRes
+                    : (abilityRes?.abilities || abilityRes?.data || []);
+                const allMacros: Macro[] = Array.isArray(macroRes?.macros) ? macroRes.macros : [];
+                this.macros = allMacros.filter((macro) => this.macroMatchesContext(macro, wowClass, spec, heroTalent));
+                this.isLoading = false;
+            },
+            error: () => {
+                this.abilities = [];
+                this.macros = [];
+                this.isLoading = false;
+            },
+        });
     }
 
     /** Get valid spec for API (required by backend) */
@@ -153,9 +190,64 @@ export class SlotAssignDialogComponent implements OnInit {
                 keybinding: this.data.slotKey,
                 name: ability.name,
                 spellId: ability.spellId,
+                actionType: 'spell',
             },
         };
         this.dialogRef.close(result);
+    }
+
+    selectMacro(macro: Macro): void {
+        const macroText = macro.macro_text || macro.macroText || macro.text || '';
+        const macroId = macro.id ? String(macro.id) : this.slugifyMacroName(macro.name || 'macro');
+        const result: SlotAssignDialogResult = {
+            key: this.data.slotKey,
+            spell: {
+                key: macro.name || 'Macro',
+                description: macro.description || macroText,
+                icon: this.resolveMacroIcon(macro),
+                id: macroId,
+                keybinding: this.data.slotKey,
+                name: macro.name || 'Macro',
+                spellId: `macro:${macroId}`,
+                actionType: 'macro',
+                isMacro: true,
+                macroId,
+                macroText,
+            },
+        };
+        this.dialogRef.close(result);
+    }
+
+    resolveMacroIcon(macro: Macro): string {
+        const icon = macro.icon;
+        if (typeof icon === 'string' && icon.trim()) {
+            return icon;
+        }
+        if (icon && typeof icon === 'object' && 'cloudfrontUrl' in icon && icon.cloudfrontUrl) {
+            return icon.cloudfrontUrl;
+        }
+        return this.macroFallbackIcon;
+    }
+
+    private macroMatchesContext(macro: Macro, wowClass: string, spec: string, heroTalent: string): boolean {
+        const macroClass = (macro.class || '').toLowerCase().replace(/\s+/g, '');
+        const normalizedClass = wowClass.toLowerCase().replace(/\s+/g, '');
+        if (macroClass && macroClass !== normalizedClass) return false;
+
+        const macroSpec = (macro.spec || '').toLowerCase().replace(/\s+/g, '-').replace(/'/g, '');
+        if (macroSpec && spec && macroSpec !== spec) return false;
+
+        const macroHero = (macro.hero_talent || macro.heroTalent || '')
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/'/g, '');
+        if (macroHero && heroTalent && macroHero !== heroTalent) return false;
+
+        return true;
+    }
+
+    private slugifyMacroName(name: string): string {
+        return (name || 'macro').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'macro';
     }
 
     onCancel(): void {

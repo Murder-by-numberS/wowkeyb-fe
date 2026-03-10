@@ -37,17 +37,6 @@
                     My Keybindings
                     }
                 </h2>
-                @if (!drawerDisabled && useOverlayMode && !drawerOpen) {
-                <button
-                    type="button"
-                    mat-stroked-button
-                    (click)="openDrawerForSelection()"
-                    matTooltip="Select a different keybinding"
-                    class="text-xs sm:text-sm flex-shrink-0">
-                    <mat-icon class="text-base sm:text-lg">list</mat-icon>
-                    <span class="ml-1 hidden sm:inline">Change</span>
-                </button>
-                }
                 @if (selectedKeybinding?.version?.game_version) {
                 <div class="flex items-center gap-2 ml-2">
                     <span class="text-sm text-gray-500">v</span>

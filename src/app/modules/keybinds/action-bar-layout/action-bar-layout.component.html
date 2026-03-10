@@ -76,7 +76,7 @@
                             ? (slot.keyLabel ? ('Change keybind (' + slot.keyLabel + ')') : 'Assign keybind')
                             : (!slot.keyLabel
                                 ? 'Assign a keybind first (Keybind Mode)'
-                                : (slot.keybinds?.length ? 'Click to edit' : 'Click to add spell'))"
+                                : (slot.keybinds?.length ? 'Click to edit' : 'Click to add spell or macro'))"
                         matTooltipPosition="above"
                         class="relative w-10 h-10 sm:w-12 sm:h-12 min-w-10 min-h-10 sm:min-w-12 sm:min-h-12 flex flex-col items-center justify-start pt-0.5 sm:pt-1 pb-3 sm:pb-3.5 rounded border border-gray-600 bg-gray-600 hover:bg-gray-500 transition-colors cursor-pointer group flex-shrink-0 overflow-hidden"
                         [ngClass]="keybindMode ? 'border-blue-400 bg-blue-600/25 hover:bg-blue-500/35' : ''">

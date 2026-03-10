@@ -78,6 +78,37 @@ interface DraftMacroState {
     selector: 'my-macros',
     templateUrl: './my-macros.component.html',
     encapsulation: ViewEncapsulation.None,
+    styles: [`
+        .dark .macro-create-stepper .mat-step-header {
+            background-color: rgba(17, 24, 39, 0.55);
+        }
+        .dark .macro-create-stepper .mat-step-label,
+        .dark .macro-create-stepper .mat-step-label-selected,
+        .dark .macro-create-stepper .mat-step-label-active,
+        .dark .macro-create-stepper .mat-step-label.mat-step-label-active {
+            color: #e5e7eb !important;
+            opacity: 1 !important;
+        }
+        .dark .macro-create-stepper .mat-step-icon {
+            background-color: #f59e0b;
+            color: #111827;
+        }
+        .dark .macro-create-stepper .mat-step-icon-selected {
+            background-color: #fbbf24;
+            color: #111827;
+        }
+        .dark .macro-create-stepper .mat-step-icon-state-edit {
+            background-color: #f59e0b;
+            color: #111827;
+        }
+        .dark .macro-create-stepper .tooltip-options-step .mdc-form-field > label,
+        .dark .macro-create-stepper .tooltip-options-step .mat-mdc-checkbox .mdc-label {
+            color: #f3f4f6 !important;
+        }
+        .dark .macro-create-stepper .tooltip-options-step .mat-mdc-checkbox .mdc-checkbox__background {
+            border-color: rgba(243, 244, 246, 0.65) !important;
+        }
+    `],
     standalone: true,
     host: {
         class: 'flex flex-col flex-auto w-full h-full'
@@ -108,6 +139,7 @@ interface DraftMacroState {
     ]
 })
 export class MyMacrosComponent implements OnInit, OnChanges {
+    private static readonly DRAFT_STORAGE_KEY = 'wowkeyb_macro_draft_v1';
     @Input() isAuthenticated: boolean = false;
     @Input() refreshMacros: Observable<any> | null = null;
     @Input() macroSelected: boolean = false;
@@ -323,6 +355,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             takeUntil(this.destroy$)
         ).subscribe(user => {
             this.currentUserId = user?._id || null;
+            this.loadDraftFromStorage();
         });
 
         // Check authentication status first, then load macros
@@ -365,6 +398,9 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     }
 
     ngOnDestroy(): void {
+        if (this.isCreating) {
+            this.saveDraftState();
+        }
         // Remove resize listener
         window.removeEventListener('resize', () => this.checkMobile());
         this.destroy$.next();
@@ -793,6 +829,11 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     setupChangeDetection(): void {
         this.editForm.valueChanges.subscribe(() => {
             this.checkForChanges();
+        });
+        this.createForm.valueChanges.subscribe(() => {
+            if (this.isCreating) {
+                this.saveDraftState();
+            }
         });
     }
 
@@ -1252,10 +1293,12 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
     onCreateIconSelected(icon: Icon): void {
         this.createSelectedIcon = icon;
+        if (this.isCreating) this.saveDraftState();
     }
 
     onCreateIconCleared(): void {
         this.createSelectedIcon = null;
+        if (this.isCreating) this.saveDraftState();
     }
 
     onCreateAbilitySelected(ability: AbilitySelection): void {
@@ -1265,6 +1308,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         if (ability.ability) {
             this.updateCreateMacroTextWithAbility();
         }
+        if (this.isCreating) this.saveDraftState();
     }
 
     onCreateTooltipChanged(checked: boolean): void {
@@ -1276,6 +1320,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             this.updateCreateMacroTextWithAbility();
             console.log('Updated create macro text:', this.createForm.get('macro_text')?.value);
         }
+        if (this.isCreating) this.saveDraftState();
     }
 
     private updateCreateMacroTextWithAbility(): void {
@@ -1321,6 +1366,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
         this.createSelectedAbility = null;
         this.createAddTooltip = false;
+        if (this.isCreating) this.saveDraftState();
     }
 
 
@@ -1380,6 +1426,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
             macroBuilderModifierKey: this.macroBuilderModifierKey,
             selectedMacroBuilderTemplate: this.selectedMacroBuilderTemplate
         };
+        this.persistDraftToStorage();
     }
 
     /**
@@ -1423,6 +1470,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
      */
     clearDraft(): void {
         this.draftMacro = null;
+        this.clearDraftStorage();
     }
 
     /**
@@ -1452,6 +1500,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
     selectManualMode(): void {
         this.useManualMode = true;
         this.useMacroBuilder = false;
+        if (this.isCreating) this.saveDraftState();
     }
 
     selectGenerateMode(): void {
@@ -1459,6 +1508,7 @@ export class MyMacrosComponent implements OnInit, OnChanges {
         this.useManualMode = false;
         // Clear any existing macro text from previous attempts
         this.createForm.patchValue({ macro_text: '' });
+        if (this.isCreating) this.saveDraftState();
     }
 
     getConditionalLabel(value: string): string {
@@ -1475,6 +1525,45 @@ export class MyMacrosComponent implements OnInit, OnChanges {
 
     onCreateValidationChange(validation: { isValid: boolean; hasErrors: boolean }): void {
         this.createMacroValidationPassed = validation.isValid;
+        if (this.isCreating) this.saveDraftState();
+    }
+
+    private draftStorageKey(): string {
+        const userPart = this.currentUserId || 'anon';
+        return `${MyMacrosComponent.DRAFT_STORAGE_KEY}:${userPart}`;
+    }
+
+    private persistDraftToStorage(): void {
+        if (!this.draftMacro) return;
+        try {
+            localStorage.setItem(this.draftStorageKey(), JSON.stringify(this.draftMacro));
+        } catch (error) {
+            console.warn('Failed to persist macro draft to localStorage', error);
+        }
+    }
+
+    private loadDraftFromStorage(): void {
+        if (this.draftMacro) return;
+        try {
+            const direct = localStorage.getItem(this.draftStorageKey());
+            const fallback = localStorage.getItem(`${MyMacrosComponent.DRAFT_STORAGE_KEY}:anon`);
+            const raw = direct || fallback;
+            if (!raw) return;
+            const parsed = JSON.parse(raw) as DraftMacroState;
+            if (!parsed || typeof parsed !== 'object') return;
+            this.draftMacro = parsed;
+        } catch (error) {
+            console.warn('Failed to load macro draft from localStorage', error);
+        }
+    }
+
+    private clearDraftStorage(): void {
+        try {
+            localStorage.removeItem(this.draftStorageKey());
+            localStorage.removeItem(`${MyMacrosComponent.DRAFT_STORAGE_KEY}:anon`);
+        } catch (error) {
+            console.warn('Failed to clear macro draft from localStorage', error);
+        }
     }
 
     // Macro builder methods

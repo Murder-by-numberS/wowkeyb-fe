@@ -18,7 +18,7 @@ interface KeyboardKey {
             key: string,
             description: string,
             icon: string,
-            id: number,
+            id: number | string,
             keybinding: string,
             name: string,
             spellId: string

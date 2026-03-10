@@ -9,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { KeybindingService } from 'app/core/services/keybinding.service';
+import { Macro, MacroService } from 'app/modules/macros/services/macro.service';
 
 @Component({
     selector: 'ability-dialog',
@@ -37,6 +38,14 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
     useManualMode = false; // Toggle between press-keys and manual mode
     errorMessage: string | null = null;
     warningMessage: string | null = null;
+    availableMacros: Macro[] = [];
+    loadingMacros = false;
+    applySelectedMacro = false;
+    selectedMacroId = '';
+    private readonly spellNameAliases: Record<string, string[]> = {
+        'eternalflame': ['wordofglory'],
+        'wordofglory': ['eternalflame'],
+    };
     private readonly ERROR_TIMEOUT = 3000; // 3 seconds
     private keydownHandler: (event: KeyboardEvent) => boolean;
 
@@ -75,7 +84,8 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
     constructor(
         @Inject(MAT_DIALOG_DATA) public data: AbilityDialogData,
         private dialogRef: MatDialogRef<AbilityDialogComponent>,
-        private keybindingService: KeybindingService
+        private keybindingService: KeybindingService,
+        private macroService: MacroService
     ) {
         // Initialize keybindings from data with deep copies
         this.originalKeybindings = [...(data.ability.keybindings || [])];
@@ -106,6 +116,7 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
         document.body.addEventListener('keypress', this.preventDefaultEvent, options);
         document.body.addEventListener('keyup', this.preventDefaultEvent, options);
 
+        this.loadAbilityMacros();
         console.log('AbilityDialog: Multi-layered event listeners attached');
     }
 
@@ -299,21 +310,141 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
         return this.originalKeybindings[0] !== this.keybindings[0];
     }
 
+    canSave(): boolean {
+        if (this.isKeybindingActive) return false;
+        if (this.hasKeybindingChanged()) return true;
+        return this.applySelectedMacro && !!this.getSelectedMacro();
+    }
+
     confirm(): void {
         console.log('confirming keybindings', this.keybindings);
+        const selectedMacro = this.getSelectedMacro();
         this.dialogRef.close({
-            keybindings: this.keybindings
+            keybindings: this.keybindings,
+            macro: this.applySelectedMacro && selectedMacro ? {
+                macroId: this.getMacroId(selectedMacro),
+                macroName: selectedMacro.name || 'Macro',
+                macroText: selectedMacro.macro_text || selectedMacro.macroText || selectedMacro.text || '',
+                icon: this.resolveMacroIcon(selectedMacro),
+            } : null,
         });
     }
 
     close(): void {
         this.dialogRef.close();
     }
+
+    getSelectedMacro(): Macro | null {
+        if (!this.selectedMacroId) return null;
+        return this.availableMacros.find((macro) => {
+            const id = this.getMacroId(macro);
+            const fallback = macro.id || macro.name;
+            return id === this.selectedMacroId || String(fallback) === this.selectedMacroId;
+        }) || null;
+    }
+
+    private loadAbilityMacros(): void {
+        const abilityId = this.data.ability?.id ? String(this.data.ability.id) : '';
+        this.loadingMacros = true;
+        if (abilityId) {
+            this.macroService.getMacrosByAbility({ abilityId, page: 1, limit: 50 }).subscribe({
+                next: (response) => {
+                    const macros = Array.isArray(response?.macros) ? response.macros : [];
+                    if (macros.length > 0) {
+                        this.availableMacros = macros;
+                        this.loadingMacros = false;
+                        return;
+                    }
+                    this.loadFallbackMacros();
+                },
+                error: () => this.loadFallbackMacros(),
+            });
+            return;
+        }
+        this.loadFallbackMacros();
+    }
+
+    private getMacroId(macro: Macro): string {
+        return macro.id ? String(macro.id) : this.slugify(macro.name || 'macro');
+    }
+
+    private resolveMacroIcon(macro: Macro): string {
+        const icon = macro.icon;
+        if (typeof icon === 'string' && icon.trim()) return icon;
+        if (icon && typeof icon === 'object' && 'cloudfrontUrl' in icon && icon.cloudfrontUrl) {
+            return icon.cloudfrontUrl;
+        }
+        return 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg';
+    }
+
+    private slugify(value: string): string {
+        return (value || 'macro').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'macro';
+    }
+
+    private loadFallbackMacros(): void {
+        this.macroService.getMyMacros(1, 250, 'created_at', 'desc').subscribe({
+            next: (response) => {
+                const macros = Array.isArray(response?.macros) ? response.macros : [];
+                this.availableMacros = this.filterMacrosForAbility(macros);
+                this.loadingMacros = false;
+            },
+            error: () => {
+                this.availableMacros = [];
+                this.loadingMacros = false;
+            },
+        });
+    }
+
+    private filterMacrosForAbility(macros: Macro[]): Macro[] {
+        const abilityId = this.data.ability?.id ? String(this.data.ability.id) : '';
+        const spellId = this.data.ability?.spellId ? String(this.data.ability.spellId) : '';
+        const spellNameCandidates = this.getSpellNameCandidates([this.data.ability?.name || '']);
+
+        return macros.filter((macro) => {
+            const macroAbility = macro.ability;
+            const macroAbilityId = typeof macroAbility === 'string'
+                ? macroAbility
+                : (macroAbility && typeof macroAbility === 'object' && 'id' in macroAbility ? String((macroAbility as any).id) : '');
+            if (abilityId && macroAbilityId && macroAbilityId === abilityId) return true;
+
+            const macroAbilitySpellId =
+                macroAbility && typeof macroAbility === 'object'
+                    ? String((macroAbility as any).spellId || (macroAbility as any).spell_id || '')
+                    : '';
+            if (spellId && macroAbilitySpellId && macroAbilitySpellId === spellId) return true;
+
+            const macroAbilityName =
+                macroAbility && typeof macroAbility === 'object'
+                    ? this.normalizeSpellName(String((macroAbility as any).name || ''))
+                    : '';
+            if (macroAbilityName && spellNameCandidates.has(macroAbilityName)) return true;
+
+            return false;
+        });
+    }
+
+    private getSpellNameCandidates(names: string[]): Set<string> {
+        const candidates = new Set<string>();
+        names.forEach((raw) => {
+            const normalized = this.normalizeSpellName(raw);
+            if (!normalized) return;
+            candidates.add(normalized);
+            const aliases = this.spellNameAliases[normalized] || [];
+            aliases.forEach((alias) => candidates.add(alias));
+        });
+        return candidates;
+    }
+
+    private normalizeSpellName(value: string): string {
+        return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
 }
 
 // Update the interface to support multiple keybindings
 interface AbilityDialogData {
     ability: {
+        id?: string;
+        spellId?: string;
         name: string;
         icon: string;
         description: string;

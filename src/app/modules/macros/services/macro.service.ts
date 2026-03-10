@@ -89,7 +89,9 @@ export interface GetMacrosByTagsParams {
 }
 
 export interface GetMacrosByAbilityParams {
-    ability: string;
+    ability?: string;
+    abilityId?: string;
+    ability_id?: string;
     page?: number;
     limit?: number;
 }
@@ -257,9 +259,15 @@ export class MacroService {
         this.getBackendURL();
         let httpParams = new HttpParams();
 
-        httpParams = httpParams.set('ability', params.ability);
+        const abilityId = params.ability_id || params.abilityId || params.ability;
+        if (abilityId) {
+            httpParams = httpParams.set('ability_id', abilityId);
+        }
         if (params.page) httpParams = httpParams.set('page', params.page.toString());
-        if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
+        if (params.limit) {
+            const safeLimit = Math.max(1, Math.min(50, params.limit));
+            httpParams = httpParams.set('limit', safeLimit.toString());
+        }
 
         const url = `${this.apiUrl}/macros/by-ability`;
         return this.http.get<MacroResponse>(url, { params: httpParams });

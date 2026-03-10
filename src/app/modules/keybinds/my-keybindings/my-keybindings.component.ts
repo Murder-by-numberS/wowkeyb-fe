@@ -620,11 +620,32 @@ export class MyKeybindingsComponent implements OnInit {
                     name: kb.spell?.name ?? '',
                     icon: kb.spell?.icon ?? '',
                     description: kb.spell?.description ?? '',
+                    actionType: kb.spell?.actionType,
+                    isMacro: kb.spell?.isMacro,
+                    macroId: kb.spell?.macroId,
+                    macroText: kb.spell?.macroText,
+                    sourceSpellId: kb.spell?.sourceSpellId,
+                    sourceSpellName: kb.spell?.sourceSpellName,
                 },
                 barId: kb.barId ?? undefined,
                 slotIndex: kb.slotIndex ?? undefined,
             })),
         };
+        const macros = (this.selectedKeybinding.keybinds || [])
+            .filter((kb) => kb.spell?.isMacro || kb.spell?.actionType === 'macro' || String(kb.spell?.spellId || '').startsWith('macro:'))
+            .map((kb) => ({
+                id: kb.spell?.macroId || kb.spell?.spellId || '',
+                name: kb.spell?.name || 'Macro',
+                macroText: kb.spell?.macroText || '',
+                icon: kb.spell?.icon || '',
+                sourceSpellId: kb.spell?.sourceSpellId || '',
+                sourceSpellName: kb.spell?.sourceSpellName || '',
+            }));
+        if (macros.length > 0) {
+            profile.macros = Array.from(
+                new Map(macros.map((macro) => [String(macro.id), macro])).values()
+            );
+        }
 
         if (this.selectedKeybinding.layout?.bars?.length) {
             profile.layout = {
@@ -761,6 +782,12 @@ export class MyKeybindingsComponent implements OnInit {
                         name: typeof spellRaw.name === 'string' ? spellRaw.name : '',
                         icon: typeof spellRaw.icon === 'string' ? spellRaw.icon : '',
                         description: typeof spellRaw.description === 'string' ? spellRaw.description : '',
+                        actionType: spellRaw.actionType === 'macro' ? 'macro' : 'spell',
+                        isMacro: spellRaw.isMacro === true || spellId.startsWith('macro:'),
+                        macroId: typeof spellRaw.macroId === 'string' ? spellRaw.macroId : undefined,
+                        macroText: typeof spellRaw.macroText === 'string' ? spellRaw.macroText : undefined,
+                        sourceSpellId: typeof spellRaw.sourceSpellId === 'string' ? spellRaw.sourceSpellId : undefined,
+                        sourceSpellName: typeof spellRaw.sourceSpellName === 'string' ? spellRaw.sourceSpellName : undefined,
                     },
                     barId: typeof r.barId === 'string' ? r.barId : (typeof r.bar_id === 'string' ? r.bar_id : undefined),
                     slotIndex: typeof r.slotIndex === 'number'
@@ -1022,12 +1049,6 @@ export class MyKeybindingsComponent implements OnInit {
     toggleDrawer(): void {
         this.drawerOpen = !this.drawerOpen;
         this.opened = this.drawerOpen; // Keep opened in sync for backward compatibility
-    }
-
-    openDrawerForSelection(): void {
-        if (this.drawerDisabled) return;
-        this.drawerOpen = true;
-        this.opened = true;
     }
 
     setViewMode(mode: 'keyboard' | 'layout' | 'expanded'): void {

@@ -218,15 +218,13 @@ export class KeyboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
         if (isMobile) {
             // Mobile: Use full width with small margins
-            return '95vw';
+            return '98vw';
         }
 
-        // Desktop: Base width for 1-2 keybinds
-        const baseWidth = 300;
-        // Add 50px for each additional keybind beyond 2
-        const extraWidth = Math.max(0, keybindsCount - 2) * 50;
-        // Cap the maximum width at 600px
-        return `${Math.min(baseWidth + extraWidth, 600)}px`;
+        // Desktop: wider dialog for macro controls
+        const baseWidth = 560;
+        const extraWidth = Math.max(0, keybindsCount - 2) * 70;
+        return `${Math.min(baseWidth + extraWidth, 780)}px`;
     }
 
     collapseKey(key: Key): void {
@@ -302,7 +300,7 @@ export class KeyboardComponent implements OnInit, AfterViewInit, OnDestroy {
             const dialogRef = this.dialog.open(KeybindDialogComponent, {
                 data: { key: key },
                 width: dialogWidth,
-                maxWidth: isMobile ? '95vw' : '90vw',
+                maxWidth: isMobile ? '98vw' : '92vw',
                 maxHeight: isMobile ? '90vh' : '80vh',
                 panelClass: isMobile ? 'mobile-dialog' : ''
             });
@@ -320,30 +318,46 @@ export class KeyboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
                     // Helper function to check if a keybind belongs to the current key (handles modifiers)
                     const isKeybindForCurrentKey = (keybind) => {
-                        const keybindKey = keybind.key.toLowerCase();
-                        const currentKeyLabel = key.label.toLowerCase();
+                        const keybindKey = String(keybind?.key || '').toLowerCase().replace(/\s+/g, '');
+                        const currentKeyLabel = String(key?.label || '').toLowerCase().replace(/\s+/g, '');
+
+                        if (!keybindKey || !currentKeyLabel) {
+                            return false;
+                        }
 
                         // Direct match
                         if (keybindKey === currentKeyLabel) {
                             return true;
                         }
 
-                        // Check for modifier combinations (e.g., "shift+t" matches "t")
-                        const modifiers = ['shift+', 'ctrl+', 'alt+', 'cmd+', 'meta+'];
-                        for (const modifier of modifiers) {
-                            if (keybindKey === modifier + currentKeyLabel) {
-                                return true;
-                            }
-                        }
-
-                        return false;
+                        // Multi-modifier safe matching:
+                        // "ctrl+shift+5" should still be considered part of key "5".
+                        const keyParts = keybindKey.split('+');
+                        const mainKey = keyParts[keyParts.length - 1];
+                        return mainKey === currentKeyLabel;
                     };
 
                     // Remove all keybinds for this key (including modifier combinations)
                     const keybindsForOtherKeys = allKeybinds.filter(k => !isKeybindForCurrentKey(k));
 
-                    // Add the new keybinds for this key
-                    const updatedKeybinds = [...keybindsForOtherKeys, ...result];
+                    const dedupeKeybindList = (items: any[]) => {
+                        const seen = new Set<string>();
+                        return items.filter((item) => {
+                            const keySig = String(item?.key || '').toLowerCase().replace(/\s+/g, '');
+                            const spellSig = String(item?.spell?.spellId || '').toLowerCase();
+                            const actionSig = String(item?.spell?.actionType || '').toLowerCase();
+                            const macroSig = String(item?.spell?.macroId || '').toLowerCase();
+                            const signature = [keySig, spellSig, actionSig, macroSig].join('|');
+                            if (!keySig || !spellSig || seen.has(signature)) {
+                                return false;
+                            }
+                            seen.add(signature);
+                            return true;
+                        });
+                    };
+
+                    // Add the new keybinds for this key and de-duplicate.
+                    const updatedKeybinds = dedupeKeybindList([...keybindsForOtherKeys, ...result]);
 
                     console.log('Keyboard - Updating keybinding with new keybinds:', {
                         originalCount: allKeybinds.length,

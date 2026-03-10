@@ -439,13 +439,13 @@
                         <!-- GENERATE MODE: Stepper -->
                 @if (useMacroBuilder) {
                 <form [formGroup]="createForm">
-                            <mat-stepper orientation="vertical" linear #stepper>
+                            <mat-stepper orientation="vertical" linear #stepper class="macro-create-stepper">
 
                                 <!-- Step 1: Select Ability -->
                                 <mat-step label="Select Ability">
                                     <div class="space-y-6 py-4">
-                                        <h4 class="text-md font-medium text-gray-900">Select Your Ability</h4>
-                                <p class="text-sm text-gray-600">Search and select the spell/ability for your macro</p>
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">Select Your Ability</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Search and select the spell/ability for your macro</p>
 
                                         <app-ability-picker [selectedAbility]="createSelectedAbility"
                                             (abilitySelected)="onCreateAbilitySelected($event)"
@@ -462,8 +462,8 @@
                                 <!-- Step 2: Select Icon -->
                                 <mat-step label="Select Icon">
                                     <div class="space-y-6 py-4">
-                                        <h4 class="text-md font-medium text-gray-900">Choose an Icon</h4>
-                                        <p class="text-sm text-gray-600">Select an icon for your macro</p>
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">Choose an Icon</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">Select an icon for your macro</p>
 
                                         <app-icon-picker [selectedIcon]="createSelectedIcon"
                                     (iconSelected)="onCreateIconSelected($event)" (iconCleared)="onCreateIconCleared()"
@@ -481,8 +481,8 @@
                                 <!-- Step 3: Target Modifier -->
                                 <mat-step label="Target Modifier">
                                     <div class="space-y-6 py-4">
-                                        <h4 class="text-md font-medium text-gray-900">Select Target Modifier</h4>
-                                <p class="text-sm text-gray-600">Choose how the macro should target (Optional)</p>
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">Select Target Modifier</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Choose how the macro should target (Optional)</p>
 
                                         <mat-form-field appearance="outline" class="w-full">
                                             <mat-label>Target Modifier</mat-label>
@@ -508,8 +508,8 @@
                                 <!-- Step 4: Conditionals -->
                                 <mat-step label="Conditionals">
                                     <div class="space-y-6 py-4">
-                                        <h4 class="text-md font-medium text-gray-900">Add Conditionals</h4>
-                                <p class="text-sm text-gray-600">Select conditions for when the macro should execute
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">Add Conditionals</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Select conditions for when the macro should execute
                                     (Optional)</p>
 
                                         <mat-form-field appearance="outline" class="w-full">
@@ -543,8 +543,8 @@
                                 <!-- Step 5: Key Modifiers -->
                                 <mat-step label="Key Modifiers">
                                     <div class="space-y-6 py-4">
-                                        <h4 class="text-md font-medium text-gray-900">Add Key Modifiers</h4>
-                                <p class="text-sm text-gray-600">Select modifier keys to use with the macro (Optional)
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">Add Key Modifiers</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Select modifier keys to use with the macro (Optional)
                                 </p>
 
                                         <mat-form-field appearance="outline" class="w-full">
@@ -577,16 +577,16 @@
 
                                 <!-- Step 6: Tooltip Options -->
                                 <mat-step label="Tooltip Options">
-                                    <div class="space-y-6 py-4">
-                                        <h4 class="text-md font-medium text-gray-900">Tooltip Options</h4>
-                                        <p class="text-sm text-gray-600">Configure tooltip display</p>
+                                    <div class="space-y-6 py-4 tooltip-options-step">
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">Tooltip Options</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">Configure tooltip display</p>
 
                                         <div class="mt-3">
                                             <mat-checkbox [(ngModel)]="macroBuilderIncludeTooltip"
                                                 [ngModelOptions]="{standalone: true}" color="primary">
                                                 Add #showtooltip command
                                             </mat-checkbox>
-                                            <p class="text-xs text-gray-500 mt-1 ml-7">
+                                            <p class="text-xs text-gray-500 dark:text-gray-300 mt-1 ml-7">
                                                 Shows the ability tooltip when mousing over the macro button
                                             </p>
                                         </div>
@@ -601,34 +601,34 @@
                                 <!-- Step 7: Generate Macro -->
                                 <mat-step label="Generate Macro">
                                     <div class="space-y-6 py-4">
-                                        <h4 class="text-md font-medium text-gray-900">Generate Your Macro</h4>
-                                <p class="text-sm text-gray-600">Review your selections and generate the macro</p>
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">Generate Your Macro</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Review your selections and generate the macro</p>
 
                                         <!-- Configuration Summary -->
                                         <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                                    <h5 class="text-sm font-semibold text-gray-900 mb-3">Configuration Summary</h5>
+                                    <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Configuration Summary</h5>
                                             <div class="space-y-2 text-sm">
                                                 <div class="flex justify-between">
-                                                    <span class="text-gray-600">Ability:</span>
-                                                    <span class="font-medium text-gray-900">{{
+                                                    <span class="text-gray-600 dark:text-gray-300">Ability:</span>
+                                                    <span class="font-medium text-gray-900 dark:text-gray-100">{{
                                                         createSelectedAbility?.ability?.name }}</span>
                                                 </div>
                                         @if (createSelectedIcon) {
                                         <div class="flex justify-between">
-                                                    <span class="text-gray-600">Icon:</span>
-                                                    <span class="font-medium text-gray-900">✓ Selected</span>
+                                                    <span class="text-gray-600 dark:text-gray-300">Icon:</span>
+                                                    <span class="font-medium text-gray-900 dark:text-gray-100">✓ Selected</span>
                                                 </div>
                                         }
                                         @if (macroBuilderTargetModifier) {
                                         <div class="flex justify-between">
-                                                    <span class="text-gray-600">Target:</span>
-                                                    <span class="font-medium text-gray-900">{{
+                                                    <span class="text-gray-600 dark:text-gray-300">Target:</span>
+                                                    <span class="font-medium text-gray-900 dark:text-gray-100">{{
                                                         getTargetModifierLabel(macroBuilderTargetModifier) }}</span>
                                                 </div>
                                         }
                                         @if (macroBuilderConditionals.length > 0) {
                                         <div>
-                                                    <span class="text-gray-600 block mb-1">Conditionals:</span>
+                                                    <span class="text-gray-600 dark:text-gray-300 block mb-1">Conditionals:</span>
                                                     <div class="flex flex-wrap gap-1">
                                                 @for (conditional of macroBuilderConditionals; track conditional) {
                                                 <mat-chip class="text-xs">{{ getConditionalLabel(conditional)
@@ -639,7 +639,7 @@
                                         }
                                         @if (macroBuilderKeyModifiers.length > 0) {
                                         <div>
-                                                    <span class="text-gray-600 block mb-1">Key Modifiers:</span>
+                                                    <span class="text-gray-600 dark:text-gray-300 block mb-1">Key Modifiers:</span>
                                                     <div class="flex flex-wrap gap-1">
                                                 @for (modifier of macroBuilderKeyModifiers; track modifier) {
                                                 <mat-chip class="text-xs">{{ getKeyModifierLabel(modifier) }}</mat-chip>
@@ -648,8 +648,8 @@
                                                 </div>
                                         }
                                                 <div class="flex justify-between">
-                                                    <span class="text-gray-600">Tooltip:</span>
-                                                    <span class="font-medium text-gray-900">{{
+                                                    <span class="text-gray-600 dark:text-gray-300">Tooltip:</span>
+                                                    <span class="font-medium text-gray-900 dark:text-gray-100">{{
                                                         macroBuilderIncludeTooltip ? '✓ Enabled' : 'Disabled' }}</span>
                                                 </div>
                                             </div>
@@ -682,12 +682,12 @@
                                 <!-- Step 8: Validate -->
                                 <mat-step label="Validate">
                                     <div class="space-y-6 py-4">
-                                        <h4 class="text-md font-medium text-gray-900">Validate Your Macro</h4>
-                                        <p class="text-sm text-gray-600">Review the generated macro for any issues</p>
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">Validate Your Macro</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">Review the generated macro for any issues</p>
 
                                         <!-- Generated Macro Display -->
                                         <div class="space-y-2">
-                                            <label class="text-sm font-medium text-gray-700">Generated Macro</label>
+                                            <label class="text-sm font-medium text-gray-700 dark:text-gray-200">Generated Macro</label>
                                             <div
                                                 class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm whitespace-pre-wrap">
                                                 {{ createForm.get('macro_text')?.value }}</div>
@@ -709,8 +709,8 @@
                                 <!-- Step 9: Name & Description -->
                                 <mat-step label="Name & Description">
                                     <div class="space-y-6 py-4">
-                                        <h4 class="text-md font-medium text-gray-900">Macro Details</h4>
-                                        <p class="text-sm text-gray-600">Add a name and description for your macro</p>
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">Macro Details</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">Add a name and description for your macro</p>
 
                                         <!-- Macro Name -->
                                         <mat-form-field appearance="outline" class="w-full">
@@ -737,7 +737,7 @@
 
                                         <!-- Tags -->
                                         <div class="space-y-3">
-                                            <label class="text-sm font-medium text-gray-700">Tags (Optional)</label>
+                                            <label class="text-sm font-medium text-gray-700 dark:text-gray-200">Tags (Optional)</label>
                                             <div class="flex flex-wrap gap-2">
                                         @for (tag of createForm.get('tags')?.value; track tag) {
                                         <mat-chip [removable]="true" (removed)="removeCreateTag(tag)">
@@ -750,14 +750,14 @@
                                                 <mat-label>Add Tag</mat-label>
                                         <input matInput #stepperCreateTagInput placeholder="Type a tag and press Enter"
                                                     (keyup.enter)="addCreateTag(stepperCreateTagInput.value); stepperCreateTagInput.value=''">
-                                                <mat-hint>Press Enter to add a tag</mat-hint>
+                                                <mat-hint class="dark:!text-gray-300">Press Enter to add a tag</mat-hint>
                                             </mat-form-field>
                                         </div>
 
                                         <!-- Summary Note -->
                                         <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
-                                            <p class="text-sm text-blue-900">
-                                        <mat-icon class="text-blue-600 mr-2 align-middle text-sm">info</mat-icon>
+                                            <p class="text-sm text-blue-900 dark:text-blue-200">
+                                        <mat-icon class="text-blue-600 dark:text-blue-300 mr-2 align-middle text-sm">info</mat-icon>
                                         Note: Macro text, ability, and icon cannot be edited after creation. Use the
                                         back
                                         button if you need to make changes.

@@ -25,6 +25,7 @@ import { classes, fullClasses } from 'app/core/data/classes';
 // Interfaces
 import { Keybinding } from 'app/core/types/keybinding';
 import { Ability } from 'app/core/types/ability';
+import { Keybind } from 'app/core/types/keybind';
 
 @Component({
     selector: 'abilities',
@@ -848,7 +849,12 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             //loop through abilities and add the keybindings to the abilities from the selectedKeybinding
             data.forEach(ability => {
-                ability.keybindings = this.selectedKeybinding.keybinds.filter(keybind => keybind.spell.spellId == ability.spellId).map(keybind => keybind.key);
+                ability.keybindings = this.selectedKeybinding.keybinds
+                    .filter((keybind) =>
+                        keybind.spell?.spellId == ability.spellId ||
+                        keybind.spell?.sourceSpellId == ability.spellId
+                    )
+                    .map((keybind) => keybind.key);
             });
             this.abilities = data;
             console.log('Abilities set in component:', this.abilities.length);
@@ -879,38 +885,74 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
             if (result) {
                 const oldKeybindings = ability.keybindings || [];
                 const newKeybindings = result.keybindings;
+                const selectedMacro = result?.macro || null;
+                const buildSpellPayload = (key: string): Keybind['spell'] => {
+                    if (selectedMacro) {
+                        const macroId = selectedMacro.macroId || (selectedMacro.macroName || 'macro');
+                        return {
+                            key: selectedMacro.macroName || `${ability.name} Macro`,
+                            description: selectedMacro.macroText || ability.description,
+                            icon: selectedMacro.icon || ability.icon,
+                            id: macroId,
+                            keybinding: key,
+                            name: selectedMacro.macroName || `${ability.name} Macro`,
+                            spellId: `macro:${macroId}`,
+                            actionType: 'macro' as const,
+                            isMacro: true,
+                            macroId,
+                            macroText: selectedMacro.macroText || '',
+                            sourceSpellId: ability.spellId,
+                            sourceSpellName: ability.name,
+                        };
+                    }
+                    return {
+                        key: ability.name,
+                        description: ability.description,
+                        icon: ability.icon,
+                        id: ability.id,
+                        keybinding: key,
+                        name: ability.name,
+                        spellId: ability.spellId,
+                        actionType: 'spell' as const,
+                        isMacro: false,
+                        sourceSpellId: ability.spellId,
+                        sourceSpellName: ability.name,
+                    };
+                };
 
                 // Handle removed keybindings
-                const removedKeybinds = oldKeybindings
+                const removedKeybinds: { key: string; spell: Keybind['spell'] }[] = oldKeybindings
                     .filter(key => !newKeybindings.includes(key))
                     .map(key => ({
                         key,
-                        spell: {
-                            key: ability.name,
-                            description: ability.description,
-                            icon: ability.icon,
-                            id: ability.id,
-                            keybinding: key,
-                            name: ability.name,
-                            spellId: ability.spellId
-                        }
+                        spell: buildSpellPayload(key)
                     }));
 
                 // Handle added keybindings
-                const addedKeybinds = newKeybindings
+                const addedKeybinds: { key: string; spell: Keybind['spell'] }[] = newKeybindings
                     .filter(key => !oldKeybindings.includes(key))
                     .map(key => ({
                         key,
-                        spell: {
-                            key: ability.name,
-                            description: ability.description,
-                            icon: ability.icon,
-                            id: ability.id,
-                            keybinding: key,
-                            name: ability.name,
-                            spellId: ability.spellId
-                        }
+                        spell: buildSpellPayload(key)
                     }));
+
+                // If key remains but action type changed (spell <-> macro), treat it as remove+add.
+                const unchangedKeys = newKeybindings.filter((key) => oldKeybindings.includes(key));
+                unchangedKeys.forEach((key) => {
+                    const existing = this.selectedKeybinding?.keybinds?.find((kb) =>
+                        kb.key === key &&
+                        (kb.spell?.spellId === ability.spellId || kb.spell?.sourceSpellId === ability.spellId)
+                    );
+                    if (!existing) return;
+                    const existingIsMacro = existing.spell?.isMacro === true
+                        || existing.spell?.actionType === 'macro'
+                        || String(existing.spell?.spellId || '').startsWith('macro:');
+                    const desiredIsMacro = !!selectedMacro;
+                    if (existingIsMacro !== desiredIsMacro) {
+                        removedKeybinds.push({ key, spell: existing.spell as Keybind['spell'] });
+                        addedKeybinds.push({ key, spell: buildSpellPayload(key) });
+                    }
+                });
 
                 ability.keybindings = newKeybindings;
 

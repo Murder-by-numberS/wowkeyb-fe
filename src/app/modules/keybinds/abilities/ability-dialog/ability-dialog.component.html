@@ -45,6 +45,30 @@
         }
     </div>
 
+    @if (loadingMacros) {
+    <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">Checking macros for this ability...</div>
+    } @else if (availableMacros.length > 0) {
+    <div class="mt-4 border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+        <p class="font-medium mb-2">Apply a macro instead of spell?</p>
+        <mat-checkbox [(ngModel)]="applySelectedMacro" class="mb-3">
+            Use macro for this ability's keybinds
+        </mat-checkbox>
+        @if (applySelectedMacro) {
+        <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Select Macro</mat-label>
+            <mat-select [(ngModel)]="selectedMacroId" placeholder="Choose a macro">
+                @for (macro of availableMacros; track macro.id || macro.name) {
+                <mat-option [value]="macro.id || macro.name">{{ macro.name }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+            Selected macro will be used for the keybinds saved here.
+        </p>
+        }
+    </div>
+    }
+
     <!-- Active Keybinding Input Section -->
     @if (isKeybindingActive) {
     <div class="mt-4 border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
@@ -144,7 +168,7 @@
 <mat-dialog-actions class="flex justify-end space-x-4 p-4">
     <button mat-button (click)="close()"
         class="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-md">Close</button>
-    @if (hasKeybindingChanged() && !isKeybindingActive) {
+    @if (canSave()) {
     <button mat-button (click)="confirm()"
         class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md">Save</button>
     }
