@@ -6,15 +6,29 @@
 
     <!-- Left Column: Keybinding List (hidden when drawerDisabled) -->
     @if (!drawerDisabled) {
-    <div class="w-80 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-transform duration-300 ease-in-out"
+    <div class="w-80 flex flex-col min-h-0 overflow-hidden border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-transform duration-300 ease-in-out"
         [class.fixed]="useOverlayMode" [class.left-0]="useOverlayMode" [class.bottom-0]="useOverlayMode" [class.top-16]="useOverlayMode" [class.z-50]="useOverlayMode"
         [class.-translate-x-full]="useOverlayMode && !drawerOpen" [class.translate-x-0]="useOverlayMode && drawerOpen"
         [class.hidden]="!useOverlayMode && !drawerOpen" [class.static]="!useOverlayMode"
         [style.height]="useOverlayMode ? 'calc(100vh - 64px)' : '100%'">
-        <keybinds-drawer [isKeybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
-            (keybindingSelected)="onKeybindingSelected($event)" (refreshKeybindings)="refreshChildKeybindings()"
-            (keybindingUpdated)="onKeybindingUpdated($event)">
-        </keybinds-drawer>
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700">
+            <button
+                type="button"
+                mat-stroked-button
+                (click)="importFromAddon()"
+                [disabled]="!isAuthenticated"
+                [matTooltip]="!isAuthenticated ? 'Create an account to import keybindings' : 'Import addon profile code into My Keybindings'"
+                class="w-full text-xs sm:text-sm">
+                <mat-icon class="text-base sm:text-lg">upload</mat-icon>
+                <span class="ml-1">Import Keybinding</span>
+            </button>
+        </div>
+        <div class="flex-1 min-h-0">
+            <keybinds-drawer class="block h-full" [isKeybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
+                (keybindingSelected)="onKeybindingSelected($event)" (refreshKeybindings)="refreshChildKeybindings()"
+                (keybindingUpdated)="onKeybindingUpdated($event)">
+            </keybinds-drawer>
+        </div>
     </div>
     }
 
@@ -68,19 +82,6 @@
                     }
                 </div>
                 }
-            </div>
-
-            <div class="flex items-center gap-2 w-full lg:w-auto lg:ml-auto">
-                <button
-                    type="button"
-                    mat-stroked-button
-                    (click)="importFromAddon()"
-                    [disabled]="!isAuthenticated"
-                    [matTooltip]="!isAuthenticated ? 'Create an account to import keybindings' : 'Import addon profile code into My Keybindings'"
-                    class="text-xs sm:text-sm flex-shrink-0">
-                    <mat-icon class="text-base sm:text-lg">upload</mat-icon>
-                    <span class="ml-1">Import</span>
-                </button>
             </div>
 
             @if (selectedKeybinding) {

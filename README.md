@@ -136,6 +136,23 @@ The frontend communicates with the wowkeyb-be backend API:
 
 API endpoints are configured in environment files and automatically switch based on the deployment environment.
 
+## 🔄 Addon Interop (WK1 Codes)
+
+wowkeyb-fe supports importing/exporting addon share codes in `WK1:...` format.
+
+### Web -> Addon
+
+1. Build or edit a keybinding in wowkeyb-fe.
+2. Use **Export for Addon** to copy a `WK1:...` code.
+3. In WoW addon, import the code and **Apply Profile**.
+4. Addon applies keybindings and creates/reuses macros in game.
+
+### Addon -> Web
+
+1. In WoW addon, export a profile to a `WK1:...` code.
+2. In wowkeyb-fe, open **Import from Addon** and paste the code.
+3. Choose whether to update an existing keybinding with the same name or create a copy.
+
 ## 🎨 UI Components
 
 The application uses the Fuse admin template with custom components:

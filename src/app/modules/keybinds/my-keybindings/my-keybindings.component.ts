@@ -122,7 +122,7 @@ export class MyKeybindingsComponent implements OnInit {
 
     currentUserId: string | null = null;
     keybindings: any[] = [];  // Initialize as empty array
-    MAX_SIZE = 10;
+    MAX_SIZE = 50;
 
     // Version switching
     keybindingVersions: Array<{ keybindingId: string; versionId: string; gameVersion: string; isCurrent: boolean }> = [];
@@ -765,6 +765,32 @@ export class MyKeybindingsComponent implements OnInit {
         const obj = data as Record<string, unknown>;
         if (!Array.isArray(obj.keybinds)) return null;
 
+        const macroLookup = new Map<string, Record<string, unknown>>();
+        const registerMacroLookup = (idValue: unknown, macro: Record<string, unknown>) => {
+            const key = idValue !== undefined && idValue !== null ? String(idValue) : '';
+            if (!key) return;
+            macroLookup.set(key, macro);
+            if (key.startsWith('macro:')) {
+                const stripped = key.slice('macro:'.length);
+                if (stripped) macroLookup.set(stripped, macro);
+            } else {
+                macroLookup.set(`macro:${key}`, macro);
+            }
+        };
+        if (Array.isArray(obj.macros)) {
+            obj.macros.forEach((raw) => {
+                if (!raw || typeof raw !== 'object') return;
+                const macro = raw as Record<string, unknown>;
+                registerMacroLookup(macro.id ?? macro.macroId ?? macro.macro_id, macro);
+                const macroName = typeof (macro.name ?? macro.macroName ?? macro.macro_name) === 'string'
+                    ? String(macro.name ?? macro.macroName ?? macro.macro_name).trim()
+                    : '';
+                if (macroName) {
+                    macroLookup.set(`name:${macroName.toLowerCase()}`, macro);
+                }
+            });
+        }
+
         const keybinds = obj.keybinds
             .map((raw): Keybind | null => {
                 if (!raw || typeof raw !== 'object') return null;
@@ -773,21 +799,47 @@ export class MyKeybindingsComponent implements OnInit {
                 const spellRaw = (r.spell || {}) as Record<string, unknown>;
                 const spellIdRaw = spellRaw.spellId ?? spellRaw.spell_id;
                 const spellId = spellIdRaw !== undefined && spellIdRaw !== null ? String(spellIdRaw) : '';
+                const initialMacroId = typeof spellRaw.macroId === 'string'
+                    ? spellRaw.macroId
+                    : (typeof spellRaw.macro_id === 'string' ? spellRaw.macro_id : '');
+                const initialMacroText = typeof spellRaw.macroText === 'string'
+                    ? spellRaw.macroText
+                    : (typeof spellRaw.macro_text === 'string' ? spellRaw.macro_text : '');
+                const isMacro = spellRaw.isMacro === true
+                    || spellRaw.actionType === 'macro'
+                    || spellRaw.action_type === 'macro'
+                    || spellId.startsWith('macro:');
+
+                let macroId = initialMacroId || (spellId.startsWith('macro:') ? spellId.slice('macro:'.length) : '');
+                let macroText = initialMacroText;
+                let macroName = typeof spellRaw.name === 'string' ? spellRaw.name : '';
+                if (isMacro && !macroText) {
+                    const macroById = macroLookup.get(macroId) || macroLookup.get(spellId);
+                    const macroByName = !macroById && macroName
+                        ? macroLookup.get(`name:${macroName.toLowerCase()}`)
+                        : undefined;
+                    const hydrated = macroById || macroByName;
+                    if (hydrated) {
+                        macroId = macroId || String(hydrated.id ?? hydrated.macroId ?? hydrated.macro_id ?? '');
+                        macroText = String(hydrated.macroText ?? hydrated.macro_text ?? hydrated.text ?? hydrated.body ?? '');
+                        if (!macroName) {
+                            macroName = String(hydrated.name ?? hydrated.macroName ?? hydrated.macro_name ?? '');
+                        }
+                    }
+                }
 
                 if (!key) return null;
                 return {
                     key,
                     spell: {
                         spellId,
-                        name: typeof spellRaw.name === 'string' ? spellRaw.name : '',
+                        name: macroName,
                         icon: typeof spellRaw.icon === 'string' ? spellRaw.icon : '',
                         description: typeof spellRaw.description === 'string' ? spellRaw.description : '',
                         actionType: spellRaw.actionType === 'macro' ? 'macro' : 'spell',
-                        isMacro: spellRaw.isMacro === true || spellId.startsWith('macro:'),
-                        macroId: typeof spellRaw.macroId === 'string'
-                            ? spellRaw.macroId
-                            : (typeof spellRaw.macro_id === 'string' ? spellRaw.macro_id : undefined),
-                        macroText: typeof spellRaw.macroText === 'string' ? spellRaw.macroText : undefined,
+                        isMacro,
+                        macroId: macroId || undefined,
+                        macroText: macroText || undefined,
                         sourceSpellId: spellRaw.sourceSpellId !== undefined && spellRaw.sourceSpellId !== null
                             ? String(spellRaw.sourceSpellId)
                             : (spellRaw.source_spell_id !== undefined && spellRaw.source_spell_id !== null

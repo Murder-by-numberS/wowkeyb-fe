@@ -65,7 +65,7 @@ export class KeybindsDrawerComponent implements OnInit, OnDestroy {
     @Output() keybindingSelected = new EventEmitter<any>();
     @Output() refreshKeybindings = new EventEmitter<void>();
     @Output() keybindingUpdated = new EventEmitter<any>();
-    MAX_SIZE = 10;
+    MAX_SIZE = 50;
 
     selectedClasses = new FormControl<any[]>([]);
 
