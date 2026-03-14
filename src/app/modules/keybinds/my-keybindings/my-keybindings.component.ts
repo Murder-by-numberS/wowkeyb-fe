@@ -813,6 +813,8 @@ export class MyKeybindingsComponent implements OnInit {
                 let macroId = initialMacroId || (spellId.startsWith('macro:') ? spellId.slice('macro:'.length) : '');
                 let macroText = initialMacroText;
                 let macroName = typeof spellRaw.name === 'string' ? spellRaw.name : '';
+                let hydratedSourceSpellId = '';
+                let hydratedSourceSpellName = '';
                 if (isMacro && !macroText) {
                     const macroById = macroLookup.get(macroId) || macroLookup.get(spellId);
                     const macroByName = !macroById && macroName
@@ -825,8 +827,35 @@ export class MyKeybindingsComponent implements OnInit {
                         if (!macroName) {
                             macroName = String(hydrated.name ?? hydrated.macroName ?? hydrated.macro_name ?? '');
                         }
+                        const hydratedAbility = (hydrated.ability && typeof hydrated.ability === 'object')
+                            ? (hydrated.ability as Record<string, unknown>)
+                            : null;
+                        hydratedSourceSpellId = String(
+                            hydrated.sourceSpellId
+                            ?? hydrated.source_spell_id
+                            ?? hydratedAbility?.spellId
+                            ?? hydratedAbility?.spell_id
+                            ?? ''
+                        );
+                        hydratedSourceSpellName = String(
+                            hydrated.sourceSpellName
+                            ?? hydrated.source_spell_name
+                            ?? hydratedAbility?.name
+                            ?? ''
+                        );
                     }
                 }
+
+                const sourceSpellIdRaw =
+                    spellRaw.sourceSpellId
+                    ?? spellRaw.source_spell_id
+                    ?? hydratedSourceSpellId
+                    ?? '';
+                const sourceSpellNameRaw =
+                    spellRaw.sourceSpellName
+                    ?? spellRaw.source_spell_name
+                    ?? hydratedSourceSpellName
+                    ?? '';
 
                 if (!key) return null;
                 return {
@@ -840,14 +869,8 @@ export class MyKeybindingsComponent implements OnInit {
                         isMacro,
                         macroId: macroId || undefined,
                         macroText: macroText || undefined,
-                        sourceSpellId: spellRaw.sourceSpellId !== undefined && spellRaw.sourceSpellId !== null
-                            ? String(spellRaw.sourceSpellId)
-                            : (spellRaw.source_spell_id !== undefined && spellRaw.source_spell_id !== null
-                                ? String(spellRaw.source_spell_id)
-                                : undefined),
-                        sourceSpellName: typeof spellRaw.sourceSpellName === 'string'
-                            ? spellRaw.sourceSpellName
-                            : (typeof spellRaw.source_spell_name === 'string' ? spellRaw.source_spell_name : undefined),
+                        sourceSpellId: sourceSpellIdRaw ? String(sourceSpellIdRaw) : undefined,
+                        sourceSpellName: sourceSpellNameRaw ? String(sourceSpellNameRaw) : undefined,
                     },
                     barId: typeof r.barId === 'string' ? r.barId : (typeof r.bar_id === 'string' ? r.bar_id : undefined),
                     slotIndex: typeof r.slotIndex === 'number'

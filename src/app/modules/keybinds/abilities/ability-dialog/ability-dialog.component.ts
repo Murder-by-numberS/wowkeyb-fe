@@ -45,6 +45,12 @@ export class AbilityDialogComponent implements OnInit, OnDestroy {
     private readonly spellNameAliases: Record<string, string[]> = {
         'eternalflame': ['wordofglory'],
         'wordofglory': ['eternalflame'],
+        'judgment': ['judgement'],
+        'judgement': ['judgment'],
+        'blessingoffreedom': ['handoffreedom', 'bof', 'freedom'],
+        'handoffreedom': ['blessingoffreedom', 'bof', 'freedom'],
+        'blessingofsacrifice': ['handofsacrifice', 'bos', 'sacrifice', 'sac'],
+        'handofsacrifice': ['blessingofsacrifice', 'bos', 'sacrifice', 'sac'],
     };
     private readonly ERROR_TIMEOUT = 3000; // 3 seconds
     private keydownHandler: (event: KeyboardEvent) => boolean;
@@ -449,6 +455,7 @@ interface AbilityDialogData {
         icon: string;
         description: string;
         keybindings?: string[];
+        macroKeybindings?: string[];
     },
     keybinding: {
         keybindingId: string;

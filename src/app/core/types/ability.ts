@@ -6,6 +6,7 @@ export interface Ability {
     power: number;
     icon: string;  // Path or URL to the icon image,
     keybindings: string[];
+    macroKeybindings?: string[];
     class?: string;  // Class name for the ability
     spec?: string;   // Spec name for the ability
     heroTalent?: string;  // Hero talent name for the ability

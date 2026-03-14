@@ -89,6 +89,16 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     private readonly ICON_WIDTH = 48;
     private resizeObserver: ResizeObserver | null = null;
+    private readonly spellNameAliases: Record<string, string[]> = {
+        eternalflame: ['wordofglory'],
+        wordofglory: ['eternalflame'],
+        judgment: ['judgement'],
+        judgement: ['judgment'],
+        blessingoffreedom: ['handoffreedom', 'bof', 'freedom'],
+        handoffreedom: ['blessingoffreedom', 'bof', 'freedom'],
+        blessingofsacrifice: ['handofsacrifice', 'bos', 'sacrifice', 'sac'],
+        handofsacrifice: ['blessingofsacrifice', 'bos', 'sacrifice', 'sac'],
+    };
 
     /** Drawer width (Tailwind w-80 = 20rem = 320px) – used for viewport cap when drawer is open. */
     private static readonly DRAWER_WIDTH_PX = 320;
@@ -849,18 +859,14 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             //loop through abilities and add the keybindings to the abilities from the selectedKeybinding
             data.forEach(ability => {
-                ability.keybindings = this.selectedKeybinding.keybinds
-                    .filter((keybind) => {
-                        const spell: any = keybind.spell || {};
-                        const directSpellId = String(spell.spellId || spell.spell_id || '');
-                        const sourceSpellId = String(spell.sourceSpellId || spell.source_spell_id || '');
-                        const sourceSpellName = String(spell.sourceSpellName || spell.source_spell_name || '').trim().toLowerCase();
-                        const abilitySpellId = String(ability.spellId || '');
-                        const abilityName = String(ability.name || '').trim().toLowerCase();
-                        return directSpellId === abilitySpellId
-                            || sourceSpellId === abilitySpellId
-                            || (sourceSpellName !== '' && sourceSpellName === abilityName);
-                    })
+                const matchedKeybinds = this.selectedKeybinding.keybinds.filter((keybind) =>
+                    this.spellReferencesAbility((keybind as any)?.spell || {}, ability)
+                );
+                ability.keybindings = matchedKeybinds.map((keybind) => keybind.key);
+                ability.macroKeybindings = matchedKeybinds
+                    .filter((keybind) =>
+                        this.getSpellReferenceType((keybind as any)?.spell || {}, ability) === 'macro'
+                    )
                     .map((keybind) => keybind.key);
             });
             this.abilities = data;
@@ -947,17 +953,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
                 const unchangedKeys = newKeybindings.filter((key) => oldKeybindings.includes(key));
                 unchangedKeys.forEach((key) => {
                     const existing = this.selectedKeybinding?.keybinds?.find((kb) =>
-                        kb.key === key && (() => {
-                            const spell: any = kb.spell || {};
-                            const directSpellId = String(spell.spellId || spell.spell_id || '');
-                            const sourceSpellId = String(spell.sourceSpellId || spell.source_spell_id || '');
-                            const sourceSpellName = String(spell.sourceSpellName || spell.source_spell_name || '').trim().toLowerCase();
-                            const abilitySpellId = String(ability.spellId || '');
-                            const abilityName = String(ability.name || '').trim().toLowerCase();
-                            return directSpellId === abilitySpellId
-                                || sourceSpellId === abilitySpellId
-                                || (sourceSpellName !== '' && sourceSpellName === abilityName);
-                        })()
+                        kb.key === key && this.spellReferencesAbility((kb as any)?.spell || {}, ability)
                     );
                     if (!existing) return;
                     const existingIsMacro = existing.spell?.isMacro === true
@@ -978,6 +974,58 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
                 });
             }
         });
+    }
+
+    private normalizeSpellName(value: string): string {
+        return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    private getSpellNameCandidates(name: string): Set<string> {
+        const normalized = this.normalizeSpellName(name);
+        const out = new Set<string>();
+        if (!normalized) return out;
+        out.add(normalized);
+        (this.spellNameAliases[normalized] || []).forEach((alias) => out.add(alias));
+        return out;
+    }
+
+    private getSpellReferenceType(spell: any, ability: Ability): 'none' | 'direct' | 'macro' {
+        const directSpellId = String(spell?.spellId || spell?.spell_id || '');
+        const sourceSpellId = String(spell?.sourceSpellId || spell?.source_spell_id || '');
+        const sourceSpellName = this.normalizeSpellName(String(spell?.sourceSpellName || spell?.source_spell_name || ''));
+        const abilitySpellId = String((ability as any)?.spellId || '');
+        const abilityNameCandidates = this.getSpellNameCandidates(String((ability as any)?.name || ''));
+
+        const actionType = String(spell?.actionType || spell?.action_type || '').toLowerCase();
+        const isMacro = spell?.isMacro === true || actionType === 'macro' || directSpellId.startsWith('macro:');
+        const directMatch = (directSpellId !== '' && directSpellId === abilitySpellId)
+            || (sourceSpellId !== '' && sourceSpellId === abilitySpellId)
+            || (sourceSpellName !== '' && abilityNameCandidates.has(sourceSpellName));
+
+        if (!isMacro) {
+            return directMatch ? 'direct' : 'none';
+        }
+
+        const macroTextRaw = String(spell?.macroText || spell?.macro_text || spell?.text || spell?.body || '');
+        const macroTextNormalized = this.normalizeSpellName(macroTextRaw);
+        const macroDisplayNameNormalized = this.normalizeSpellName(String(spell?.name || ''));
+        const macroIdMatch = abilitySpellId !== '' && macroTextRaw.includes(String(abilitySpellId));
+        let macroNameMatch = false;
+        for (const candidate of abilityNameCandidates) {
+            if (
+                candidate !== ''
+                && (macroTextNormalized.includes(candidate) || macroDisplayNameNormalized.includes(candidate))
+            ) {
+                macroNameMatch = true;
+                break;
+            }
+        }
+        if (directMatch || macroIdMatch || macroNameMatch) return 'macro';
+        return 'none';
+    }
+
+    private spellReferencesAbility(spell: any, ability: Ability): boolean {
+        return this.getSpellReferenceType(spell, ability) !== 'none';
     }
 
 }

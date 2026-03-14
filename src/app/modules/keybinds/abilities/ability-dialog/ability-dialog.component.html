@@ -28,6 +28,11 @@
     <!-- Multiple Keybindings Section -->
     <div class="mt-4">
         <p class="font-medium">Keybindings:</p>
+        @if ((data.ability.macroKeybindings?.length || 0) > 0) {
+        <div class="mb-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+            This ability is keybound via macro on: {{ data.ability.macroKeybindings?.join(', ') }}
+        </div>
+        }
         @for (binding of keybindings; track binding) {
         <div class="flex items-center gap-2 mb-2">
             <p class="text-gray-600 dark:text-gray-400">{{ binding }}</p>
