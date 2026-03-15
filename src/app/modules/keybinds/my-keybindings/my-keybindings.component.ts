@@ -700,8 +700,10 @@ export class MyKeybindingsComponent implements OnInit {
         }
 
         const payload = this.toImportPayload(parsed);
-        if (!payload || !payload.name || !payload.class || !payload.keybinds?.length) {
-            this.snackBar.open('Invalid profile format. Required: name, class, keybinds.', 'Close', { duration: 4000 });
+        const hasLayoutBars = !!payload?.layout?.bars?.length;
+        const hasKeybinds = !!payload?.keybinds;
+        if (!payload || !payload.name || !payload.class || (!hasKeybinds && !hasLayoutBars)) {
+            this.snackBar.open('Invalid profile format. Required: name, class, and keybinds or layout.', 'Close', { duration: 4000 });
             return;
         }
 
