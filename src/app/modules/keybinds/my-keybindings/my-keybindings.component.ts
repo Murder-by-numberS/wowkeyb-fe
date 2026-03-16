@@ -34,6 +34,7 @@ import { ImportConflictAction, ImportConflictDialogComponent } from './import-co
 import { KeybindingService } from 'app/core/services/keybinding.service';
 import { AuthService } from 'app/core/auth/auth.service';
 import { UserService } from 'app/core/user/user.service';
+import { AbilitiesService } from 'app/core/services/abilities.service';
 
 //Types
 import { Keybinding } from 'app/core/types/keybinding';
@@ -132,6 +133,7 @@ export class MyKeybindingsComponent implements OnInit {
 
     constructor(
         private keybindingService: KeybindingService,
+        private abilitiesService: AbilitiesService,
         private _formBuilder: FormBuilder,
         private _authService: AuthService,
         private _userService: UserService,
@@ -377,6 +379,9 @@ export class MyKeybindingsComponent implements OnInit {
 
             // Load versions for version switching
             this.loadVersions(updatedKeybinding.keybindingId);
+
+            // Hydrate imported keybind icons from ability catalog when icon refs are unusable.
+            this.hydrateSelectedKeybindingIconsFromAbilities(updatedKeybinding);
         }
         else {
             this.selectedKeybinding = null;
@@ -400,6 +405,90 @@ export class MyKeybindingsComponent implements OnInit {
     onSelectionClassChanged(value: string) {
         this.selectedKeybindingClass = value;
         // You can also perform other actions here
+    }
+
+    private hydrateSelectedKeybindingIconsFromAbilities(keybinding: Keybinding): void {
+        if (!keybinding?.keybinds?.length) return;
+        if (!keybinding.class || !keybinding.spec || !keybinding.heroTalent || !keybinding.version?.game_version) return;
+
+        const needsIconHydration = keybinding.keybinds.some((kb) => !this.isRenderableIcon(kb?.spell?.icon));
+        if (!needsIconHydration) return;
+
+        this.abilitiesService.getAbilities(
+            keybinding.class,
+            keybinding.spec,
+            keybinding.heroTalent,
+            keybinding.version.game_version
+        ).subscribe({
+            next: (abilities: any[]) => {
+                if (!Array.isArray(abilities) || abilities.length === 0) return;
+
+                const bySpellId = new Map<string, string>();
+                const byName = new Map<string, string>();
+                abilities.forEach((ability: any) => {
+                    const spellId = String(ability?.spellId ?? '');
+                    const icon = String(ability?.icon ?? '');
+                    const name = this.normalizeAbilityName(String(ability?.name ?? ''));
+                    if (spellId && icon) bySpellId.set(spellId, icon);
+                    if (name && icon) byName.set(name, icon);
+                });
+
+                let changed = false;
+                const hydratedKeybinds = keybinding.keybinds.map((kb) => {
+                    if (this.isRenderableIcon(kb?.spell?.icon)) return kb;
+
+                    const directSpellId = String(kb?.spell?.spellId ?? '').replace(/^macro:/i, '');
+                    const sourceSpellId = String(kb?.spell?.sourceSpellId ?? '');
+                    const sourceSpellName = this.normalizeAbilityName(String(kb?.spell?.sourceSpellName ?? ''));
+                    const spellName = this.normalizeAbilityName(String(kb?.spell?.name ?? ''));
+
+                    const hydratedIcon =
+                        bySpellId.get(sourceSpellId) ||
+                        bySpellId.get(directSpellId) ||
+                        byName.get(sourceSpellName) ||
+                        byName.get(spellName) ||
+                        '';
+
+                    if (!hydratedIcon) return kb;
+                    changed = true;
+                    return {
+                        ...kb,
+                        spell: {
+                            ...kb.spell,
+                            icon: hydratedIcon,
+                        },
+                    };
+                });
+
+                if (!changed) return;
+
+                const hydrated = {
+                    ...this.selectedKeybinding,
+                    keybinds: hydratedKeybinds,
+                };
+                this.selectedKeybinding = hydrated;
+                this.keybindsDrawerComponent?.setSelectedKeybinding(hydrated);
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                console.error('Failed to hydrate imported keybind icons:', error);
+            },
+        });
+    }
+
+    private isRenderableIcon(icon: unknown): boolean {
+        if (typeof icon !== 'string') return false;
+        const value = icon.trim();
+        if (!value) return false;
+        return value.startsWith('http://')
+            || value.startsWith('https://')
+            || value.startsWith('assets/')
+            || value.startsWith('/')
+            || value.startsWith('data:');
+    }
+
+    private normalizeAbilityName(value: string): string {
+        return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 
     selectNextKeybindingAfterDeletion(deletedIndex: number, originalLength: number) {
