@@ -3,10 +3,15 @@
     <div class="py-4">
         <div *ngFor="let bind of keybinds" class="mb-4" [class.opacity-50]="markedForRemoval.has(bind)">
             <div class="flex items-center gap-3 mb-2">
-                <img [src]="bind.spell?.icon" class="w-8 h-8" [alt]="bind.spell?.name">
+                <img [src]="getRenderableIcon(bind)" class="w-8 h-8" [alt]="bind.spell?.name">
                 <div class="flex-grow">
                     <div class="font-semibold text-lg">{{bind.spell?.name}}</div>
                 </div>
+                @if (getUtilityActionBadge(bind)) {
+                <span class="rounded bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+                    {{ getUtilityActionBadge(bind) }}
+                </span>
+                }
                 <button mat-icon-button color="warn" (click)="toggleRemoval(bind)"
                     [matTooltip]="markedForRemoval.has(bind) ? 'Undo remove' : 'Remove keybind'">
                     <mat-icon>{{markedForRemoval.has(bind) ? 'undo' : 'delete'}}</mat-icon>

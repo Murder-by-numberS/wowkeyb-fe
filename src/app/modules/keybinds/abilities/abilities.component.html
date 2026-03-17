@@ -53,6 +53,22 @@
             </mat-form-field>
         </div>
         }
+
+        <!-- Racial Selector -->
+        @if (selectedKeybinding && selectedKeybindingClass) {
+        <div class="px-2 flex-col">
+            <mat-form-field appearance="fill" class="w-full max-w-[calc(100vw-3rem)] min-w-0 sm:w-48 sm:max-w-none">
+                <mat-label>Racial: </mat-label>
+                <mat-select [(value)]="selectedKeybindingRace" [disabled]="!keybindingSelected"
+                    (selectionChange)="onRaceChange($event)">
+                    <mat-option [value]="''">Any (Optional)</mat-option>
+                    @for (race of races; track $index + race) {
+                    <mat-option [value]="race">{{race}}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
+        }
     </div>
 </div>
 

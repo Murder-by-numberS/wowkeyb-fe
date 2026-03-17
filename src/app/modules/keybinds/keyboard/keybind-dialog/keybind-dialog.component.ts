@@ -283,6 +283,53 @@ export class KeybindDialogComponent {
         });
         return unique;
     }
+
+    getUtilityActionBadge(bind: Keybind): string {
+        const actionType = String(bind?.spell?.actionType ?? '').trim().toLowerCase();
+        if (actionType === 'mount') return 'Mount';
+        if (actionType === 'toy') return 'Toy';
+        return '';
+    }
+
+    getRenderableIcon(bind: Keybind): string {
+        const rawIcon = this.extractRawIcon(bind);
+        if (!rawIcon) {
+            return 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg';
+        }
+        if (
+            rawIcon.startsWith('http://')
+            || rawIcon.startsWith('https://')
+            || rawIcon.startsWith('assets/')
+            || rawIcon.startsWith('/')
+            || rawIcon.startsWith('data:')
+        ) {
+            return rawIcon;
+        }
+        if (/^\d+$/.test(rawIcon)) {
+            return `https://render.worldofwarcraft.com/us/icons/56/${rawIcon}.jpg`;
+        }
+        const normalized = rawIcon
+            .replace(/^interface[\\/]+icons[\\/]+/i, '')
+            .replace(/\.blp$/i, '')
+            .replace(/\\/g, '/');
+        const iconName = normalized.split('/').pop() || '';
+        if (iconName) {
+            return `https://wow.zamimg.com/images/wow/icons/large/${iconName.toLowerCase()}.jpg`;
+        }
+        return 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg';
+    }
+
+    private extractRawIcon(bind: Keybind): string {
+        const icon = bind?.spell?.icon as any;
+        if (typeof icon === 'string') return icon.trim();
+        if (icon && typeof icon === 'object') {
+            const cloudfront = String(icon.cloudfrontUrl || icon.url || '').trim();
+            if (cloudfront) return cloudfront;
+            const nested = String(icon.icon || '').trim();
+            if (nested) return nested;
+        }
+        return '';
+    }
 }
 
 interface KeybindDialogData {

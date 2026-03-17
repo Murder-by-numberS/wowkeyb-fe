@@ -330,20 +330,22 @@ export class MyKeybindingsComponent implements OnInit {
             const currentKeybindings = this.keybindingService.currentKeybindingsValue;
             const updatedKeybinding = currentKeybindings.find(kb => kb.keybindingId === keybinding.keybindingId) || keybinding;
 
+            // Normalize imported icon references (numeric IDs / WoW texture names) for rendering.
+            const normalizedKeybinding = this.normalizeKeybindIconsForRender(updatedKeybinding);
             // Update the selected keybinding with the latest data
-            this.selectedKeybinding = updatedKeybinding;
+            this.selectedKeybinding = normalizedKeybinding;
             this.selectedKeybindingName = this.selectedKeybinding.name;
             this.keybindingSelected = true;
             this.nameForm.get('name')?.setValue(this.selectedKeybindingName);
 
             // Update the class, spec, and heroTalent selections
-            this.selectedKeybindingClass = updatedKeybinding.class;
-            this.selectedKeybindingSpec = updatedKeybinding.spec;
-            this.selectedKeybindingHeroTalent = updatedKeybinding.heroTalent;
+            this.selectedKeybindingClass = normalizedKeybinding.class;
+            this.selectedKeybindingSpec = normalizedKeybinding.spec;
+            this.selectedKeybindingHeroTalent = normalizedKeybinding.heroTalent;
 
             // If this is a new keybinding with random class details, use them to fetch abilities
-            if (updatedKeybinding.randomClassDetails) {
-                console.log('New keybinding with random class details:', updatedKeybinding.randomClassDetails);
+            if (normalizedKeybinding.randomClassDetails) {
+                console.log('New keybinding with random class details:', normalizedKeybinding.randomClassDetails);
 
                 // The abilities component will pick up the randomClassDetails from the selectedKeybinding
                 // and use them in ngOnChanges to populate the abilities
@@ -356,11 +358,11 @@ export class MyKeybindingsComponent implements OnInit {
 
             // Update the drawer's selection
             if (this.keybindsDrawerComponent) {
-                this.keybindsDrawerComponent.setSelectedKeybinding(updatedKeybinding);
+                this.keybindsDrawerComponent.setSelectedKeybinding(normalizedKeybinding);
             }
 
             // Trigger the change events to update the abilities component
-            this.onSelectionClassChanged(updatedKeybinding.class);
+            this.onSelectionClassChanged(normalizedKeybinding.class);
 
             // Force change detection to ensure UI updates
             this.cdr.detectChanges();
@@ -378,10 +380,10 @@ export class MyKeybindingsComponent implements OnInit {
             }
 
             // Load versions for version switching
-            this.loadVersions(updatedKeybinding.keybindingId);
+            this.loadVersions(normalizedKeybinding.keybindingId);
 
             // Hydrate imported keybind icons from ability catalog when icon refs are unusable.
-            this.hydrateSelectedKeybindingIconsFromAbilities(updatedKeybinding);
+            this.hydrateSelectedKeybindingIconsFromAbilities(normalizedKeybinding);
         }
         else {
             this.selectedKeybinding = null;
@@ -407,73 +409,178 @@ export class MyKeybindingsComponent implements OnInit {
         // You can also perform other actions here
     }
 
+    onAbilitiesLoaded(abilities: any[]): void {
+        if (!this.selectedKeybinding?.keybinds?.length) return;
+        if (!Array.isArray(abilities) || abilities.length === 0) return;
+
+        const bySpellId = new Map<string, string>();
+        const byName = new Map<string, string>();
+        abilities.forEach((ability: any) => {
+            const spellId = String(ability?.spellId ?? '');
+            const icon = String(ability?.icon ?? '');
+            const name = this.normalizeAbilityName(String(ability?.name ?? ''));
+            if (spellId && icon) bySpellId.set(spellId, icon);
+            if (name && icon) byName.set(name, icon);
+        });
+
+        let changed = false;
+        const keybinds = this.selectedKeybinding.keybinds.map((kb: any) => {
+            const directSpellId = String(kb?.spell?.spellId ?? '').replace(/^macro:/i, '');
+            const sourceSpellId = String(kb?.spell?.sourceSpellId ?? '');
+            const sourceSpellName = this.normalizeAbilityName(String(kb?.spell?.sourceSpellName ?? ''));
+            const spellName = this.normalizeAbilityName(String(kb?.spell?.name ?? ''));
+
+            const catalogIcon =
+                bySpellId.get(sourceSpellId) ||
+                bySpellId.get(directSpellId) ||
+                byName.get(sourceSpellName) ||
+                byName.get(spellName) ||
+                '';
+
+            if (!catalogIcon) return kb;
+            const renderableCatalogIcon = this.resolveIconForRender(catalogIcon);
+            const nextIcon = renderableCatalogIcon || catalogIcon;
+            if (!nextIcon || nextIcon === String(kb?.spell?.icon || '')) return kb;
+
+            changed = true;
+            return {
+                ...kb,
+                spell: {
+                    ...kb.spell,
+                    icon: nextIcon,
+                },
+            };
+        });
+
+        if (!changed) return;
+
+        const updated = {
+            ...this.selectedKeybinding,
+            keybinds,
+        };
+        this.selectedKeybinding = updated;
+        this.keybindsDrawerComponent?.setSelectedKeybinding(updated);
+        this.cdr.detectChanges();
+    }
+
     private hydrateSelectedKeybindingIconsFromAbilities(keybinding: Keybinding): void {
         if (!keybinding?.keybinds?.length) return;
-        if (!keybinding.class || !keybinding.spec || !keybinding.heroTalent || !keybinding.version?.game_version) return;
+        if (!keybinding.class || !keybinding.version?.game_version) return;
 
         const needsIconHydration = keybinding.keybinds.some((kb) => !this.isRenderableIcon(kb?.spell?.icon));
         if (!needsIconHydration) return;
 
-        this.abilitiesService.getAbilities(
-            keybinding.class,
-            keybinding.spec,
-            keybinding.heroTalent,
-            keybinding.version.game_version
-        ).subscribe({
-            next: (abilities: any[]) => {
-                if (!Array.isArray(abilities) || abilities.length === 0) return;
+        const normalizedClass = this.normalizeFilterValue(keybinding.class);
+        const normalizedSpec = this.normalizeFilterValue(keybinding.spec);
+        const normalizedHeroTalent = this.normalizeFilterValue(keybinding.heroTalent);
 
-                const bySpellId = new Map<string, string>();
-                const byName = new Map<string, string>();
-                abilities.forEach((ability: any) => {
-                    const spellId = String(ability?.spellId ?? '');
-                    const icon = String(ability?.icon ?? '');
-                    const name = this.normalizeAbilityName(String(ability?.name ?? ''));
-                    if (spellId && icon) bySpellId.set(spellId, icon);
-                    if (name && icon) byName.set(name, icon);
-                });
+        const requests: Array<() => any> = [];
+        if (keybinding.spec && keybinding.heroTalent) {
+            requests.push(() => this.abilitiesService.getAbilities(
+                keybinding.class,
+                keybinding.spec,
+                keybinding.heroTalent,
+                keybinding.version.game_version
+            ));
+        }
+        requests.push(
+            () => this.abilitiesService.getAbilitiesWithFilters({
+                gameVersion: keybinding.version.game_version,
+                class: normalizedClass,
+                spec: normalizedSpec || undefined,
+                page: 1,
+                limit: 100,
+            }),
+            () => this.abilitiesService.getAbilitiesWithFilters({
+                gameVersion: keybinding.version.game_version,
+                class: normalizedClass,
+                page: 1,
+                limit: 100,
+            })
+        );
 
-                let changed = false;
-                const hydratedKeybinds = keybinding.keybinds.map((kb) => {
-                    if (this.isRenderableIcon(kb?.spell?.icon)) return kb;
+        const tryHydrateRequest = (index: number): void => {
+            if (index >= requests.length) return;
+            requests[index]().subscribe({
+                next: (response: any) => {
+                    const abilities = Array.isArray(response) ? response : (Array.isArray(response?.abilities) ? response.abilities : []);
+                    if (!abilities.length) {
+                        tryHydrateRequest(index + 1);
+                        return;
+                    }
 
-                    const directSpellId = String(kb?.spell?.spellId ?? '').replace(/^macro:/i, '');
-                    const sourceSpellId = String(kb?.spell?.sourceSpellId ?? '');
-                    const sourceSpellName = this.normalizeAbilityName(String(kb?.spell?.sourceSpellName ?? ''));
-                    const spellName = this.normalizeAbilityName(String(kb?.spell?.name ?? ''));
+                    const bySpellId = new Map<string, string>();
+                    const byName = new Map<string, string>();
+                    abilities.forEach((ability: any) => {
+                        const spellId = String(ability?.spellId ?? '');
+                        const icon = String(ability?.icon ?? '');
+                        const name = this.normalizeAbilityName(String(ability?.name ?? ''));
+                        if (spellId && icon) bySpellId.set(spellId, icon);
+                        if (name && icon) byName.set(name, icon);
+                    });
 
-                    const hydratedIcon =
-                        bySpellId.get(sourceSpellId) ||
-                        bySpellId.get(directSpellId) ||
-                        byName.get(sourceSpellName) ||
-                        byName.get(spellName) ||
-                        '';
+                    let changed = false;
+                    const hydratedKeybinds = keybinding.keybinds.map((kb) => {
+                        const normalizedIcon = this.resolveIconForRender(kb?.spell?.icon);
+                        if (this.isRenderableIcon(normalizedIcon)) {
+                            if (normalizedIcon !== String(kb?.spell?.icon || '')) {
+                                changed = true;
+                                return {
+                                    ...kb,
+                                    spell: {
+                                        ...kb.spell,
+                                        icon: normalizedIcon,
+                                    },
+                                };
+                            }
+                            return kb;
+                        }
 
-                    if (!hydratedIcon) return kb;
-                    changed = true;
-                    return {
-                        ...kb,
-                        spell: {
-                            ...kb.spell,
-                            icon: hydratedIcon,
-                        },
+                        const directSpellId = String(kb?.spell?.spellId ?? '').replace(/^macro:/i, '');
+                        const sourceSpellId = String(kb?.spell?.sourceSpellId ?? '');
+                        const sourceSpellName = this.normalizeAbilityName(String(kb?.spell?.sourceSpellName ?? ''));
+                        const spellName = this.normalizeAbilityName(String(kb?.spell?.name ?? ''));
+
+                        const hydratedIcon =
+                            bySpellId.get(sourceSpellId) ||
+                            bySpellId.get(directSpellId) ||
+                            byName.get(sourceSpellName) ||
+                            byName.get(spellName) ||
+                            '';
+
+                        if (!hydratedIcon) return kb;
+                        const renderableHydratedIcon = this.resolveIconForRender(hydratedIcon);
+                        changed = true;
+                        return {
+                            ...kb,
+                            spell: {
+                                ...kb.spell,
+                                icon: renderableHydratedIcon || hydratedIcon,
+                            },
+                        };
+                    });
+
+                    if (!changed) return;
+
+                    const hydrated = {
+                        ...this.selectedKeybinding,
+                        keybinds: hydratedKeybinds,
                     };
-                });
+                    this.selectedKeybinding = hydrated;
+                    this.keybindsDrawerComponent?.setSelectedKeybinding(hydrated);
+                    this.cdr.detectChanges();
+                },
+                error: (error) => {
+                    if (index + 1 < requests.length) {
+                        tryHydrateRequest(index + 1);
+                        return;
+                    }
+                    console.error('Failed to hydrate imported keybind icons:', error);
+                },
+            });
+        };
 
-                if (!changed) return;
-
-                const hydrated = {
-                    ...this.selectedKeybinding,
-                    keybinds: hydratedKeybinds,
-                };
-                this.selectedKeybinding = hydrated;
-                this.keybindsDrawerComponent?.setSelectedKeybinding(hydrated);
-                this.cdr.detectChanges();
-            },
-            error: (error) => {
-                console.error('Failed to hydrate imported keybind icons:', error);
-            },
-        });
+        tryHydrateRequest(0);
     }
 
     private isRenderableIcon(icon: unknown): boolean {
@@ -487,8 +594,54 @@ export class MyKeybindingsComponent implements OnInit {
             || value.startsWith('data:');
     }
 
+    private resolveIconForRender(icon: unknown): string {
+        if (typeof icon !== 'string') return '';
+        const value = icon.trim();
+        if (!value) return '';
+        if (this.isRenderableIcon(value)) return value;
+
+        // Addon often sends numeric WoW fileData IDs.
+        if (/^\d+$/.test(value)) {
+            return `https://render.worldofwarcraft.com/us/icons/56/${value}.jpg`;
+        }
+
+        // Support WoW texture paths and bare icon names (e.g. "trade_blacksmithing").
+        const normalized = value
+            .replace(/^interface[\\/]+icons[\\/]+/i, '')
+            .replace(/\.blp$/i, '')
+            .replace(/\\/g, '/');
+        const iconName = normalized.split('/').pop() || '';
+        if (iconName) {
+            return `https://wow.zamimg.com/images/wow/icons/large/${iconName.toLowerCase()}.jpg`;
+        }
+
+        return '';
+    }
+
+    private normalizeKeybindIconsForRender(keybinding: Keybinding): Keybinding {
+        if (!keybinding?.keybinds?.length) return keybinding;
+        let changed = false;
+        const keybinds = keybinding.keybinds.map((kb) => {
+            const resolvedIcon = this.resolveIconForRender(kb?.spell?.icon);
+            if (!resolvedIcon || resolvedIcon === String(kb?.spell?.icon || '')) return kb;
+            changed = true;
+            return {
+                ...kb,
+                spell: {
+                    ...kb.spell,
+                    icon: resolvedIcon,
+                },
+            };
+        });
+        return changed ? { ...keybinding, keybinds } : keybinding;
+    }
+
     private normalizeAbilityName(value: string): string {
         return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    private normalizeFilterValue(value: string | null | undefined): string {
+        return String(value || '').trim().toLowerCase();
     }
 
     selectNextKeybindingAfterDeletion(deletedIndex: number, originalLength: number) {
@@ -991,6 +1144,8 @@ export class MyKeybindingsComponent implements OnInit {
             layout: payload.layout,
         }).subscribe({
             next: (updated) => {
+                (updated as any).__fromAddonImport = true;
+                this.markAddonImportedKeybinding(updated.keybindingId);
                 this.onKeybindingSelected(updated);
                 this.snackBar.open(`Updated "${updated.name}" from import`, 'Close', { duration: 3500 });
                 this.refreshChildKeybindings();
@@ -1016,6 +1171,8 @@ export class MyKeybindingsComponent implements OnInit {
 
         this.keybindingService.createKeybinding(keybindingToCreate as Keybinding).subscribe({
             next: (created) => {
+                (created as any).__fromAddonImport = true;
+                this.markAddonImportedKeybinding(created.keybindingId);
                 this.onKeybindingSelected(created);
                 this.snackBar.open(`Imported "${created.name}"`, 'Close', { duration: 3500 });
                 this.refreshChildKeybindings();
@@ -1039,6 +1196,21 @@ export class MyKeybindingsComponent implements OnInit {
             candidate = `${trimmed} (Imported ${idx})`;
         }
         return candidate;
+    }
+
+    private markAddonImportedKeybinding(keybindingId: string): void {
+        if (!keybindingId || typeof localStorage === 'undefined') return;
+        try {
+            const raw = localStorage.getItem('wowkeybAddonImportedKeybindings');
+            const ids = raw ? JSON.parse(raw) : [];
+            const list = Array.isArray(ids) ? ids : [];
+            if (!list.includes(keybindingId)) {
+                list.push(keybindingId);
+                localStorage.setItem('wowkeybAddonImportedKeybindings', JSON.stringify(list));
+            }
+        } catch {
+            // best-effort marker only
+        }
     }
 
     shareKeybinding() {

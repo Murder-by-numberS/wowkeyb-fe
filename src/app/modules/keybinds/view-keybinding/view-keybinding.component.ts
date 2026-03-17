@@ -12,6 +12,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil } from 'rxjs';
 import { KeybindingService } from '../../../core/services/keybinding.service';
+import { AbilitiesService } from '../../../core/services/abilities.service';
 import { Keybinding } from '../../../core/types/keybinding';
 import { ViewKeyboardComponent } from '../view-keyboard/view-keyboard.component';
 import { AuthService } from '../../../core/services/auth.service';
@@ -56,6 +57,7 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         private router: Router,
         private keybindingService: KeybindingService,
+        private abilitiesService: AbilitiesService,
         private snackBar: MatSnackBar,
         private authService: AuthService,
         private dialog: MatDialog
@@ -81,9 +83,11 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
             takeUntil(this._unsubscribeAll)
         ).subscribe({
             next: (keybinding) => {
-                this.keybinding = keybinding;
+                const normalized = this.normalizeKeybindIconsForRender(keybinding);
+                this.keybinding = normalized;
                 this.checkOwnership();
                 this.loadVersions(id);
+                this.hydrateKeybindingIconsFromAbilities(normalized);
             },
             error: (error) => {
                 console.error('Error loading keybinding:', error);
@@ -290,5 +294,177 @@ export class ViewKeybindingComponent implements OnInit, OnDestroy {
                 this.isCopyingToVersion = false;
             }
         });
+    }
+
+    private hydrateKeybindingIconsFromAbilities(keybinding: Keybinding): void {
+        if (!keybinding?.keybinds?.length) return;
+        if (!keybinding.class || !keybinding.version?.game_version) return;
+
+        const needsIconHydration = keybinding.keybinds.some((kb) => !this.isRenderableIcon(kb?.spell?.icon));
+        if (!needsIconHydration) return;
+
+        const normalizedClass = this.normalizeFilterValue(keybinding.class);
+        const normalizedSpec = this.normalizeFilterValue(keybinding.spec);
+        const normalizedHeroTalent = this.normalizeFilterValue(keybinding.heroTalent);
+
+        const filterCandidates = [
+            {
+                gameVersion: keybinding.version.game_version,
+                class: normalizedClass,
+                spec: normalizedSpec || undefined,
+                heroTalent: normalizedHeroTalent || undefined,
+                page: 1,
+                limit: 100,
+            },
+            {
+                gameVersion: keybinding.version.game_version,
+                class: normalizedClass,
+                spec: normalizedSpec || undefined,
+                page: 1,
+                limit: 100,
+            },
+            {
+                gameVersion: keybinding.version.game_version,
+                class: normalizedClass,
+                page: 1,
+                limit: 100,
+            },
+        ];
+
+        const tryHydrateWithFilters = (index: number): void => {
+            if (index >= filterCandidates.length) return;
+            this.abilitiesService.getAbilitiesWithFilters(filterCandidates[index]).pipe(
+                takeUntil(this._unsubscribeAll)
+            ).subscribe({
+                next: (response: any) => {
+                    const abilities = Array.isArray(response) ? response : (Array.isArray(response?.abilities) ? response.abilities : []);
+                    if (!abilities.length) {
+                        tryHydrateWithFilters(index + 1);
+                        return;
+                    }
+
+                    const bySpellId = new Map<string, string>();
+                    const byName = new Map<string, string>();
+                    abilities.forEach((ability: any) => {
+                        const spellId = String(ability?.spellId ?? '');
+                        const icon = String(ability?.icon ?? '');
+                        const name = this.normalizeAbilityName(String(ability?.name ?? ''));
+                        if (spellId && icon) bySpellId.set(spellId, icon);
+                        if (name && icon) byName.set(name, icon);
+                    });
+
+                    let changed = false;
+                    const hydratedKeybinds = keybinding.keybinds.map((kb) => {
+                        const normalizedIcon = this.resolveIconForRender(kb?.spell?.icon);
+                        if (this.isRenderableIcon(normalizedIcon)) {
+                            if (normalizedIcon !== String(kb?.spell?.icon || '')) {
+                                changed = true;
+                                return {
+                                    ...kb,
+                                    spell: {
+                                        ...kb.spell,
+                                        icon: normalizedIcon,
+                                    },
+                                };
+                            }
+                            return kb;
+                        }
+
+                        const directSpellId = String(kb?.spell?.spellId ?? '').replace(/^macro:/i, '');
+                        const sourceSpellId = String(kb?.spell?.sourceSpellId ?? '');
+                        const sourceSpellName = this.normalizeAbilityName(String(kb?.spell?.sourceSpellName ?? ''));
+                        const spellName = this.normalizeAbilityName(String(kb?.spell?.name ?? ''));
+                        const hydratedIcon =
+                            bySpellId.get(sourceSpellId) ||
+                            bySpellId.get(directSpellId) ||
+                            byName.get(sourceSpellName) ||
+                            byName.get(spellName) ||
+                            '';
+
+                        if (!hydratedIcon) return kb;
+                        const renderableHydratedIcon = this.resolveIconForRender(hydratedIcon);
+                        changed = true;
+                        return {
+                            ...kb,
+                            spell: {
+                                ...kb.spell,
+                                icon: renderableHydratedIcon || hydratedIcon,
+                            },
+                        };
+                    });
+
+                    if (!changed || !this.keybinding) return;
+                    this.keybinding = {
+                        ...this.keybinding,
+                        keybinds: hydratedKeybinds,
+                    };
+                },
+                error: (error) => {
+                    if (index + 1 < filterCandidates.length) {
+                        tryHydrateWithFilters(index + 1);
+                        return;
+                    }
+                    console.error('Failed to hydrate keybinding icons from abilities:', error);
+                }
+            });
+        };
+
+        tryHydrateWithFilters(0);
+    }
+
+    private isRenderableIcon(icon: unknown): boolean {
+        if (typeof icon !== 'string') return false;
+        const value = icon.trim();
+        if (!value) return false;
+        return value.startsWith('http://')
+            || value.startsWith('https://')
+            || value.startsWith('assets/')
+            || value.startsWith('/')
+            || value.startsWith('data:');
+    }
+
+    private resolveIconForRender(icon: unknown): string {
+        if (typeof icon !== 'string') return '';
+        const value = icon.trim();
+        if (!value) return '';
+        if (this.isRenderableIcon(value)) return value;
+        if (/^\d+$/.test(value)) {
+            return `https://render.worldofwarcraft.com/us/icons/56/${value}.jpg`;
+        }
+        const normalized = value
+            .replace(/^interface[\\/]+icons[\\/]+/i, '')
+            .replace(/\.blp$/i, '')
+            .replace(/\\/g, '/');
+        const iconName = normalized.split('/').pop() || '';
+        if (iconName) {
+            return `https://wow.zamimg.com/images/wow/icons/large/${iconName.toLowerCase()}.jpg`;
+        }
+        return '';
+    }
+
+    private normalizeAbilityName(value: string): string {
+        return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    private normalizeFilterValue(value: string | null | undefined): string {
+        return String(value || '').trim().toLowerCase();
+    }
+
+    private normalizeKeybindIconsForRender(keybinding: Keybinding): Keybinding {
+        if (!keybinding?.keybinds?.length) return keybinding;
+        let changed = false;
+        const keybinds = keybinding.keybinds.map((kb) => {
+            const resolvedIcon = this.resolveIconForRender(kb?.spell?.icon);
+            if (!resolvedIcon || resolvedIcon === String(kb?.spell?.icon || '')) return kb;
+            changed = true;
+            return {
+                ...kb,
+                spell: {
+                    ...kb.spell,
+                    icon: resolvedIcon,
+                },
+            };
+        });
+        return changed ? { ...keybinding, keybinds } : keybinding;
     }
 }

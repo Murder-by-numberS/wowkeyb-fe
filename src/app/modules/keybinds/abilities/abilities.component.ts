@@ -57,6 +57,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
     selectedKeybindingClass: string;
     selectedKeybindingSpec: string;
     selectedKeybindingHeroTalent: string;
+    selectedKeybindingRace: string;
 
     abilities: Ability[] = [];
     private isFetchingAbilities = false;
@@ -65,9 +66,54 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
     classes = classes;
     specs: string[] = [];
     heroTalents: string[] = [];
+    races: string[] = [
+        'Human',
+        'Dwarf',
+        'Night Elf',
+        'Gnome',
+        'Draenei',
+        'Worgen',
+        'Pandaren',
+        'Void Elf',
+        'Lightforged Draenei',
+        'Dark Iron Dwarf',
+        'Kul Tiran',
+        'Mechagnome',
+        'Orc',
+        'Undead',
+        'Tauren',
+        'Troll',
+        'Blood Elf',
+        'Goblin',
+        'Highmountain Tauren',
+        'Nightborne',
+        'Mag\'har Orc',
+        'Zandalari Troll',
+        'Vulpera',
+        'Dracthyr',
+    ];
+    private readonly RACIAL_PLACEHOLDER_ID_1 = 'racial:placeholder:1';
+    private readonly RACIAL_PLACEHOLDER_ID_2 = 'racial:placeholder:2';
+    private readonly professionIconByName: Record<string, string> = {
+        alchemy: 'https://wow.zamimg.com/images/wow/icons/large/trade_alchemy.jpg',
+        blacksmithing: 'https://wow.zamimg.com/images/wow/icons/large/trade_blacksmithing.jpg',
+        enchanting: 'https://wow.zamimg.com/images/wow/icons/large/trade_engraving.jpg',
+        engineering: 'https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg',
+        herbalism: 'https://wow.zamimg.com/images/wow/icons/large/trade_herbalism.jpg',
+        inscription: 'https://wow.zamimg.com/images/wow/icons/large/inv_inscription_tradeskill01.jpg',
+        jewelcrafting: 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_gem_01.jpg',
+        leatherworking: 'https://wow.zamimg.com/images/wow/icons/large/trade_leatherworking.jpg',
+        mining: 'https://wow.zamimg.com/images/wow/icons/large/trade_mining.jpg',
+        skinning: 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_pelt_wolf_01.jpg',
+        tailoring: 'https://wow.zamimg.com/images/wow/icons/large/trade_tailoring.jpg',
+        cooking: 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_food_15.jpg',
+        fishing: 'https://wow.zamimg.com/images/wow/icons/large/trade_fishing.jpg',
+        archaeology: 'https://wow.zamimg.com/images/wow/icons/large/trade_archaeology.jpg',
+    };
 
     @Output() selectionClassChanged = new EventEmitter<string>();
     @Output() keybindingUpdated = new EventEmitter<any>();
+    @Output() abilitiesLoaded = new EventEmitter<Ability[]>();
 
     // ─────────────────────────────────────────────────────────────────────────
     // Pagination State
@@ -302,7 +348,14 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!this.selectedKeybinding?.keybinds?.length) return;
 
         this.selectedKeybinding.keybinds.forEach(keybind => {
-            const ability = this.abilities.find(a => a.spellId === keybind.spell.spellId);
+            const keybindSpellId = String(keybind?.spell?.spellId || keybind?.spell?.sourceSpellId || '');
+            const keybindSpellName = this.normalizeSpellName(String(keybind?.spell?.name || keybind?.spell?.sourceSpellName || ''));
+            const ability = this.abilities.find((a) => {
+                const abilitySpellId = String(a?.spellId || '');
+                const abilityName = this.normalizeSpellName(String(a?.name || ''));
+                return (abilitySpellId !== '' && keybindSpellId !== '' && abilitySpellId === keybindSpellId)
+                    || (abilityName !== '' && keybindSpellName !== '' && abilityName === keybindSpellName);
+            });
             if (ability) {
                 ability.keybindings = ability.keybindings || [];
                 if (!ability.keybindings.includes(keybind.key)) {
@@ -377,6 +430,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
                             : this.selectedKeybinding.heroTalent === 'Elunes Chosen'
                                 ? 'Elune\'s Chosen'
                                 : this.selectedKeybinding.heroTalent;
+                    this.selectedKeybindingRace = (this.selectedKeybinding as any).race || '';
                 } else if (this.selectedKeybinding.randomClassDetails) {
                     console.log('Using random class details for abilities:', this.selectedKeybinding.randomClassDetails);
 
@@ -498,6 +552,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.selectedKeybindingClass = classMapping[this.selectedKeybinding.randomClassDetails.class] || this.selectedKeybinding.randomClassDetails.class;
                     this.selectedKeybindingSpec = specMapping[this.selectedKeybinding.randomClassDetails.spec] || this.selectedKeybinding.randomClassDetails.spec;
                     this.selectedKeybindingHeroTalent = heroTalentMapping[this.selectedKeybinding.randomClassDetails.heroTalent] || this.selectedKeybinding.randomClassDetails.heroTalent;
+                    this.selectedKeybindingRace = (this.selectedKeybinding as any).race || '';
 
                     console.log('Converted values:', {
                         class: this.selectedKeybindingClass,
@@ -532,6 +587,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.selectedKeybindingClass = undefined;
                     this.selectedKeybindingSpec = undefined;
                     this.selectedKeybindingHeroTalent = undefined;
+                    this.selectedKeybindingRace = '';
                 }
 
                 // Abilities already cleared above
@@ -593,6 +649,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.selectedKeybindingClass = undefined;
                 this.selectedKeybindingSpec = undefined;
                 this.selectedKeybindingHeroTalent = undefined;
+                this.selectedKeybindingRace = '';
                 this.specs = [];
                 this.heroTalents = [];
                 this.abilities = [];
@@ -773,6 +830,17 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     }
 
+    onRaceChange(event: any) {
+        const selectedOption = event.value;
+        this.selectedKeybindingRace = selectedOption;
+        // Keep local state in selected keybinding for future racial filtering support.
+        if (this.selectedKeybinding) {
+            (this.selectedKeybinding as any).race = selectedOption || undefined;
+        }
+        this.abilities = this.ensureRacialPlaceholderAbilityForSelectedKeybinding(this.abilities || []);
+        this.triggerPaginationRecalculation();
+    }
+
     fetchAbilities() {
         console.log('fetching abilities for', {
             class: this.selectedKeybindingClass,
@@ -842,7 +910,8 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
             heroTalentName,
             gameVersion
         ).subscribe((data) => {
-            console.log('Abilities fetched from backend:', data.length, 'abilities');
+            const fetchedAbilities = Array.isArray(data) ? data : [];
+            console.log('Abilities fetched from backend:', fetchedAbilities.length, 'abilities');
 
             // Check if this fetch is still relevant (prevent race conditions)
             const currentKeybindingId = this.selectedKeybinding?.keybindingId;
@@ -858,7 +927,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
             console.log('Abilities fetch result applied for keybinding:', currentKeybindingId);
 
             //loop through abilities and add the keybindings to the abilities from the selectedKeybinding
-            data.forEach(ability => {
+            fetchedAbilities.forEach((ability: Ability) => {
                 const matchedKeybinds = this.selectedKeybinding.keybinds.filter((keybind) =>
                     this.spellReferencesAbility((keybind as any)?.spell || {}, ability)
                 );
@@ -869,7 +938,9 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
                     )
                     .map((keybind) => keybind.key);
             });
-            this.abilities = data;
+            const mergedAbilities = this.mergeSupplementalKeyboundAbilities(fetchedAbilities);
+            this.abilities = this.ensureRacialPlaceholderAbilityForSelectedKeybinding(mergedAbilities);
+            this.abilitiesLoaded.emit(this.abilities);
             console.log('Abilities set in component:', this.abilities.length);
             this.isFetchingAbilities = false;
 
@@ -1026,6 +1097,189 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     private spellReferencesAbility(spell: any, ability: Ability): boolean {
         return this.getSpellReferenceType(spell, ability) !== 'none';
+    }
+
+    private mergeSupplementalKeyboundAbilities(baseAbilities: Ability[]): Ability[] {
+        const merged = [...baseAbilities];
+        const isAddonImported = this.isSelectedKeybindingFromAddonImport();
+        const existingBySpellId = new Set(
+            merged
+                .map((ability) => String(ability?.spellId || ''))
+                .filter((spellId) => spellId !== '')
+        );
+        const existingByName = new Set(
+            merged
+                .map((ability) => this.normalizeSpellName(String(ability?.name || '')))
+                .filter((name) => name !== '')
+        );
+        const supplementalById = new Map<string, Ability>();
+
+        const keybinds = Array.isArray(this.selectedKeybinding?.keybinds)
+            ? this.selectedKeybinding.keybinds
+            : [];
+
+        keybinds.forEach((keybind) => {
+            const spell = (keybind as any)?.spell || {};
+            const actionType = String(spell?.actionType || spell?.action_type || 'spell').toLowerCase();
+            const isMacro = spell?.isMacro === true || actionType === 'macro' || String(spell?.spellId || '').startsWith('macro:');
+            if (isMacro) return;
+
+            const rawSpellId = String(spell?.spellId || spell?.sourceSpellId || spell?.spell_id || spell?.source_spell_id || '').trim();
+            const normalizedName = this.normalizeSpellName(String(spell?.sourceSpellName || spell?.name || ''));
+            if (rawSpellId.startsWith('item:') || rawSpellId.startsWith('mount:') || rawSpellId.startsWith('toy:')) return;
+            if (this.isProfessionName(normalizedName) && !isAddonImported) return;
+            if (!rawSpellId && !normalizedName) return;
+            if (rawSpellId && existingBySpellId.has(rawSpellId)) return;
+            if (normalizedName && existingByName.has(normalizedName)) return;
+
+            const candidateId = rawSpellId || `supplemental:${normalizedName}`;
+            const displayName = String(spell?.name || spell?.sourceSpellName || 'Unknown Ability');
+            const resolvedIcon = this.resolveSupplementalIcon(spell, normalizedName);
+            const description = this.getSupplementalDescription(normalizedName);
+
+            const existing = supplementalById.get(candidateId);
+            if (!existing) {
+                supplementalById.set(candidateId, {
+                    id: `supplemental-${candidateId}`,
+                    spellId: candidateId,
+                    name: displayName,
+                    description,
+                    power: 0,
+                    icon: resolvedIcon,
+                    keybindings: keybind?.key ? [keybind.key] : [],
+                    macroKeybindings: [],
+                    class: this.selectedKeybindingClass,
+                    spec: this.selectedKeybindingSpec,
+                    heroTalent: this.selectedKeybindingHeroTalent,
+                    abilityType: 'supplemental',
+                });
+                return;
+            }
+
+            if (keybind?.key && !existing.keybindings.includes(keybind.key)) {
+                existing.keybindings.push(keybind.key);
+            }
+        });
+
+        supplementalById.forEach((ability) => merged.push(ability));
+        return merged;
+    }
+
+    private ensureRacialPlaceholderAbility(abilities: Ability[]): Ability[] {
+        const list = Array.isArray(abilities) ? [...abilities] : [];
+        const hasSelectedRace = String(this.selectedKeybindingRace || '').trim() !== '';
+        const isPlaceholder = (ability: Ability) => {
+            const spellId = String(ability?.spellId || '');
+            return spellId === this.RACIAL_PLACEHOLDER_ID_1 || spellId === this.RACIAL_PLACEHOLDER_ID_2;
+        };
+
+        if (hasSelectedRace) {
+            return list.filter((ability) => !isPlaceholder(ability));
+        }
+
+        const baseList = list.filter((ability) => !isPlaceholder(ability));
+        const selectedKeybinds = Array.isArray(this.selectedKeybinding?.keybinds) ? this.selectedKeybinding.keybinds : [];
+        const buildPlaceholder = (spellId: string, label: string): Ability => {
+            const keys = selectedKeybinds
+                .filter((kb) => String((kb as any)?.spell?.spellId || '') === spellId)
+                .map((kb) => kb.key)
+                .filter((key) => !!key);
+            return {
+                id: `supplemental-${spellId}`,
+                spellId,
+                name: label,
+                description: 'Generic racial ability placeholder when race is not selected.',
+                power: 0,
+                icon: 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg',
+                keybindings: keys,
+                macroKeybindings: [],
+                class: this.selectedKeybindingClass,
+                spec: this.selectedKeybindingSpec,
+                heroTalent: this.selectedKeybindingHeroTalent,
+                abilityType: 'racial',
+            };
+        };
+
+        baseList.push(buildPlaceholder(this.RACIAL_PLACEHOLDER_ID_1, 'Racial Ability 1'));
+        baseList.push(buildPlaceholder(this.RACIAL_PLACEHOLDER_ID_2, 'Racial Ability 2'));
+        return baseList;
+    }
+
+    private ensureLegacySingleRacialPlaceholderMigration(keybinds: Keybind[]): void {
+        if (!Array.isArray(keybinds)) return;
+        keybinds.forEach((kb) => {
+            const spellId = String((kb as any)?.spell?.spellId || '');
+            if (spellId === 'racial:placeholder') {
+                (kb as any).spell.spellId = this.RACIAL_PLACEHOLDER_ID_1;
+                if (!(kb as any).spell.name || (kb as any).spell.name === 'Racial Ability') {
+                    (kb as any).spell.name = 'Racial Ability 1';
+                }
+            }
+        });
+    }
+
+    private ensureRacialPlaceholderAbilityForSelectedKeybinding(abilities: Ability[]): Ability[] {
+        const keybinds = Array.isArray(this.selectedKeybinding?.keybinds) ? this.selectedKeybinding.keybinds : [];
+        this.ensureLegacySingleRacialPlaceholderMigration(keybinds);
+        return this.ensureRacialPlaceholderAbility(abilities);
+    }
+
+    private isRenderableIcon(icon: string): boolean {
+        const value = String(icon || '').trim();
+        if (!value) return false;
+        return value.startsWith('http://')
+            || value.startsWith('https://')
+            || value.startsWith('assets/')
+            || value.startsWith('/')
+            || value.startsWith('data:');
+    }
+
+    private isProfessionName(normalizedName: string): boolean {
+        return !!this.professionIconByName[normalizedName];
+    }
+
+    private resolveSupplementalIcon(spell: any, normalizedName: string): string {
+        const rawIcon = String(spell?.icon || '').trim();
+        if (this.isRenderableIcon(rawIcon)) {
+            return rawIcon;
+        }
+
+        // Addon exports often send numeric WoW fileData IDs for icons.
+        if (/^\d+$/.test(rawIcon)) {
+            return `https://render.worldofwarcraft.com/us/icons/56/${rawIcon}.jpg`;
+        }
+
+        if (this.professionIconByName[normalizedName]) {
+            return this.professionIconByName[normalizedName];
+        }
+
+        return 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg';
+    }
+
+    private getSupplementalDescription(normalizedName: string): string {
+        if (this.isProfessionName(normalizedName)) {
+            return 'Profession ability';
+        }
+        return 'Imported keybound ability';
+    }
+
+    private isSelectedKeybindingFromAddonImport(): boolean {
+        const keybinding = this.selectedKeybinding as any;
+        if (keybinding?.__fromAddonImport === true) {
+            return true;
+        }
+        const keybindingId = String(this.selectedKeybinding?.keybindingId || '');
+        if (!keybindingId || typeof localStorage === 'undefined') {
+            return false;
+        }
+        try {
+            const raw = localStorage.getItem('wowkeybAddonImportedKeybindings');
+            if (!raw) return false;
+            const ids = JSON.parse(raw);
+            return Array.isArray(ids) && ids.includes(keybindingId);
+        } catch {
+            return false;
+        }
     }
 
 }

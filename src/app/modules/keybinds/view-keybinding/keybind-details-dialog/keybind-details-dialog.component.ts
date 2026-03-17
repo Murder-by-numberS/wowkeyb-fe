@@ -17,7 +17,8 @@ interface KeybindDetailsDialogData {
             id: number | string,
             keybinding: string,
             name: string,
-            spellId: string
+            spellId: string,
+            actionType?: string
         };
     }[];
 }
@@ -42,6 +43,11 @@ interface KeybindDetailsDialogData {
                         <div class="flex-grow">
                             <div class="font-semibold text-lg dark:text-gray-100">{{ keybind.spell.name }}</div>
                         </div>
+                        <span
+                            *ngIf="getUtilityActionBadge(keybind.spell.actionType)"
+                            class="rounded bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+                            {{ getUtilityActionBadge(keybind.spell.actionType) }}
+                        </span>
                     </div>
                     <div class="mt-2 flex items-center gap-3">
                         <div class="text-gray-600 dark:text-gray-400">Bound to:</div>
@@ -66,5 +72,12 @@ export class KeybindDetailsDialogComponent {
 
     close(): void {
         this.dialogRef.close();
+    }
+
+    getUtilityActionBadge(actionType: string | undefined): string {
+        const normalized = String(actionType ?? '').trim().toLowerCase();
+        if (normalized === 'mount') return 'Mount';
+        if (normalized === 'toy') return 'Toy';
+        return '';
     }
 }

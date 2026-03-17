@@ -24,6 +24,7 @@ import {
     RESOLUTIONS,
 } from 'app/core/types/action-bar-layout';
 import { KeybindingService } from 'app/core/services/keybinding.service';
+import { AbilitiesService } from 'app/core/services/abilities.service';
 import { KeybindDialogComponent } from '../keyboard/keybind-dialog/keybind-dialog.component';
 import { SlotAssignDialogComponent } from './slot-assign-dialog/slot-assign-dialog.component';
 import { SlotKeyDialogComponent } from './slot-key-dialog.component';
@@ -82,6 +83,9 @@ export class ActionBarLayoutComponent implements OnChanges {
     private cleanKeybindsSnapshot: Keybind[] | null = null;
     private activeKeybindingId: string | null = null;
     private lastRenderSignature: string | null = null;
+    private iconCatalogSignature: string | null = null;
+    private abilityIconBySpellId = new Map<string, string>();
+    private abilityIconByName = new Map<string, string>();
 
     /** Screen resolution */
     screenWidth = 2560;
@@ -96,12 +100,14 @@ export class ActionBarLayoutComponent implements OnChanges {
     constructor(
         private dialog: MatDialog,
         private keybindingService: KeybindingService,
+        private abilitiesService: AbilitiesService,
         private cdr: ChangeDetectorRef
     ) {}
 
     ngOnChanges(): void {
         const currentId = this.selectedKeybinding?.keybindingId || null;
         const renderSignature = this.computeRenderSignature(this.selectedKeybinding);
+        this.ensureAbilityIconCatalog();
         if (currentId !== this.activeKeybindingId) {
             this.activeKeybindingId = currentId;
             this.layoutDirty = false;
@@ -190,8 +196,8 @@ export class ActionBarLayoutComponent implements OnChanges {
                     keybind.slotIndex < displaySlots.length
                         ? displaySlots[keybind.slotIndex]
                         : null;
-                const slotByKey = displaySlots.find(
-                    (s) => keybind.key.toLowerCase() === s.keyLabel.toLowerCase()
+                const slotByKey = displaySlots.find((s) =>
+                    this.areEquivalentKeyLabels(keybind.key, s.keyLabel)
                 );
                 const slot = slotByIndex || slotByKey;
                 if (slot) slot.keybinds.push(keybind);
@@ -465,6 +471,82 @@ export class ActionBarLayoutComponent implements OnChanges {
         return `${keybinding.keybindingId || ''}::${layoutSig}::${keybindsSig}`;
     }
 
+    private ensureAbilityIconCatalog(): void {
+        const kb = this.selectedKeybinding;
+        const classValue = String(kb?.class || '').trim();
+        const specValue = String(kb?.spec || '').trim();
+        const heroTalentValue = String(kb?.heroTalent || '').trim();
+        const gameVersion = String(kb?.version?.game_version || '').trim();
+        const signature = [classValue, specValue, heroTalentValue, gameVersion].join('|');
+        if (!classValue || !gameVersion) {
+            this.iconCatalogSignature = null;
+            this.abilityIconBySpellId.clear();
+            this.abilityIconByName.clear();
+            return;
+        }
+        if (this.iconCatalogSignature === signature) return;
+        this.iconCatalogSignature = signature;
+        this.abilityIconBySpellId.clear();
+        this.abilityIconByName.clear();
+
+        const requests: Array<() => any> = [];
+        if (specValue && heroTalentValue) {
+            requests.push(() =>
+                this.abilitiesService.getAbilities(classValue, specValue, heroTalentValue, gameVersion)
+            );
+        }
+        requests.push(
+            () =>
+                this.abilitiesService.getAbilitiesWithFilters({
+                    gameVersion,
+                    class: classValue.toLowerCase(),
+                    spec: specValue ? specValue.toLowerCase() : undefined,
+                    page: 1,
+                    limit: 100,
+                }),
+            () =>
+                this.abilitiesService.getAbilitiesWithFilters({
+                    gameVersion,
+                    class: classValue.toLowerCase(),
+                    page: 1,
+                    limit: 100,
+                })
+        );
+
+        const fillCatalog = (abilities: any[]): void => {
+            abilities.forEach((ability) => {
+                const spellId = String(ability?.spellId ?? '');
+                const icon = String(ability?.icon ?? '');
+                const name = this.normalizeAbilityName(String(ability?.name ?? ''));
+                if (spellId && icon) this.abilityIconBySpellId.set(spellId, icon);
+                if (name && icon) this.abilityIconByName.set(name, icon);
+            });
+        };
+
+        const tryRequest = (index: number): void => {
+            if (index >= requests.length) return;
+            requests[index]().subscribe({
+                next: (response: any) => {
+                    const abilities = Array.isArray(response)
+                        ? response
+                        : Array.isArray(response?.abilities)
+                            ? response.abilities
+                            : [];
+                    if (!abilities.length) {
+                        tryRequest(index + 1);
+                        return;
+                    }
+                    fillCatalog(abilities);
+                    this.cdr.markForCheck();
+                },
+                error: () => {
+                    tryRequest(index + 1);
+                },
+            });
+        };
+        tryRequest(0);
+    }
+
     private getLayoutToSave(): ActionBarLayout {
         const existing = this.selectedKeybinding?.layout;
         if (existing?.bars?.length) {
@@ -493,5 +575,116 @@ export class ActionBarLayoutComponent implements OnChanges {
             screenHeight: this.screenHeight,
             barGap: this.barGap,
         };
+    }
+
+    getUtilityActionBadge(keybind: Keybind | null | undefined): string {
+        const actionType = String(keybind?.spell?.actionType ?? '').trim().toLowerCase();
+        if (actionType === 'mount') return 'Mount';
+        if (actionType === 'toy') return 'Toy';
+        return '';
+    }
+
+    getPrimarySlotKeybind(slot: ActionBarSlot | null | undefined): Keybind | null {
+        const candidates = slot?.keybinds || [];
+        if (!candidates.length) return null;
+
+        const withRenderableIcon = candidates.find((bind) => this.isRenderableIcon(this.extractRawIcon(bind)));
+        if (withRenderableIcon) return withRenderableIcon;
+
+        const firstNamed = candidates.find((bind) => String(bind?.spell?.name ?? '').trim().length > 0);
+        return firstNamed || candidates[0] || null;
+    }
+
+    getRenderableIcon(keybind: Keybind | null | undefined): string {
+        const rawIcon = this.extractRawIcon(keybind);
+
+        const directSpellId = String((keybind as any)?.spell?.spellId ?? '').replace(/^macro:/i, '');
+        const sourceSpellId = String((keybind as any)?.spell?.sourceSpellId ?? '');
+        const sourceSpellName = this.normalizeAbilityName(String((keybind as any)?.spell?.sourceSpellName ?? ''));
+        const spellName = this.normalizeAbilityName(String((keybind as any)?.spell?.name ?? ''));
+        const catalogIcon =
+            this.abilityIconBySpellId.get(sourceSpellId) ||
+            this.abilityIconBySpellId.get(directSpellId) ||
+            this.abilityIconByName.get(sourceSpellName) ||
+            this.abilityIconByName.get(spellName) ||
+            '';
+        if (this.isRenderableIcon(catalogIcon)) {
+            return catalogIcon;
+        }
+
+        if (!rawIcon) {
+            return 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg';
+        }
+        if (
+            rawIcon.startsWith('http://')
+            || rawIcon.startsWith('https://')
+            || rawIcon.startsWith('assets/')
+            || rawIcon.startsWith('/')
+            || rawIcon.startsWith('data:')
+        ) {
+            return rawIcon;
+        }
+        if (/^\d+$/.test(rawIcon)) {
+            return `https://render.worldofwarcraft.com/us/icons/56/${rawIcon}.jpg`;
+        }
+
+        const normalized = rawIcon
+            .replace(/^interface[\\/]+icons[\\/]+/i, '')
+            .replace(/\.blp$/i, '')
+            .replace(/\\/g, '/');
+        const iconName = normalized.split('/').pop() || '';
+        if (iconName) {
+            return `https://wow.zamimg.com/images/wow/icons/large/${iconName.toLowerCase()}.jpg`;
+        }
+
+        return 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg';
+    }
+
+    onSlotIconError(event: Event): void {
+        const image = event.target as HTMLImageElement | null;
+        if (!image) return;
+        const fallback = 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg';
+        if (image.src !== fallback) {
+            image.src = fallback;
+        }
+    }
+
+    private extractRawIcon(keybind: Keybind | null | undefined): string {
+        const icon = keybind?.spell?.icon as any;
+        if (typeof icon === 'string') return icon.trim();
+        if (icon && typeof icon === 'object') {
+            const cloudfront = String(icon.cloudfrontUrl || icon.url || '').trim();
+            if (cloudfront) return cloudfront;
+            const nested = String(icon.icon || '').trim();
+            if (nested) return nested;
+        }
+        return '';
+    }
+
+    private isRenderableIcon(icon: string): boolean {
+        return icon.startsWith('http://')
+            || icon.startsWith('https://')
+            || icon.startsWith('assets/')
+            || icon.startsWith('/')
+            || icon.startsWith('data:');
+    }
+
+    private areEquivalentKeyLabels(left: string, right: string): boolean {
+        return this.normalizeKeyLabel(left) === this.normalizeKeyLabel(right);
+    }
+
+    private normalizeKeyLabel(value: string): string {
+        return String(value || '')
+            .toLowerCase()
+            .replace(/\s+/g, '')
+            .replace(/control/g, 'ctrl')
+            .replace(/shift[-_]/g, 'shift+')
+            .replace(/ctrl[-_]/g, 'ctrl+')
+            .replace(/alt[-_]/g, 'alt+')
+            .replace(/meta[-_]/g, 'meta+');
+    }
+
+    private normalizeAbilityName(value: string): string {
+        return (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 }

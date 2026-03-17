@@ -487,4 +487,45 @@ export class ExpandedKeyboardComponent implements OnChanges, AfterViewInit, OnIn
     public getZoomSensitivity(): number {
         return this.mouseWheelFactor;
     }
+
+    getRenderableIcon(spell: any): string {
+        const rawIcon = this.extractRawIcon(spell);
+        if (!rawIcon) {
+            return 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg';
+        }
+        if (
+            rawIcon.startsWith('http://')
+            || rawIcon.startsWith('https://')
+            || rawIcon.startsWith('assets/')
+            || rawIcon.startsWith('/')
+            || rawIcon.startsWith('data:')
+        ) {
+            return rawIcon;
+        }
+        if (/^\d+$/.test(rawIcon)) {
+            return `https://render.worldofwarcraft.com/us/icons/56/${rawIcon}.jpg`;
+        }
+
+        const normalized = rawIcon
+            .replace(/^interface[\\/]+icons[\\/]+/i, '')
+            .replace(/\.blp$/i, '')
+            .replace(/\\/g, '/');
+        const iconName = normalized.split('/').pop() || '';
+        if (iconName) {
+            return `https://wow.zamimg.com/images/wow/icons/large/${iconName.toLowerCase()}.jpg`;
+        }
+        return 'https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg';
+    }
+
+    private extractRawIcon(spell: any): string {
+        const icon = spell?.icon;
+        if (typeof icon === 'string') return icon.trim();
+        if (icon && typeof icon === 'object') {
+            const cloudfront = String(icon.cloudfrontUrl || icon.url || '').trim();
+            if (cloudfront) return cloudfront;
+            const nested = String(icon.icon || '').trim();
+            if (nested) return nested;
+        }
+        return '';
+    }
 }

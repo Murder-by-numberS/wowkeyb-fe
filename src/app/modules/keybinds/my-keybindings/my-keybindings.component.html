@@ -173,6 +173,7 @@
                 <abilities [keybindingSelected]="keybindingSelected" [selectedKeybinding]="selectedKeybinding"
                     [drawerOpen]="drawerOpen"
                     (selectionClassChanged)="onSelectionClassChanged($event)"
+                    (abilitiesLoaded)="onAbilitiesLoaded($event)"
                     (keybindingUpdated)="updateKeybinding($event)">
                 </abilities>
             </div>

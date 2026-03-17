@@ -92,12 +92,20 @@
                             }}
                             }
                         </span>
-                        @if (slot.keybinds?.length) {
+                        @if (getPrimarySlotKeybind(slot)) {
                         <img
-                            [src]="slot.keybinds[0].spell?.icon"
-                            [alt]="slot.keybinds[0].spell?.name"
+                            [src]="getRenderableIcon(getPrimarySlotKeybind(slot))"
+                            (error)="onSlotIconError($event)"
+                            [alt]="getPrimarySlotKeybind(slot)?.spell?.name"
                             class="w-6 h-6 sm:w-8 sm:h-8 object-contain flex-shrink-0 mt-0.5"
-                            [matTooltip]="slot.keybinds[0].spell?.name + (slot.keybinds.length > 1 ? ' (+' + (slot.keybinds.length - 1) + ' more)' : '')" />
+                            [matTooltip]="getPrimarySlotKeybind(slot)?.spell?.name + (slot.keybinds.length > 1 ? ' (+' + (slot.keybinds.length - 1) + ' more)' : '')" />
+                        @if (getUtilityActionBadge(getPrimarySlotKeybind(slot))) {
+                        <span
+                            class="absolute right-0.5 top-0.5 rounded bg-black/70 px-1 py-[1px] text-[8px] font-semibold uppercase tracking-wide text-amber-200"
+                            [matTooltip]="getUtilityActionBadge(getPrimarySlotKeybind(slot)) + ' action'">
+                            {{ getUtilityActionBadge(getPrimarySlotKeybind(slot)) }}
+                        </span>
+                        }
                         } @else {
                         <mat-icon class="text-gray-500 text-xl opacity-50 group-hover:opacity-70 mt-0.5">add_circle_outline</mat-icon>
                         }
