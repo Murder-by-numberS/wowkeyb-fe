@@ -242,6 +242,40 @@ export class ActionBarLayoutComponent implements OnChanges {
         this.buildDisplayBars();
     }
 
+    removeBar(index: number): void {
+        if (!this.selectedKeybinding || index <= 0) return;
+
+        const layout = this.getLayoutToSave();
+        const removed = layout.bars[index];
+        if (!removed) return;
+
+        layout.bars.splice(index, 1);
+
+        const removedId = removed.id;
+        const normalizeKey = (key: string | undefined): string => (key || '').trim().toLowerCase();
+        const removedKeys = new Set((removed.slotKeys || []).map(normalizeKey).filter(Boolean));
+        const remainingIds = new Set(layout.bars.map((bar) => bar.id));
+        const remainingKeys = new Set(
+            layout.bars.flatMap((bar) => (bar.slotKeys || []).map(normalizeKey).filter(Boolean))
+        );
+        const keybinds = (this.selectedKeybinding.keybinds || []).filter((keybind) => {
+            if (keybind.barId && keybind.barId === removedId) return false;
+            if (keybind.barId && remainingIds.has(keybind.barId)) return true;
+            const key = normalizeKey(keybind.key);
+            if (key && removedKeys.has(key) && !remainingKeys.has(key)) return false;
+            return true;
+        });
+
+        this.markLayoutDirty();
+        this.layoutTouchesKeybinds = true;
+        this.selectedKeybinding = {
+            ...this.selectedKeybinding,
+            layout: this.cloneLayout(layout),
+            keybinds,
+        };
+        this.buildDisplayBars();
+    }
+
     onSlotClick(bar: DisplayBar, slot: ActionBarSlot, event: Event): void {
         event.stopPropagation();
         if (!this.selectedKeybinding) return;

@@ -68,14 +68,26 @@
                         <div class="text-xs font-semibold text-gray-200">{{ barTitle(idx) }}</div>
                         <div class="text-[11px] text-gray-400">{{ barDetail(idx) }} · {{ bar.slots }} slots</div>
                     </div>
-                    <mat-slide-toggle
-                        color="primary"
-                        [checked]="bar.enabled !== false"
-                        [disabled]="idx === 0"
-                        (change)="setBarEnabled(bar, $event.checked)"
-                        matTooltip="Action Bar 1 stays on. Other bars show or hide in WoW when this profile is applied.">
-                        <span class="text-[11px] text-gray-300">Show in WoW</span>
-                    </mat-slide-toggle>
+                    <div class="flex items-center gap-1">
+                        @if (idx > 0) {
+                        <button
+                            type="button"
+                            mat-icon-button
+                            (click)="removeBar(idx)"
+                            matTooltip="Remove this bar. Save to keep the change, or Reset to undo."
+                            class="!w-8 !h-8">
+                            <mat-icon class="!text-[18px] text-gray-300">delete</mat-icon>
+                        </button>
+                        }
+                        <mat-slide-toggle
+                            color="primary"
+                            [checked]="bar.enabled !== false"
+                            [disabled]="idx === 0"
+                            (change)="setBarEnabled(bar, $event.checked)"
+                            matTooltip="Action Bar 1 stays on. Other bars show or hide in WoW when this profile is applied.">
+                            <span class="text-[11px] text-gray-300">Show in WoW</span>
+                        </mat-slide-toggle>
+                    </div>
                 </div>
                 <div
                     class="relative flex gap-1 p-1.5 rounded-lg border border-gray-600 bg-gray-700/70 w-fit flex-shrink-0"
