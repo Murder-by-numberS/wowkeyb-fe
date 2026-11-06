@@ -482,6 +482,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
                         'guardian': 'Guardian',
                         'havoc': 'Havoc',
                         'vengeance': 'Vengeance',
+                        'devourer': 'Devourer',
                         'blood': 'Blood',
                         'unholy': 'Unholy',
                         'devastation': 'Devastation',
@@ -522,6 +523,8 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
                         'druidoftheclaw': 'Druid of the Claw',
                         'wildstalker': 'Wildstalker',
                         'aldrachireaver': 'Aldrachi Reaver',
+                        'annihilator': 'Annihilator',
+                        'voidscarred': 'Void-Scarred',
                         'felscarred': 'Fel-Scarred',
                         'deathbringer': 'Deathbringer',
                         'rideroftheapocalypse': 'Rider of the Apocalypse',
@@ -1126,7 +1129,7 @@ export class AbilitiesComponent implements OnInit, AfterViewInit, OnDestroy {
 
             const rawSpellId = String(spell?.spellId || spell?.sourceSpellId || spell?.spell_id || spell?.source_spell_id || '').trim();
             const normalizedName = this.normalizeSpellName(String(spell?.sourceSpellName || spell?.name || ''));
-            if (rawSpellId.startsWith('item:') || rawSpellId.startsWith('mount:') || rawSpellId.startsWith('toy:')) return;
+            if (actionType === 'trinket' || rawSpellId.startsWith('trinket:') || rawSpellId.startsWith('item:') || rawSpellId.startsWith('mount:') || rawSpellId.startsWith('toy:')) return;
             if (this.isProfessionName(normalizedName) && !isAddonImported) return;
             if (!rawSpellId && !normalizedName) return;
             if (rawSpellId && existingBySpellId.has(rawSpellId)) return;

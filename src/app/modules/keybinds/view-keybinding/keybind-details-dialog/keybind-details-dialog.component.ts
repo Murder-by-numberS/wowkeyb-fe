@@ -78,6 +78,7 @@ export class KeybindDetailsDialogComponent {
         const normalized = String(actionType ?? '').trim().toLowerCase();
         if (normalized === 'mount') return 'Mount';
         if (normalized === 'toy') return 'Toy';
+        if (normalized === 'trinket') return 'Trinket';
         return '';
     }
 }

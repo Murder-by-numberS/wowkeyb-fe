@@ -288,6 +288,7 @@ export class KeybindDialogComponent {
         const actionType = String(bind?.spell?.actionType ?? '').trim().toLowerCase();
         if (actionType === 'mount') return 'Mount';
         if (actionType === 'toy') return 'Toy';
+        if (actionType === 'trinket') return 'Trinket';
         return '';
     }
 

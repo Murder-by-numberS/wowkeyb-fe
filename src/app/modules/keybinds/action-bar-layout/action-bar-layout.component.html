@@ -5,9 +5,9 @@
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Blizzard Action Bars</span>
             <span
                 class="text-xs text-amber-700 dark:text-amber-300"
-                matTooltip="This view maps keys and spells to Blizzard bars. Final bar positions are managed in WoW Edit Mode."
+                matTooltip="Turn a bar on here, save, then apply the profile in WoW. Bar positions stay in WoW Edit Mode."
                 matTooltipPosition="below">
-                Preview only - move bars in WoW Edit Mode
+                Toggles apply in WoW when you apply this profile
             </span>
         </div>
         <div class="flex items-center gap-2">
@@ -60,10 +60,22 @@
         } @else {
         <div class="flex flex-col gap-3 max-w-5xl mx-auto">
             @for (bar of displayBars; track bar.id; let idx = $index) {
-            <div class="rounded-lg border border-gray-600 bg-gray-900/90 p-3 shadow">
-                <div class="mb-2 flex items-center justify-between">
-                    <div class="text-xs font-semibold text-gray-200">Blizzard Bar {{ idx + 1 }}</div>
-                    <div class="text-[11px] text-gray-400">horizontal · {{ bar.slots }} slots</div>
+            <div
+                class="rounded-lg border border-gray-600 bg-gray-900/90 p-3 shadow"
+                [class.opacity-60]="bar.enabled === false">
+                <div class="mb-2 flex items-center justify-between gap-3">
+                    <div>
+                        <div class="text-xs font-semibold text-gray-200">{{ barTitle(idx) }}</div>
+                        <div class="text-[11px] text-gray-400">{{ barDetail(idx) }} · {{ bar.slots }} slots</div>
+                    </div>
+                    <mat-slide-toggle
+                        color="primary"
+                        [checked]="bar.enabled !== false"
+                        [disabled]="idx === 0"
+                        (change)="setBarEnabled(bar, $event.checked)"
+                        matTooltip="Action Bar 1 stays on. Other bars show or hide in WoW when this profile is applied.">
+                        <span class="text-[11px] text-gray-300">Show in WoW</span>
+                    </mat-slide-toggle>
                 </div>
                 <div
                     class="relative flex gap-1 p-1.5 rounded-lg border border-gray-600 bg-gray-700/70 w-fit flex-shrink-0"

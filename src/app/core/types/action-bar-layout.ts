@@ -18,6 +18,8 @@ export interface ActionBar {
     position: BarPosition;
     orientation: 'horizontal' | 'vertical';
     scale?: number;
+    /** When false, applying the profile hides this bar in WoW. Bar 1 stays shown. */
+    enabled?: boolean;
 }
 
 export interface ActionBarLayout {

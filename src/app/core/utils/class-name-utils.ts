@@ -38,10 +38,13 @@ export const CLASS_SPEC_HERO_CATALOG: ClassCatalogEntry[] = [
         specs: [
             { value: 'havoc', label: 'Havoc', specId: 577 },
             { value: 'vengeance', label: 'Vengeance', specId: 581 },
+            { value: 'devourer', label: 'Devourer', specId: 1480 },
         ],
         heroTalents: [
             { value: 'aldrachi-reaver', label: 'Aldrachi Reaver' },
             { value: 'fel-scarred', label: 'Fel-Scarred' },
+            { value: 'annihilator', label: 'Annihilator' },
+            { value: 'void-scarred', label: 'Void-Scarred' },
         ],
     },
     {
@@ -325,6 +328,7 @@ export function formatHeroTalentNameForBackend(frontendHeroName: string): string
         mountainthane: 'mountain-thane',
         aldrachireaver: 'aldrachi-reaver',
         felscarred: 'fel-scarred',
+        voidscarred: 'void-scarred',
     };
     return aliases[compact] || normalized;
 }

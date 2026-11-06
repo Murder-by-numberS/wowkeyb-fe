@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
@@ -42,8 +43,18 @@ interface DisplayBar extends ActionBar {
 }
 
 const DEFAULT_BAR_GAP = 16;
-const MAX_BLIZZARD_BARS = 5;
+const MAX_BLIZZARD_BARS = 8;
 const BLIZZARD_BAR_SLOTS = 12;
+const BLIZZARD_BAR_NAMES = [
+    { name: 'Action Bar 1', detail: 'Main' },
+    { name: 'Action Bar 2', detail: 'Bottom Left' },
+    { name: 'Action Bar 3', detail: 'Bottom Right' },
+    { name: 'Action Bar 4', detail: 'Right' },
+    { name: 'Action Bar 5', detail: 'Right 2' },
+    { name: 'Action Bar 6', detail: 'Extra 1' },
+    { name: 'Action Bar 7', detail: 'Extra 2' },
+    { name: 'Action Bar 8', detail: 'Extra 3' },
+];
 
 const DEFAULT_KEYS_BY_BAR_INDEX: string[][] = [
     ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
@@ -64,6 +75,7 @@ const ASSIGNABLE_KEYS = DEFAULT_KEYS_BY_BAR_INDEX.flat();
         MatButtonModule,
         MatIconModule,
         MatTooltipModule,
+        MatSlideToggleModule,
         MatFormFieldModule,
         MatSelectModule,
     ],
@@ -204,7 +216,30 @@ export class ActionBarLayoutComponent implements OnChanges {
             });
         }
 
-        return { ...bar, slots: normalizedSlots, orientation: 'horizontal', displaySlots };
+        const enabled = barIndex === 0 ? true : bar.enabled !== false;
+        return { ...bar, enabled, slots: normalizedSlots, orientation: 'horizontal', displaySlots };
+    }
+
+    barTitle(index: number): string {
+        return BLIZZARD_BAR_NAMES[index]?.name ?? `Action Bar ${index + 1}`;
+    }
+
+    barDetail(index: number): string {
+        return BLIZZARD_BAR_NAMES[index]?.detail ?? '';
+    }
+
+    setBarEnabled(bar: DisplayBar, enabled: boolean): void {
+        if (!this.selectedKeybinding) return;
+        const barIndex = this.displayBars.findIndex((candidate) => candidate.id === bar.id);
+        if (barIndex <= 0 && !enabled) return;
+
+        const layout = this.getLayoutToSave();
+        const targetBar = layout.bars.find((candidate) => candidate.id === bar.id);
+        if (!targetBar) return;
+        targetBar.enabled = barIndex === 0 ? true : enabled;
+        this.markLayoutDirty();
+        this.setDraftLayout(layout);
+        this.buildDisplayBars();
     }
 
     onSlotClick(bar: DisplayBar, slot: ActionBarSlot, event: Event): void {
@@ -381,6 +416,7 @@ export class ActionBarLayoutComponent implements OnChanges {
             },
             orientation: 'horizontal',
             scale: 1,
+            enabled: true,
         };
 
         const layout = this.getLayoutToSave();
@@ -569,6 +605,7 @@ export class ActionBarLayoutComponent implements OnChanges {
                 position: { ...b.position },
                 orientation: b.orientation,
                 scale: b.scale ?? 1,
+                enabled: b.enabled !== false,
             })),
             barMode: 'blizzard',
             screenWidth: this.screenWidth,
@@ -581,6 +618,7 @@ export class ActionBarLayoutComponent implements OnChanges {
         const actionType = String(keybind?.spell?.actionType ?? '').trim().toLowerCase();
         if (actionType === 'mount') return 'Mount';
         if (actionType === 'toy') return 'Toy';
+        if (actionType === 'trinket') return 'Trinket';
         return '';
     }
 
