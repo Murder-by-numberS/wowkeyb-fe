@@ -37,18 +37,18 @@ export interface VersionCopyDialogData {
         
         <mat-dialog-content class="!py-4">
             @if (data.changes.removedAbilities.length > 0) {
-                <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div class="flex items-center gap-2 text-yellow-800 font-medium mb-2">
-                        <mat-icon class="text-yellow-600">warning</mat-icon>
+                <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <div class="flex items-center gap-2 text-yellow-800 dark:text-yellow-200 font-medium mb-2">
+                        <mat-icon class="text-yellow-600 dark:text-yellow-400">warning</mat-icon>
                         <span>{{ data.changes.removedAbilities.length }} ability/abilities removed</span>
                     </div>
-                    <p class="text-sm text-yellow-700 mb-3">
+                    <p class="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
                         The following abilities don't exist in version {{ data.targetVersion }} and were removed from the keybinding:
                     </p>
                     <div class="space-y-2 max-h-64 overflow-y-auto">
                         @for (removed of data.changes.removedAbilities; track removed.key) {
-                            <div class="flex items-center gap-3 p-2 bg-white rounded border border-yellow-100">
-                                <div class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center overflow-hidden">
+                            <div class="flex items-center gap-3 p-2 bg-white dark:bg-gray-900 rounded border border-yellow-100 dark:border-yellow-900">
+                                <div class="w-8 h-8 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
                                     @if (removed.spell.icon) {
                                         <img [src]="'https://wow.zamimg.com/images/wow/icons/medium/' + removed.spell.icon + '.jpg'" 
                                              [alt]="removed.spell.name"
@@ -57,23 +57,23 @@ export interface VersionCopyDialogData {
                                     }
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-medium text-sm truncate">{{ removed.spell.name }}</div>
-                                    <div class="text-xs text-gray-500">Key: {{ removed.key }}</div>
+                                    <div class="font-medium text-sm truncate text-gray-900 dark:text-gray-100">{{ removed.spell.name }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">Key: {{ removed.key }}</div>
                                 </div>
                             </div>
                         }
                     </div>
                 </div>
             } @else {
-                <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div class="flex items-center gap-2 text-green-800">
-                        <mat-icon class="text-green-600">check_circle</mat-icon>
+                <div class="p-3 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div class="flex items-center gap-2 text-green-800 dark:text-green-200">
+                        <mat-icon class="text-green-600 dark:text-green-400">check_circle</mat-icon>
                         <span>All abilities transferred successfully!</span>
                     </div>
                 </div>
             }
             
-            <div class="mt-4 text-sm text-gray-600">
+            <div class="mt-4 text-sm text-gray-600 dark:text-gray-300">
                 <span class="font-medium">Summary:</span>
                 {{ data.changes.newCount }} of {{ data.changes.originalCount }} keybinds copied
             </div>
